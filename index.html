@@ -1,0 +1,92 @@
+﻿<!DOCTYPE html>
+<html>
+<head runat="server">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+    <title></title>
+    <link type="text/css" href="../LTMS/Styles/Site.css?ver=1.31" rel="stylesheet" />
+    
+    <style type="text/css" >
+        #jitm
+        {
+            min-width:1060px;
+        }
+
+        #outer
+        {
+            margin-top:30px;
+            width: 100%;
+            text-align: center;
+        }
+            
+        #inner
+        {
+            display: inline-block;
+            min-width:1060px;
+        }
+        .imgIndex
+        {
+            border: 1px solid #6495ED;
+            border-radius: 4px;
+            margin: 4px;
+            height: 324px;
+            width: 520px;
+        }
+        
+        div.imgWrapper
+        {
+            float: left; /* important */
+            position: relative; /* important(so we can absolutely position the description div */
+        }
+        div.description
+        {
+            position: absolute; /* absolute position (so we can position it where we want)*/
+            border-radius: 4px;
+            top: 6px;
+            left: 6px;
+            height: 322px; 
+            width: 518px;
+            background-color: #FFF;
+            font-size: 35px;
+            color: Black;
+            opacity: 0.7; /* transparency */
+            filter: alpha(opacity=70); /* IE transparency */
+        }
+        p.description_content
+        {
+            padding: 10px;
+            margin: 244px 0px 0px 38px;
+        }
+    </style>
+
+</head>
+<body>
+    <div id="jitm">
+        <img class="imageCenter" alt="JIT Manager" src="../LTMS/Images/Header/ggsJITM.png" />
+    </div>
+    <div id="outer">
+        <div id="inner" class="divCenter divBorder">
+
+            <div class='imgWrapper'>
+                <a title="Accord Assembly Lines" href="http://ASTMOH-WEB01/LTMS/">
+                    <img class="imgIndex" alt="Accord Assembly Lines" src="../LTMS/Images/index2013.png" />
+                    <div class='description'>
+                        <p class='description_content'>
+                            Accord Assembly Lines</p>
+                    </div>
+                </a>
+            </div>
+
+            <div class='imgWrapper'>
+                <a title="Acura Assembly Lines" href="http://ASTMOH-WEB02/LTMS/">
+                    <img class="imgIndex" alt="Acura Assembly Lines" src="../LTMS/Images/index2015.png" />
+                    <div class='description'>
+                        <p class='description_content'>
+                            Acura Assembly Lines</p>
+                    </div>
+                </a>
+            </div>
+
+        </div>
+    </div>
+</body>
+</html>

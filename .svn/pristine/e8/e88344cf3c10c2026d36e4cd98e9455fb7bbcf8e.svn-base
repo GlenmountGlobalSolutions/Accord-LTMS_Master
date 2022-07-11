@@ -1,0 +1,1001 @@
+﻿Imports System.Data.SqlClient
+
+Public Class ShippingSchedule
+    Inherits System.Web.UI.Page
+
+
+#Region "local vars and constants"
+
+    Const LOT_NUM_DELIMITER As String = ","
+    Const REVISION_TYPE_ID As String = "0002"
+    Const ON_HOLD As String = "<span class='boldShipTime'>ON HOLD</span>"
+
+    Enum procPSGetShipSchedColumnType
+        table_id
+        LotNumber
+        LotNumber8
+        LotNumber8NoBlanks
+        LotNumberNoBlanks
+        LotNumber10
+        SubLotNumber
+        SequenceDT
+        OnHold
+        TruckMapCreated
+        Load
+        FrameCode
+        Model
+        BC
+        Qty
+        ShipTime
+        ArrivalTime
+        ApproxSeqTime
+        Trailer
+        DriverName
+        ActualDepartTime
+        SetexOrder
+    End Enum
+
+    Enum procPSGetShipLotDetailColumnType
+        LotNumber8
+        LotNumber
+        ShippingNotes
+        ShipTime
+        ArrivalTime
+        ApproxSeqTime
+        TrailerNumber
+        Driver
+        ActualDepartureTime
+    End Enum
+
+#End Region
+
+#Region "Event Handlers"
+
+    Protected Sub Page_Load(ByVal sender As Object, ByVal e As System.EventArgs) Handles Me.Load
+        Try
+            If (Not IsPostBack) Then
+                Me.tbDay.Text = Now().ToString("MM/dd/yyyy")
+                Load_ddlDriver()
+                Load_ddlTemplates()
+                ShowLotData(False)
+                LoadDay()
+            End If
+        Catch ex As Exception
+            Master.eMsg(ex.ToString())
+        End Try
+
+    End Sub
+
+    Private Sub ShippingSchedule_PreRender(sender As Object, e As System.EventArgs) Handles Me.PreRender
+        Try
+            EnableControls()
+        Catch ex As Exception
+            Master.eMsg(ex.ToString())
+        End Try
+
+    End Sub
+
+
+    Private Sub treeShip_SelectedNodeChanged(sender As Object, e As System.EventArgs) Handles treeShip.SelectedNodeChanged
+        Try
+            If (treeShip.SelectedNode IsNot Nothing) Then
+                ShowLotData(LoadLotData())
+            End If
+        Catch ex As Exception
+            Master.eMsg(ex.ToString())
+        End Try
+    End Sub
+
+
+    Private Sub cmdRefresh_Click(sender As Object, e As System.EventArgs) Handles cmdRefresh.Click
+        Dim node As TreeNode
+        Dim lot As String = ""
+        Try
+            If (treeShip.SelectedNode IsNot Nothing) Then
+                lot = treeShip.SelectedNode.Value
+            End If
+
+            LoadDay()
+
+            'select previously selected node
+            node = Utility.FindNodeByText(lot, treeShip.Nodes)
+            Utility.SelectAndExpandToNode(node)
+
+        Catch ex As Exception
+            Master.eMsg(ex.ToString())
+        End Try
+    End Sub
+
+    Private Sub cbHold_CheckedChanged(sender As Object, e As System.EventArgs) Handles cbHold.CheckedChanged
+        Dim node As TreeNode
+        Dim lot As String = ""
+        Try
+            If (treeShip.SelectedNode IsNot Nothing) Then
+                lot = treeShip.SelectedNode.Value
+            End If
+
+            LoadDay()
+
+            'select previously selected node
+            node = Utility.FindNodeByText(lot, treeShip.Nodes)
+            Utility.SelectAndExpandToNode(node)
+
+        Catch ex As Exception
+            Master.eMsg(ex.ToString())
+        End Try
+    End Sub
+    Private Sub cmdSave_Click(sender As Object, e As System.EventArgs) Handles cmdSave.Click
+        Dim node As TreeNode
+        Dim lot As String = ""
+        Try
+            If (treeShip.SelectedNode IsNot Nothing) Then
+                lot = treeShip.SelectedNode.Value
+            End If
+
+            SaveLotData()
+            LoadDay()
+
+            'select previously selected node
+            node = Utility.FindNodeByText(lot, treeShip.Nodes)
+            Utility.SelectAndExpandToNode(node)
+
+        Catch ex As Exception
+            Master.eMsg(ex.ToString())
+        End Try
+    End Sub
+
+    Private Sub cmdMove_Click(sender As Object, e As System.EventArgs) Handles cmdMove.Click
+        Dim node As TreeNode
+        Dim lot As String = ""
+        Try
+            If (treeShip.SelectedNode IsNot Nothing) Then
+                lot = treeShip.SelectedNode.Value
+            End If
+
+            MoveLot()
+            LoadDay()
+
+            'select previously selected node
+            node = Utility.FindNodeByText(lot, treeShip.Nodes)
+            Utility.SelectAndExpandToNode(node, False)
+
+        Catch ex As Exception
+            Master.eMsg(ex.ToString())
+        End Try
+
+    End Sub
+
+    Private Sub cmdTemplate_Click(sender As Object, e As System.EventArgs) Handles cmdTemplate.Click
+        Dim node As TreeNode
+        Dim lot As String = "'"
+        Dim templateText As String
+        Dim status As String = ""
+        Dim message As String = ""
+
+        Try
+
+            If (treeShip.SelectedNode IsNot Nothing) Then
+                lot = treeShip.SelectedNode.Value
+            End If
+
+            templateText = ddlTemplates.SelectedItem.Text
+
+            AssignTemplate(ddlTemplates.SelectedValue, status, message)
+
+            If (status.ToUpper() <> "TRUE") Then
+                Master.Msg = "Error: unable to Assign Template " + templateText + ".<br> S.P. Status: " + status + ".<br>S.P. Message: " + message
+            Else
+                Master.tMsg("Assign Template", "Template " + templateText + " has been assigned to lots from " + Me.tbDay.Text)
+                LoadDay()
+
+                'select previously selected node
+                node = Utility.FindNodeByText(lot, treeShip.Nodes)
+                Utility.SelectAndExpandToNode(node)
+            End If
+        Catch ex As Exception
+            Master.eMsg(ex.ToString())
+        End Try
+
+    End Sub
+
+    Private Sub cmdRevInc_Click(sender As Object, e As System.EventArgs) Handles cmdRevInc.Click
+        Try
+            If (txtComment.Text.Length > 0) Then
+                InsertRevision()
+            Else
+                Master.eMsg("Please Enter a Comment.")
+            End If
+        Catch ex As Exception
+            Master.eMsg(ex.ToString())
+        End Try
+    End Sub
+
+    Private Sub ibNext_Click(sender As Object, e As System.Web.UI.ImageClickEventArgs) Handles ibNext.Click
+        Try
+            Dim dt As Date
+            If Date.TryParse(tbDay.Text, dt) Then
+                tbDay.Text = dt.AddDays(1).ToString("MM/dd/yyyy")
+                LoadDay()
+            End If
+        Catch ex As Exception
+            Master.eMsg(ex.ToString())
+        End Try
+    End Sub
+
+    Private Sub ibPrev_Click(sender As Object, e As System.Web.UI.ImageClickEventArgs) Handles ibPrev.Click
+        Try
+            Dim dt As Date
+            If Date.TryParse(tbDay.Text, dt) Then
+                tbDay.Text = dt.AddDays(-1).ToString("MM/dd/yyyy")
+                LoadDay()
+            End If
+        Catch ex As Exception
+            Master.eMsg(ex.ToString())
+        End Try
+    End Sub
+
+
+#End Region
+
+#Region "Methods"
+
+    Private Sub EnableControls()
+        Try
+            Master.Secure(cmdRefresh)
+
+            Master.Secure(cmdSave)
+            Master.Secure(cmdMove)
+            Master.Secure(cmdPrint)
+            Master.Secure(cmdPrint2)
+            Master.Secure(cmdTemplate)
+            Master.Secure(cmdRevInc)
+
+            lblDate.Text = Me.tbDay.Text
+            lblDeliveryDate.Text = Me.tbDay.Text
+
+            If (Me.treeShip.Nodes.Count <= 0) Then
+                Me.cmdPrint.Enabled = False
+                Me.cmdPrint2.Enabled = False
+            End If
+
+            If (treeShip.SelectedNode Is Nothing) Then
+                cmdSave.Enabled = False
+                cmdMove.Enabled = False
+                ShowLotData(False)
+            Else
+
+                Select Case treeShip.SelectedNode.Depth
+                    Case 0  ' top level -date
+                        cmdMove.Enabled = False
+                        cmdSave.Enabled = False
+
+                        'Case 1  ' lot
+                        'cmdMove.Enabled = False
+                        'cmdSave.Enabled = False
+
+                    Case 2  ' sublot
+                        cmdMove.Enabled = False
+
+                End Select
+            End If
+
+        Catch ex As Exception
+            Master.eMsg(ex.ToString())
+        End Try
+    End Sub
+
+    Private Sub Load_ddlDriver()
+        Try
+            Dim sql As String = "SELECT ParameterListValue AS [TEXT], ParameterListValue AS [VALUE] FROM tblParameterListValues WHERE (ParameterListID = '51') ORDER BY DISPLAYID"
+            Dim ds As DataSet
+
+            'WebControlFunctions.DDL_DataBind(Me.ddlDriver, sql, "VALUE", "TEXT")
+
+            Me.ddlDriver.Items.Clear()
+
+            ds = DA.GetDataSet(sql)
+            If (DA.IsDSEmpty(ds)) Then
+                Me.ddlDriver.Items.Insert(0, "")
+                Return
+            End If
+
+            Me.ddlDriver.DataSource = ds
+            Me.ddlDriver.DataTextField = "TEXT"
+            Me.ddlDriver.DataValueField = "VALUE"
+            Me.ddlDriver.DataBind()
+            Me.ddlDriver.Items.Insert(0, "")
+
+        Catch ex As Exception
+            Master.eMsg(ex.ToString())
+        End Try
+    End Sub
+
+    Private Sub Load_ddlTemplates()
+        Try
+            Dim ds As DataSet
+
+            Me.ddlTemplates.Items.Clear()
+
+            ds = DA.GetDataSet("SELECT DeliveryTemplateID 'VALUE', Description 'TEXT' FROM tblPSDeliveryTemplates")
+
+            If (DA.IsDataSetNotEmpty(ds)) Then
+                Me.ddlTemplates.DataSource = ds
+                Me.ddlTemplates.DataTextField = "TEXT"
+                Me.ddlTemplates.DataValueField = "VALUE"
+                Me.ddlTemplates.DataBind()
+            End If
+        Catch ex As Exception
+            Master.eMsg(ex.ToString())
+        End Try
+
+    End Sub
+
+    Private Sub ShowLotData(ByVal show As Boolean)
+        Me.pnlLotData.Visible = show
+    End Sub
+
+    Private Function LoadDay() As Boolean
+        Dim bResult As Boolean = False
+        Dim oSqlParameter As SqlParameter
+        Dim colParameters As New List(Of SqlParameter)
+        Dim ds As DataSet
+        Dim hold As Integer = 1
+        Dim tree As TreeView
+        Dim lblTotal As Label
+        Dim strDt As String = ""
+        Dim numDays As Integer = 1
+
+        Try
+            strDt = Utility.FormattedDate(Me.tbDay.Text)
+
+            If (strDt.Length <= 0) Then
+                Master.Msg = "Error: Please select a valid date."
+                bResult = False
+            Else
+                If (Me.cbHold.Checked) Then
+                    hold = 0
+                End If
+
+                oSqlParameter = New SqlParameter("@vchBegDT", SqlDbType.VarChar, 30)
+                oSqlParameter.Value = strDt
+                colParameters.Add(oSqlParameter)
+
+                oSqlParameter = New SqlParameter("@Report", SqlDbType.Bit)
+                oSqlParameter.Value = hold
+                colParameters.Add(oSqlParameter)
+
+                ds = DA.GetDataSet("procPSGetShipSched", colParameters)
+
+                'clear all trees and totals
+                ClearDayTreesTotals()
+
+                'display day
+                LoadDayDateLabel()
+
+                If (ds Is Nothing) Then
+                    bResult = False
+                ElseIf (ds.Tables.Count < 2) Then
+                    bResult = False
+                Else
+
+                    tree = Me.treeShip
+                    lblTotal = Me.lblTotalShip
+
+                    bResult = PopulateTreeView(tree, ds.Tables(0))
+
+                    If (Not ds.Tables(1) Is Nothing) Then
+                        If (Not ds.Tables(1).DefaultView.Table.Rows(0)(0) Is Nothing) Then
+                            lblTotal.Text = ds.Tables(1).DefaultView.Table.Rows(0)(0).ToString()
+                        End If
+                    End If
+
+                    tree.Nodes(0).Expand()
+                End If
+
+                LoadRevision()
+
+            End If
+
+        Catch ex As Exception
+            Master.eMsg(ex.ToString())
+        Finally
+            Me.cmdPrint.Enabled = bResult
+            Me.cmdPrint2.Enabled = bResult
+        End Try
+
+        Return bResult
+
+    End Function
+
+    Private Sub ClearDayTreesTotals()
+        Me.treeShip.Nodes.Clear()
+        Me.lblTotalShip.Text = "?"
+    End Sub
+
+    Private Sub LoadDayDateLabel()
+        Try
+            Dim dt As Date
+
+            If (Date.TryParse(Me.tbDay.Text, dt)) Then
+                lblDayOfWeek.Text = dt.ToString("dddd, MM/dd/yyyy")
+            Else
+                Master.Msg = "Invalid Date"
+            End If
+
+        Catch ex As Exception
+            Master.eMsg(ex.ToString())
+        End Try
+    End Sub
+
+    Private Sub AssignTemplate(ByVal templateID As String, ByRef status As String, ByRef message As String)
+
+        Dim oSqlParameter As SqlParameter
+        Dim colParameters As New List(Of SqlParameter)
+        Dim colOutput As List(Of SqlParameter)
+
+        Try
+            oSqlParameter = New SqlParameter("@TemplateID", SqlDbType.Decimal)
+            oSqlParameter.Value = templateID
+            colParameters.Add(oSqlParameter)
+
+            oSqlParameter = New SqlParameter("@LotNumber8s", SqlDbType.VarChar, 8000)
+            oSqlParameter.Value = GetDelimitedLots()
+            colParameters.Add(oSqlParameter)
+
+            oSqlParameter = New SqlParameter("@Status", SqlDbType.VarChar, 80)
+            oSqlParameter.Direction = ParameterDirection.Output
+            colParameters.Add(oSqlParameter)
+
+            oSqlParameter = New SqlParameter("@ErrorMsg", SqlDbType.VarChar, 80)
+            oSqlParameter.Direction = ParameterDirection.Output
+            colParameters.Add(oSqlParameter)
+
+            colOutput = DA.ExecSP("procPSAssignTemplate", colParameters)
+
+            For Each oParameter In colOutput
+                With oParameter
+                    If .Direction = ParameterDirection.Output And .ParameterName = "@Status" Then
+                        status = oParameter.Value.ToString()
+                    ElseIf .Direction = ParameterDirection.Output And .ParameterName = "@ErrorMsg" Then
+                        message = oParameter.Value.ToString()
+                    End If
+                End With
+            Next
+        Catch ex As Exception
+            Master.eMsg(ex.ToString())
+        End Try
+    End Sub
+
+    Private Function GetDelimitedLots() As String
+        Dim i As Int32 = 0
+        Dim retval As String = ""
+        Dim nodeText As String = ""
+        Dim tree As TreeView = Me.treeShip
+        Dim node As TreeNode
+
+        Try
+
+            If (tree.Nodes.Count <= 0) Then
+                Return ""
+            End If
+
+            node = tree.Nodes(0)
+
+            If (node.ChildNodes.Count <= 0) Then
+                Return ""
+            End If
+
+            For i = 0 To (node.ChildNodes.Count - 1)
+                'check if HTML in nodetext from the background formatting 
+                'MAS 06-06-06
+
+                nodeText = node.ChildNodes(i).Text.Replace("-", "")
+                nodeText = Utility.RemoveHtmlTags(nodeText)
+                'MAS 09-05-2006 check if lot is on hold and if so then do not add to lots 
+                If Not InStr(nodeText, "on hold", CompareMethod.Text) > 0 Then
+                    retval += (nodeText.Substring(0, 8) + LOT_NUM_DELIMITER)
+                End If
+            Next
+
+            'remove last delimiter
+            If (retval.Length > 2) Then
+                retval = retval.Substring(0, (retval.Length() - LOT_NUM_DELIMITER.Length))
+            End If
+
+        Catch ex As Exception
+            Master.eMsg(ex.ToString())
+        End Try
+
+        Return retval
+    End Function
+
+    Private Function LoadRevision() As Boolean
+        Dim bResult As Boolean = False
+        Dim trackID As String = Me.tbDay.Text
+        Dim ds As DataSet
+        Dim sql As String = "SELECT TOP 1 RevisionNumber, Comment FROM tblRevisions WHERE (TrackingID = '" + trackID + "') AND (RevisionTypeID = '" + REVISION_TYPE_ID + "') ORDER BY RevisionNumber DESC"
+
+        Try
+            Me.lblRevNo.Text = "?"
+            Me.lblRevComments.Text = ""
+
+            ds = DA.GetDataSet(sql)
+
+            If (DA.IsDSEmpty(ds)) Then
+                bResult = False
+            Else
+                Me.lblRevNo.Text = ds.Tables(0).DefaultView.Table.Rows(0)("RevisionNumber").ToString()
+                Me.lblRevComments.Text = ds.Tables(0).DefaultView.Table.Rows(0)("Comment").ToString()
+                bResult = True
+            End If
+
+            LoadNewRevisionNumDialog()
+
+        Catch ex As Exception
+            Master.eMsg(ex.ToString())
+        End Try
+
+        Return bResult
+
+    End Function
+
+
+    Private Sub LoadNewRevisionNumDialog()
+        Try
+            Dim oSqlParameter As SqlParameter
+            Dim colParameters As New List(Of SqlParameter)
+            Dim colOutput As List(Of SqlParameter)
+
+            lblRev.Text = ""
+
+            oSqlParameter = New SqlParameter("@RevisionTypeID", SqlDbType.VarChar, 50)
+            oSqlParameter.Value = REVISION_TYPE_ID
+            colParameters.Add(oSqlParameter)
+
+            oSqlParameter = New SqlParameter("@TrackingID", SqlDbType.VarChar, 50)
+            oSqlParameter.Value = tbDay.Text
+            colParameters.Add(oSqlParameter)
+
+            oSqlParameter = New SqlParameter("@RevisionNumber", SqlDbType.Int)
+            oSqlParameter.Direction = ParameterDirection.Output
+            colParameters.Add(oSqlParameter)
+
+            colOutput = DA.ExecSP("procPSSelectNextRevision", colParameters)
+
+            For Each oParameter In colOutput
+                With oParameter
+                    If .Direction = ParameterDirection.Output And .ParameterName = "@RevisionNumber" Then
+                        Me.lblRev.Text = oParameter.Value.ToString()
+                        Exit For
+                    End If
+                End With
+            Next
+
+
+        Catch ex As Exception
+            Master.eMsg(ex.ToString())
+        End Try
+
+    End Sub
+
+    Private Sub InsertRevision()
+        Try
+            Dim status As String = ""
+            Dim message As String = ""
+            Dim oSqlParameter As SqlParameter
+            Dim colParameters As New List(Of SqlParameter)
+            Dim colOutput As List(Of SqlParameter)
+            Dim intRevisonNumber As Integer
+
+            If (Integer.TryParse(Me.txtComment.Text, intRevisonNumber)) Then
+                Master.tMsg("Revision", "Error: unable to update Revision for " + Me.lblDayOfWeek.Text + ".<br> S.P. Status: " + status + ".<br>S.P. Message: " + message)
+            Else
+                'procPSInsertRevision @RevisionTypeID varchar(50), @RevisionNumber Int,
+                '                     @Comment varchar(80), @TrackingID varchar(50),
+                '                     @Status varchar(80) OUT, @ErrorMsg varchar(80) OUT 
+
+                oSqlParameter = New SqlParameter("@RevisionTypeID", SqlDbType.VarChar, 50)
+                oSqlParameter.Value = REVISION_TYPE_ID
+                colParameters.Add(oSqlParameter)
+
+                oSqlParameter = New SqlParameter("@RevisionNumber", SqlDbType.Int)
+                oSqlParameter.Value = Me.lblRev.Text
+                colParameters.Add(oSqlParameter)
+
+                oSqlParameter = New SqlParameter("@Comment", SqlDbType.VarChar, 500)
+                oSqlParameter.Value = txtComment.Text
+                colParameters.Add(oSqlParameter)
+
+                oSqlParameter = New SqlParameter("@TrackingID", SqlDbType.VarChar, 50)
+                oSqlParameter.Value = Me.tbDay.Text
+                colParameters.Add(oSqlParameter)
+
+                oSqlParameter = New SqlParameter("@Status", SqlDbType.VarChar, 80)
+                oSqlParameter.Direction = ParameterDirection.Output
+                colParameters.Add(oSqlParameter)
+
+                oSqlParameter = New SqlParameter("@ErrorMsg", SqlDbType.VarChar, 80)
+                oSqlParameter.Direction = ParameterDirection.Output
+                colParameters.Add(oSqlParameter)
+
+                colOutput = DA.ExecSP("procPSInsertRevision", colParameters)
+
+                For Each oParameter In colOutput
+                    With oParameter
+                        If .Direction = ParameterDirection.Output And .ParameterName = "@Status" Then
+                            status = oParameter.Value.ToString()
+                        ElseIf .Direction = ParameterDirection.Output And .ParameterName = "@ErrorMsg" Then
+                            message = oParameter.Value.ToString()
+                        End If
+                    End With
+                Next
+
+
+                If (status <> "TRUE") Then
+                    Master.tMsg("Revision", "Error: unable to update Revision for " + Me.lblDayOfWeek.Text + ".<br> S.P. Status: " + status + ".<br>S.P. Message: " + message)
+                Else
+                    Master.tMsg("Revision", "Revision for " + Me.lblDayOfWeek.Text + " has been updated.")
+                End If
+            End If
+
+            LoadRevision()
+
+        Catch ex As Exception
+            Master.eMsg(ex.ToString())
+        End Try
+
+    End Sub
+
+
+    Private Function SaveLotData() As Boolean
+        Dim oSqlParameter As SqlParameter
+        Dim colParameters As New List(Of SqlParameter)
+        Dim colOutput As List(Of SqlParameter)
+        Dim status As String = ""
+        Dim message As String = ""
+        Dim bResult As Boolean = False
+
+        Try
+            'procPSUpdateLotForShipping @LotNumber8 varchar(8),
+            '					@ShipTime varchar(300),
+            '					@ArrivalTime varchar(300),
+            '					@ApproxSeqTime varchar(300),
+            '					@Trailer varchar(300),
+            '					@DriverName varchar(300),
+            '					@ActualDepartTime varchar(300),
+            '					@Status Varchar(80) OUT,
+            '					@ErrorMsg Varchar(80) OUT  
+
+            oSqlParameter = New SqlParameter("@LotNumber8", SqlDbType.VarChar, 8)
+            oSqlParameter.Value = Me.lblLdLot.Text.Replace("-", "")
+            colParameters.Add(oSqlParameter)
+
+            oSqlParameter = New SqlParameter("@ShipTime", SqlDbType.VarChar, 300)
+            oSqlParameter.Value = Me.tbLdShipTime.Text
+            colParameters.Add(oSqlParameter)
+
+            oSqlParameter = New SqlParameter("@ArrivalTime", SqlDbType.VarChar, 300)
+            oSqlParameter.Value = Me.tbLdArrivalTime.Text
+            colParameters.Add(oSqlParameter)
+
+            oSqlParameter = New SqlParameter("@ApproxSeqTime", SqlDbType.VarChar, 300)
+            oSqlParameter.Value = Me.tbLdSeqTime.Text
+            colParameters.Add(oSqlParameter)
+
+            oSqlParameter = New SqlParameter("@Trailer", SqlDbType.VarChar, 300)
+            oSqlParameter.Value = Me.txtTrailer.Text 'Me.ddlTrailer.SelectedValue
+            colParameters.Add(oSqlParameter)
+
+            oSqlParameter = New SqlParameter("@DriverName", SqlDbType.VarChar, 300)
+            oSqlParameter.Value = Me.ddlDriver.SelectedValue
+            colParameters.Add(oSqlParameter)
+
+            oSqlParameter = New SqlParameter("@ActualDepartTime", SqlDbType.VarChar, 300)
+            oSqlParameter.Value = Me.tbLdDepartureTime.Text
+            colParameters.Add(oSqlParameter)
+
+            oSqlParameter = New SqlParameter("@Status", SqlDbType.VarChar, 80)
+            oSqlParameter.Direction = ParameterDirection.Output
+            colParameters.Add(oSqlParameter)
+
+            oSqlParameter = New SqlParameter("@ErrorMsg", SqlDbType.VarChar, 80)
+            oSqlParameter.Direction = ParameterDirection.Output
+            colParameters.Add(oSqlParameter)
+
+            colOutput = DA.ExecSP("procPSUpdateLotForShipping", colParameters)
+
+            For Each oParameter In colOutput
+                With oParameter
+                    If .Direction = ParameterDirection.Output And .ParameterName = "@Status" Then
+                        status = oParameter.Value.ToString()
+                    ElseIf .Direction = ParameterDirection.Output And .ParameterName = "@ErrorMsg" Then
+                        message = oParameter.Value.ToString()
+                    End If
+                End With
+            Next
+
+            If (status.ToUpper() <> "TRUE") Then
+                Master.tMsg("Save", "Error: Unable to save Lot Detail for Lot " + Me.lblLdLot.Text + ".<br>SP Status: " + status + ".<br>SP Message: " + message)
+                bResult = False
+            End If
+
+            Master.tMsg("Save", "Updated Lot Detail for Lot " + Me.lblLdLot.Text)
+            bResult = True
+
+        Catch ex As Exception
+            Master.eMsg(ex.ToString())
+        End Try
+
+        Return bResult
+
+    End Function
+
+    Private Function PopulateTreeView(ByRef tree As TreeView, ByRef dt As DataTable) As Boolean
+        Dim dateNode As New TreeNode
+        Dim lotNode As New TreeNode
+        Dim subLotNode As New TreeNode
+
+        Dim strDate As String = Me.tbDay.Text
+        Dim strLot As String = ""
+        Dim strSubLot As String = ""
+        Dim strBC As String = ""
+        Dim strQty As String = ""
+        Dim strNodeData As String = ""
+        Dim SetexFlag As Boolean = False
+        Dim dateChange As Boolean = False
+        Dim holdFlag As Boolean = False
+        Dim strOnHold As String = ""
+        Dim strShipTime As String = ""
+
+        Dim dateAddedFlag As Boolean = False
+        Dim bResult As Boolean = False
+
+        Dim qtyLot As Int32 = 0
+        Dim i As Int32
+
+        Try
+            'clear out tree control
+            tree.Nodes.Clear()
+
+            If (dt Is Nothing) Then
+                bResult = False
+            ElseIf (dt.Rows.Count <= 0) Then
+                bResult = False
+            Else
+                'add all nodes
+                For i = 0 To dt.Rows.Count - 1
+                    strNodeData = dt.Rows(i)(procPSGetShipSchedColumnType.SequenceDT).ToString()
+                    strQty = dt.Rows(i)(procPSGetShipSchedColumnType.Qty).ToString()
+
+                    If (strQty = "") Then
+                        strQty = "0"
+                    End If
+                    strBC = dt.Rows(i)(procPSGetShipSchedColumnType.BC).ToString()
+                    strOnHold = dt.Rows(i)(procPSGetShipSchedColumnType.OnHold).ToString()
+
+                    If (Not dateAddedFlag) Then
+                        strDate = Me.tbDay.Text
+                        dateNode = Nothing
+                        dateNode = New TreeNode
+                        dateNode.Text = strDate
+                        tree.Nodes.Add(dateNode)
+                        dateChange = True
+                        dateAddedFlag = True
+                    End If
+
+                    'add new lot if needed
+                    If ((strLot <> dt.Rows(i)(procPSGetShipSchedColumnType.LotNumberNoBlanks).ToString()) Or (dateChange)) Then
+                        'add quantity to previous lot and on hold text if needed
+                        lotNode.Text += (" : " + qtyLot.ToString())
+                        'MS 06-06-2006 check if the ship code is "" then we know this is a customer order and therefore we want the background to be gray
+                        If SetexFlag = False Then
+                            lotNode.Text = "<span class='allOrders'>" + lotNode.Text + "</span>"
+                        End If
+                        If (holdFlag) Then
+                            lotNode.Text += ON_HOLD
+                        Else
+                            lotNode.Text += strShipTime
+                        End If
+                        qtyLot = 0
+                        holdFlag = False
+                        strShipTime = dt.Rows(i)(procPSGetShipSchedColumnType.ShipTime).ToString()
+
+                        If (strShipTime.Length > 0) Then
+                            strShipTime = "<span class=""boldShipTime"">" + strShipTime + "</span>"
+                        End If
+
+                        strLot = dt.Rows(i)(procPSGetShipSchedColumnType.LotNumberNoBlanks).ToString()
+                        lotNode = Nothing
+                        lotNode = New TreeNode
+                        'MS 06-06-2006 check if a Setex Order if so set a value
+                        SetexFlag = CBool(dt.Rows(i)(procPSGetShipSchedColumnType.SetexOrder))
+                        lotNode.Text = strLot  'then a Setex Order
+
+
+                        If (strOnHold.ToUpper = "TRUE") Then
+                            holdFlag = True
+                        End If
+                        dateNode.ChildNodes.Add(lotNode)
+                    End If
+                    'reset shift change flag
+                    dateChange = False
+
+                    'add sublot
+                    strSubLot = dt.Rows(i)(procPSGetShipSchedColumnType.SubLotNumber).ToString()
+                    subLotNode = Nothing
+                    subLotNode = New TreeNode
+                    'MS 06-06-2006 check if the ship code is "" then we know this is a customer order and therefore we want the background to be gray
+                    If CBool(dt.Rows(i)(procPSGetShipSchedColumnType.SetexOrder)) = False Then
+                        subLotNode.Text = "<span class='allOrders'>" + strSubLot + " : " + strQty + " " + strBC + "</span>"
+                    Else
+                        subLotNode.Text = strSubLot + " : " + strQty + " " + strBC
+                    End If
+                    lotNode.ChildNodes.Add(subLotNode)
+                    qtyLot += Convert.ToInt32(strQty)
+                Next
+
+                'add total to the very last lot
+                lotNode.Text += (" : " + qtyLot.ToString())
+
+                'add ship time to the very last lot
+                lotNode.Text += strShipTime
+                If SetexFlag = False Then
+                    lotNode.Text = "<span class='allOrders'>" + lotNode.Text + "</span>"
+                End If
+
+                bResult = True
+            End If
+
+        Catch ex As Exception
+            Master.eMsg(ex.ToString())
+        End Try
+
+        Return bResult
+
+    End Function
+
+    Private Sub ClearLotData()
+        Me.lblLdLoad.Text = ""
+        Me.lblLdLot.Text = ""
+        Me.tbLdShipTime.Text = ""
+        Me.tbLdNotes.Text = ""
+        Me.tbLdDepartureTime.Text = ""
+        Me.tbLdArrivalTime.Text = ""
+    End Sub
+
+    Private Function LoadLotData() As Boolean
+        Dim retVal As Boolean = False
+        Dim sql As String = ""
+        Dim strLot As String = ""
+        Dim ds As New DataSet
+        Dim strIndex As String = "0"
+        Dim strDriver As String = ""
+        Dim i As Integer = 0
+        Dim idx As Integer = 0
+
+        Try
+            If (treeShip.SelectedNode IsNot Nothing) Then
+
+                strLot = treeShip.SelectedValue.Trim().Replace("-", "")
+                strLot = strLot.Substring(0, 8)
+
+                If (treeShip.SelectedNode.Depth = 1) Then
+                    idx = treeShip.SelectedNode.Parent.ChildNodes.IndexOf(treeShip.SelectedNode)
+                ElseIf (treeShip.SelectedNode.Depth = 2) Then
+                    idx = treeShip.Nodes(0).ChildNodes.IndexOf(treeShip.SelectedNode.Parent)
+                End If
+                Me.lblLdLoad.Text = (idx + 1).ToString()
+
+                'CREATE PROCEDURE procPSGetShipLotDetail @LotNumber8 varchar(8)
+                sql = "exec procPSGetShipLotDetail '" + strLot + "'"
+
+                ds = DA.GetDataSet(sql)
+                If (DA.IsDSEmpty(ds)) Then
+                    ClearLotData()
+                    retVal = False
+                Else
+                    Me.lblLdLot.Text = ds.Tables(0).DefaultView.Table.Rows(0)(procPSGetShipLotDetailColumnType.LotNumber).ToString()
+                    Me.tbLdShipTime.Text = ds.Tables(0).DefaultView.Table.Rows(0)(procPSGetShipLotDetailColumnType.ShipTime).ToString()
+                    Me.tbLdArrivalTime.Text = ds.Tables(0).DefaultView.Table.Rows(0)(procPSGetShipLotDetailColumnType.ArrivalTime).ToString()
+                    Me.tbLdSeqTime.Text = ds.Tables(0).DefaultView.Table.Rows(0)(procPSGetShipLotDetailColumnType.ApproxSeqTime).ToString()
+                    Me.tbLdDepartureTime.Text = ds.Tables(0).DefaultView.Table.Rows(0)(procPSGetShipLotDetailColumnType.ActualDepartureTime).ToString()
+                    Me.tbLdNotes.Text = ds.Tables(0).DefaultView.Table.Rows(0)(procPSGetShipLotDetailColumnType.ShippingNotes).ToString()
+                    Me.txtTrailer.Text = ds.Tables(0).DefaultView.Table.Rows(0)(procPSGetShipLotDetailColumnType.TrailerNumber).ToString()
+                    strDriver = ds.Tables(0).DefaultView.Table.Rows(0)(procPSGetShipLotDetailColumnType.Driver).ToString()
+
+                    'Find the driver and set
+                    i = ddlDriver.Items.IndexOf(ddlDriver.Items.FindByValue(strDriver))
+                    If (i < 0) Then
+                        Me.ddlDriver.Items.Insert(1, strDriver)
+                        Me.ddlDriver.Items(1).Value = strDriver
+                        i = 1
+                    End If
+                    Me.ddlDriver.SelectedIndex = i
+
+                    retVal = True
+                End If
+            End If
+
+        Catch ex As Exception
+            Master.eMsg(ex.ToString())
+        End Try
+
+        Return retVal
+
+    End Function
+
+    Private Sub MoveLot()
+        Try
+            'CREATE PROCEDURE procPSMoveLot @LotNumber varchar(80),
+            '					@BeforeAfter varchar(6), 
+            '					@AdjacentLot varchar(80),
+            '					@ProdOrShipType varchar(80),
+            '					@Status varchar(80)output,
+            '					@ErrorMsg varchar(80) output,
+            '					@ProdSchedIndexIncrement SchedIndex output 
+
+            Dim lotNum As String = hidNodeLot.Value.Trim()
+            Dim status As String = ""
+            Dim message As String = ""
+            Dim retVal As String = ""
+            Dim oSqlParameter As SqlParameter
+            Dim colParameters As New List(Of SqlParameter)
+            Dim colOutput As List(Of SqlParameter)
+
+            lotNum = lotNum.Replace("-", "")
+
+            oSqlParameter = New SqlParameter("@LotNumber", SqlDbType.VarChar, 80)
+            oSqlParameter.Value = lotNum
+            colParameters.Add(oSqlParameter)
+
+            oSqlParameter = New SqlParameter("@BeforeAfter", SqlDbType.VarChar, 6)
+            oSqlParameter.Value = Me.rblBeforeAfter.SelectedValue
+            colParameters.Add(oSqlParameter)
+
+            oSqlParameter = New SqlParameter("@AdjacentLot", SqlDbType.VarChar, 80)
+            oSqlParameter.Value = Me.hidLotNum.Value.Replace("-", "")
+            colParameters.Add(oSqlParameter)
+
+            oSqlParameter = New SqlParameter("@ProdOrShipType", SqlDbType.VarChar, 80)
+            oSqlParameter.Value = "SHIP"
+            colParameters.Add(oSqlParameter)
+
+            oSqlParameter = New SqlParameter("@Status", SqlDbType.VarChar, 80)
+            oSqlParameter.Direction = ParameterDirection.Output
+            colParameters.Add(oSqlParameter)
+
+            oSqlParameter = New SqlParameter("@ErrorMsg", SqlDbType.VarChar, 80)
+            oSqlParameter.Direction = ParameterDirection.Output
+            colParameters.Add(oSqlParameter)
+
+            oSqlParameter = New SqlParameter("@ProdSchedIndexIncrement", 0)
+            oSqlParameter.Direction = ParameterDirection.Output
+            colParameters.Add(oSqlParameter)
+
+            colOutput = DA.ExecSP("procPSMoveLot", colParameters)
+
+            For Each oParameter In colOutput
+                With oParameter
+                    If .Direction = ParameterDirection.Output And .ParameterName = "@Status" Then
+                        status = oParameter.Value.ToString()
+                    ElseIf .Direction = ParameterDirection.Output And .ParameterName = "@ErrorMsg" Then
+                        message = oParameter.Value.ToString()
+                    End If
+                End With
+            Next
+
+            If (status.ToUpper() = "TRUE") Then
+                Master.tMsg("Move", "Lot Number: " + lotNum + " has been moved " + Me.rblBeforeAfter.SelectedValue + " " + Me.hidLotNum.Value.Replace("-", ""))
+            Else
+                Master.tMsg("Move", "Error - Lot Number: " + lotNum + " has NOT been moved. <BR>Error message: " + message + "<BR>Status message: " + status)
+            End If
+
+        Catch ex As Exception
+            Master.eMsg(ex.ToString())
+        End Try
+    End Sub
+
+#End Region
+
+
+End Class

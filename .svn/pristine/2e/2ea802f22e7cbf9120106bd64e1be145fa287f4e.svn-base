@@ -1,0 +1,493 @@
+﻿Public Class PrintNewSSNLabel
+    Inherits System.Web.UI.Page
+
+    Enum LabelType
+        Reject = 0
+        Foam = 1
+        HeadRest = 2
+    End Enum
+
+#Region "Event Handlers"
+
+
+    Private Sub PrintNewSSNLabel_PreRender(sender As Object, e As System.EventArgs) Handles Me.PreRender
+        Try
+            EnableControls()
+        Catch ex As Exception
+            Master.eMsg(ex.ToString())
+        End Try
+    End Sub
+
+
+    Protected Sub Page_Load(ByVal sender As Object, ByVal e As System.EventArgs) Handles Me.Load
+        Try
+            If Not IsPostBack() Then
+                ddPrinters_DataBind()
+                SeatType_DataBind()
+                NCopies()
+            End If
+
+            lblNextSSN.Text = GetNextSSN(ddSeatType.SelectedItem.Value)
+
+        Catch ex As Exception
+            Master.eMsg(ex.ToString())
+        End Try
+    End Sub
+
+    Private Sub cmdPrint_Click(sender As Object, e As System.EventArgs) Handles cmdPrint.Click
+        Try
+            lblDescNextSSN.Visible = True
+            lblNextSSN.Text = Foam_Label_Print(ddSeatType.SelectedItem.Value, "", ddPrinters.SelectedItem.Value, Page.User.Identity.Name.ToString, LabelType.Foam)
+
+        Catch ex As Exception
+            Master.eMsg(ex.ToString())
+        End Try
+    End Sub
+
+    Private Sub ddSeatType_SelectedIndexChanged(sender As Object, e As System.EventArgs) Handles ddSeatType.SelectedIndexChanged
+        Try
+            lblNextSSN.Text = GetNextSSN(ddSeatType.SelectedItem.Value)
+
+        Catch ex As Exception
+            Master.eMsg(ex.ToString())
+        End Try
+    End Sub
+
+
+#End Region
+
+
+#Region "Methods"
+
+    Private Sub EnableControls()
+        Master.Secure(Me.cmdPrint)
+        Master.Secure(Me.ddPrinters)
+
+        If ddPrinters.SelectedItem.Value = "" Then
+            cmdPrint.Enabled = False
+        End If
+
+        If lblNextSSN.Text.Contains("Error") Then
+            cmdPrint.Enabled = False
+        End If
+
+    End Sub
+
+
+    Sub ddPrinters_DataBind()
+        Dim ds As New DataSet
+
+        ds = DA.GetDataSet("Select  Name, NetworkPath from tblLabelPrinters Where LabelPrinter = 1")
+        ddPrinters.DataSource = ds
+        ddPrinters.DataTextField = "Name"
+        ddPrinters.DataValueField = "NetworkPath"
+        ddPrinters.DataBind()
+        Dim i As Integer
+        Dim foundindex As Integer
+        Dim strPrinterName As String
+        'retrieve default printer name
+        strPrinterName = Trim(BizLayer.GetApplicationParameterValue("2230", "0001"))
+        'find printer name by one configured in application parameter
+        If Not ds Is Nothing Then
+            For i = 0 To ds.Tables(0).Rows.Count - 1
+                If Trim(ds.Tables(0).Rows(i).Item(0).ToString()) = strPrinterName Then
+                    foundindex = i
+                    Exit For
+                End If
+            Next
+        End If
+        'select the value if it exists.
+        ddPrinters.SelectedIndex = foundindex
+
+    End Sub
+
+    Sub SeatType_DataBind()
+        ddSeatType.DataSource = DA.GetDataSet("SELECT DISTINCT ProductID FROM tblProducts WHERE (ComponentID <> '03') AND (ComponentID <> '04')")
+        ddSeatType.DataTextField = "ProductID"
+        ddSeatType.DataValueField = "ProductID"
+        ddSeatType.DataBind()
+    End Sub
+
+    Sub NCopies()
+        tNCopies.Text = BizLayer.GetApplicationParameterValue("0112", "0001")
+    End Sub
+
+    Function GetNextSSN(ByRef SeatNumber As String) As String
+        Dim strResult As String = ""
+        Dim strSerialNumber As String
+        Dim strNextPN As String
+        Dim strNextProductionNumber As String = ""
+        Dim strSelect As String
+        Dim p_strtemporary As String
+        Dim p_strtemporaryColorCode As String
+        Dim ds As DataSet
+        Dim blnReCheckNumber As Boolean
+        Dim intCounter As Integer = 0
+
+        'modified by pb, 08/17/04
+        p_strtemporary = Mid(SeatNumber, 1, 4)
+        p_strtemporaryColorCode = Mid(SeatNumber, 5)
+
+        strSelect = "Select NEXT_PRODUCTION_NUMBER " & _
+        "from tblPrintSerialNumberParameters " & _
+        "where STYLE_CODE = '" & p_strtemporary & "'"
+
+        ds = DA.GetDataSet(strSelect)
+        If (DA.IsDSEmpty(ds)) Then
+            strResult = ""
+        Else
+
+
+            If (ds.Tables(0).Rows(0).Item("Next_Production_Number").ToString()) <> "" Then
+                strNextProductionNumber = (ds.Tables(0).Rows(0).Item("Next_Production_Number").ToString())
+            End If
+
+
+            'let try to build make serial number and check if it ever used or not
+            strSerialNumber = UCase((p_strtemporary)) & UCase((strNextProductionNumber)) & UCase((p_strtemporaryColorCode))
+
+            'blnTestLike = 1 'if true keep checking to make sure that serial number was not used
+            blnReCheckNumber = True
+
+            Do While blnReCheckNumber = True
+
+                strSelect = "Select SEAT_SERIAL_NUMBER " & _
+                "from tblLabelPrintHistory " & _
+                "where SEAT_SERIAL_NUMBER Like  '" & (strSerialNumber) & "%'"
+
+                ds = DA.GetDataSet(strSelect)
+
+                If (ds.Tables(0).Rows.Count = 0) Then
+                    blnReCheckNumber = False
+                    strResult = UCase((strSerialNumber))
+                Else
+                    strNextPN = Serial_Counter(UCase((strNextProductionNumber)))
+                    strSerialNumber = UCase((p_strtemporary)) & UCase((strNextPN)) & UCase((p_strtemporaryColorCode))
+                    strNextProductionNumber = strNextPN
+                End If
+
+                intCounter += 1
+
+                If intCounter > 99999 Then
+                    strResult = "Error. Invalid seat type due to: seat style format or label configuration!"
+                    cmdPrint.Enabled = False
+                    blnReCheckNumber = False
+                End If
+            Loop
+
+        End If
+        Return strResult
+
+    End Function
+
+    Private Function Serial_Counter(ByVal SNum As String) As String
+        Dim strString As String
+        Dim intLengthString As Integer
+        Dim intLengthRight As Integer
+        Dim strLeftstring As String
+        Dim strRightString As String
+        Dim strRightReturn As String
+        Dim strLeftReturn As String = ""
+        Dim intRightInteger As Integer
+        Dim strReturnString As String
+
+        strString = (SNum)
+        intLengthString = Len(strString)
+
+        If intLengthString > 5 Then
+            Master.Msg = "Serial Number:  " & strString & " too Long - Serial Number Length Must Equal 5 Characters."
+            Serial_Counter = "00000"
+            Return ""
+        End If
+        If intLengthString < 5 Then
+            Master.Msg = "Serial Number:  " & strString & " too Short - Serial Number Length Must Equal 5 Characters."
+            Serial_Counter = "00000"
+            Return ""
+        End If
+
+        strLeftstring = Mid(SNum, 1, 1)
+        strRightString = Mid(SNum, 2)
+        If IsNumeric(strRightString) Then
+            intRightInteger = CInt(strRightString)
+        Else
+            Master.Msg = "Invalid Serial Number: " & strString & " - Right 4 Digits Must Be Numeric"
+            Serial_Counter = "00000"
+            Return ""
+        End If
+
+        If intRightInteger < 9999 Then
+            intRightInteger = intRightInteger + 1
+            strRightReturn = CStr(intRightInteger)
+            intLengthRight = Len(strRightReturn)
+            Do While intLengthRight <= 3
+                strRightReturn = "0" & strRightReturn
+                intLengthRight = intLengthRight + 1
+            Loop
+            strReturnString = strLeftstring + strRightReturn
+        ElseIf intRightInteger = 9999 Then
+            strLeftstring = UCase(strLeftstring)
+            Select Case strLeftstring
+                Case "0"
+                    strLeftReturn = "1"
+                Case "1"
+                    strLeftReturn = "2"
+                Case "2"
+                    strLeftReturn = "3"
+                Case "3"
+                    strLeftReturn = "4"
+                Case "4"
+                    strLeftReturn = "5"
+                Case "5"
+                    strLeftReturn = "6"
+                Case "6"
+                    strLeftReturn = "7"
+                Case "7"
+                    strLeftReturn = "8"
+                Case "8"
+                    strLeftReturn = "9"
+                Case "9"
+                    strLeftReturn = "A"
+                Case "A"
+                    strLeftReturn = "B"
+                Case "B"
+                    strLeftReturn = "C"
+                Case "C"
+                    strLeftReturn = "D"
+                Case "D"
+                    strLeftReturn = "E"
+                Case "E"
+                    strLeftReturn = "F"
+                Case "F"
+                    strLeftReturn = "G"
+                Case "G"
+                    strLeftReturn = "H"
+                Case "H"
+                    strLeftReturn = "J"
+                Case "J"
+                    strLeftReturn = "K"
+                Case "K"
+                    strLeftReturn = "L"
+                Case "L"
+                    strLeftReturn = "M"
+                Case "M"
+                    strLeftReturn = "N"
+                Case "N"
+                    strLeftReturn = "P"
+                Case "P"
+                    strLeftReturn = "Q"
+                Case "Q"
+                    strLeftReturn = "R"
+                Case "R"
+                    strLeftReturn = "S"
+                Case "S"
+                    strLeftReturn = "T"
+                Case "T"
+                    strLeftReturn = "U"
+                Case "U"
+                    strLeftReturn = "V"
+                Case "V"
+                    strLeftReturn = "W"
+                Case "W"
+                    strLeftReturn = "X"
+                Case "X"
+                    strLeftReturn = "Y"
+                Case "Y"
+                    strLeftReturn = "Z"
+                Case Else
+                    Master.Msg = "Invalid Serial Number: " & strString & " - Out Of Range"
+                    Serial_Counter = "00000"
+            End Select
+            strRightReturn = "0000"
+            strReturnString = strLeftReturn + strRightReturn
+        Else
+            Master.Msg = "Invalid Serial Number: " & strString
+            strReturnString = "00000"
+        End If
+
+        Return UCase(strReturnString)
+
+    End Function
+
+
+    Function Foam_Label_Print(ByVal SeatNumber As String, ByVal HondaLotNumber As String, ByVal QueueName As String, ByVal Requestor As String, ByVal LabelType As LabelType) As String
+        Dim strResult As String = ""
+        Dim strSelect As String
+        Dim strinsert As String
+        Dim strLSC As String = ""
+        Dim strLPN As String = ""
+        Dim strLHR As String = ""
+        Dim strHLN As String
+        Dim strSerialNumber As String = ""
+        Dim strNextPN As String
+        Dim strNextProductionNumber As String = ""
+        Dim strUpdate As String
+        Dim p_strtemporary As String
+        Dim p_strtemporaryColorCode As String
+        Dim ds As DataSet
+        Dim ds1 As DataSet
+        Dim blnReCheckNumber As Boolean
+        Dim intCounter As Integer = 0
+
+        If LabelType = PrintNewSSNLabel.LabelType.Reject Then    'Reject
+            HeadRest_Label_Print("", "", "", "", QueueName, Requestor, 0)
+            strResult = ""
+        Else
+            If LabelType = PrintNewSSNLabel.LabelType.HeadRest Then     ' HeadRest
+                strResult = strSerialNumber.ToUpper()
+
+            elseIf LabelType = PrintNewSSNLabel.LabelType.Foam Then     ' Foam
+
+                p_strtemporary = Mid(SeatNumber, 1, 4)
+                p_strtemporaryColorCode = Mid(SeatNumber, 5)
+
+                strSelect = "Select NEXT_PRODUCTION_NUMBER " & _
+                "from tblPrintSerialNumberParameters " & _
+                "where STYLE_CODE = '" & p_strtemporary & "'"
+
+                ds = DA.GetDataSet(strSelect)
+                If (DA.IsDSEmpty(ds)) Then
+                    Return ""
+                End If
+
+
+                'If (Err.Number <> 0) Then
+                '	Return 0
+                '	Exit Function
+                'End If
+
+                If (ds.Tables(0).Rows(0).Item("Next_Production_Number").ToString() & "") <> "" Then
+                    strNextProductionNumber = ds.Tables(0).Rows(0).Item("Next_Production_Number").ToString()
+                End If
+
+
+                'let try to build make serial number and check if it ever used or not
+                strSerialNumber = (p_strtemporary & strNextProductionNumber & p_strtemporaryColorCode).ToUpper()
+
+                'blnTestLike = 1 'if true keep checking to make sure that serial number was not used
+                blnReCheckNumber = True
+
+                Do While blnReCheckNumber = True
+
+                    strSelect = "Select SEAT_SERIAL_NUMBER " & _
+                    "from tblLabelPrintHistory " & _
+                    "where SEAT_SERIAL_NUMBER Like  '" & (strSerialNumber) & "%'"
+
+                    ds = DA.GetDataSet(strSelect)
+
+                    If (ds.Tables(0).Rows.Count = 0) Then
+
+                        blnReCheckNumber = False
+
+                        strSelect = "Select LABEL_SEAT_CODE," & _
+                        "LABEL_SEAT_PART_NUMBER,LABEL_HUMAN_READABLE " & _
+                        "from tblPrintSerialNumberParameters " & _
+                        "where STYLE_CODE = '" & (p_strtemporary) & "'"
+
+
+                        ds = DA.GetDataSet(strSelect)
+
+                        If ds.Tables(0).Rows(0).Item("Label_Seat_Code").ToString() <> "" Then
+                            strLSC = ds.Tables(0).Rows(0).Item("Label_Seat_Code").ToString()
+                        End If
+                        If ds.Tables(0).Rows(0).Item("Label_Seat_Part_Number").ToString() <> "" Then
+                            strLPN = ds.Tables(0).Rows(0).Item("Label_Seat_Part_Number").ToString()
+                        End If
+                        If ds.Tables(0).Rows(0).Item("Label_Human_Readable").ToString() <> "" Then
+                            strLHR = ds.Tables(0).Rows(0).Item("Label_Human_Readable").ToString()
+                        End If
+
+                        strSelect = "Select ProductParameterValue FROM tblProductParameters Where " & _
+                            "ProductParameterTypeId = " & "'0136'" & _
+                            "And ProductID = " & _
+                            "'" & SeatNumber & "'"
+                        ds1 = DA.GetDataSet(strSelect)
+                        If ds1.Tables(0).Rows.Count > 0 Then
+                            strLSC = ds1.Tables(0).Rows(0).Item("ProductParameterValue").ToString()
+                        End If
+                        If strLSC = "" Then
+                            strLSC = "Bad Data"
+                        End If
+
+                        strHLN = HondaLotNumber
+
+                        strinsert = "Insert into tblLabelPrintHistory " & _
+                        "(LABEL_SEAT_CODE,LABEL_SEAT_PART_NUMBER," & _
+                        "HONDA_LOT_NUMBER,LABEL_HUMAN_READABLE,LOT_TRACE_DT," & _
+                        "SEAT_SERIAL_NUMBER,RECORDED_BY,PRINT_LOCATION) Values " & _
+                        "('" & strLSC & "','" & strLPN & "','" & _
+                        strHLN & "','" & strLHR & "','" & Now & "','" & _
+                        strSerialNumber & "','" & Requestor & "','" & _
+                        QueueName & "')".ToUpper()
+
+                        DA.ExecSQL(strinsert)
+
+                        HeadRest_Label_Print(strSerialNumber, strLHR, strLSC, strLPN, QueueName, Requestor, LabelType.Foam)
+
+
+                        strNextPN = Serial_Counter(strNextProductionNumber.ToUpper())
+
+                        strNextProductionNumber = strNextPN
+
+                        strUpdate = "Update tblPrintSerialNumberParameters " & _
+                        "Set NEXT_PRODUCTION_NUMBER = '" & strNextProductionNumber & _
+                        "' Where STYLE_CODE = '" & Mid(SeatNumber, 1, 4) & "'".ToUpper()
+
+
+                        DA.ExecSQL(strUpdate)
+                        'here where loops will exit and if ok everything function will return next ssn (serial number)
+
+                        strResult = strSerialNumber.ToUpper()
+
+                    Else
+                        strNextPN = Serial_Counter(strNextProductionNumber.ToUpper())
+                        strSerialNumber = (p_strtemporary & strNextPN & p_strtemporaryColorCode).ToUpper()
+                        strNextProductionNumber = strNextPN
+                    End If
+                Loop
+
+                intCounter += 1
+
+                If intCounter > 99999 Then
+                    strResult = "Error. Invalid seat type due to: seat style format or label configuration!"
+                    cmdPrint.Enabled = False
+                    blnReCheckNumber = False
+                End If
+            End If
+        End If
+
+        Return strResult
+
+    End Function
+
+    Private Sub HeadRest_Label_Print(ByVal SerialNumber As String, ByVal HumanReadableText As String, ByVal SeatCode As String, ByVal SeatPartNumber As String, ByVal QueueName As String, ByVal Requestor As String, ByVal ltLabelType As LabelType)
+        Dim strArg As String
+        Dim strDelim As String
+        Dim strQuantity As String
+        strDelim = "|"
+
+        If IsNumeric(tNCopies.Text) Then
+            strQuantity = tNCopies.Text
+        Else
+            strQuantity = "1"
+        End If
+
+        strArg = BizLayer.GetApplicationParameterValue("0113", "0001") & " " & SerialNumber & strDelim & HumanReadableText & strDelim & SeatCode & strDelim & SeatPartNumber & strDelim & QueueName & strDelim & Requestor & strDelim & ltLabelType & strDelim & strQuantity
+
+        Process.Start(strArg)
+
+        ''Shell = Nothing
+
+        If CType(tNCopies.Text, Int32) = 1 Then
+            Master.Msg = "1 Label was sent to printer"
+        Else
+            Master.Msg = tNCopies.Text & " Labels were sent to printer"
+        End If
+
+    End Sub
+#End Region
+
+
+
+
+
+End Class

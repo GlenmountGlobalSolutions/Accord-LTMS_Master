@@ -1,0 +1,246 @@
+﻿<%@ Page Title="" Language="vb" AutoEventWireup="false" MasterPageFile="~/Site.Master" CodeBehind="UserTypes.aspx.vb" Inherits="LTMS_Master.UserTypes" %>
+
+<%@ MasterType VirtualPath="~/Site.master" %>
+<asp:Content ID="Content1" ContentPlaceHolderID="HeadContent" runat="server">
+	<script type="text/javascript">
+	    function contentPageLoad(sender, args) {
+	        AddDirtyClassOnChange();
+
+	        var userType = $("#MainContent_txtUserType");
+	        var renameUserType = $("#MainContent_txtRenameTo");
+
+	        //------------------------------------------------------------
+	        // New User Type Dialog			
+	        //------------------------------------------------------------
+	        $('#divDlgNewUserType').dialog({
+	            title: "New User Type",
+	            autoOpen: false,
+	            modal: true,
+	            resizable: false,
+	            width: 360,
+	            buttons: {
+	                "Ok": function () {
+
+	                    var bValid = checkLength($("#MainContent_txtUserType"), "User Type Name", 1, 50, $("#helpUserType"));
+
+	                    if (bValid) {
+	                        $(this).dialog("close");
+	                        __doPostBack($('#MainContent_cmdNew').prop('name'), '');
+	                    };
+	                },
+
+	                "Cancel": function () {
+	                    $(this).dialog("close");
+	                }
+	            },
+
+	            close: function () {
+	                userType.removeClass("ui-state-error");
+	            },
+
+	            open: function () {
+	                // add dialog to the MasterPage Form
+	                $(this).parent().appendTo($("form:first"));
+
+	                //clear textboxes and checkboxes
+	                $('input[type="text"]',this).val('').removeClass('dirty');
+
+	                // clear the all the 'help' icons
+	                $("div [id^='help']").addClass("ui-helper-hidden");
+
+	                //set focus on first control
+	                $('input[type="text"]:first',this).focus().select();
+	            }
+	        });
+
+	        //------------------------------------------------------------
+	        // Delete Dialog			
+	        //------------------------------------------------------------
+	        $('#divDlgDeleteUserType').dialog({
+	            title: "Delete User Type",
+	            autoOpen: false,
+	            modal: true,
+	            resizable: false,
+	            width: 360,
+
+	            buttons: {
+	                "Delete": function () {
+	                    $(this).dialog("close");
+	                    __doPostBack($('#MainContent_cmdDelete').prop('name'), '');
+	                },
+
+	                "Cancel": function () {
+	                    $(this).dialog("close");
+	                }
+	            },
+
+	            open: function () {
+	                // add dialog to the MasterPage Form
+	                $(this).parent().appendTo($("form:first"));
+
+	                //  set focus to the Cancel button,  try blur(remove focus from Delete button.  IE9 doesn't look right with this)
+	                $(this).closest('.ui-dialog').find('.ui-dialog-buttonpane button:eq(1)').focus();
+	                $(this).closest('.ui-dialog').find('.ui-dialog-buttonpane button:eq(0)').blur();
+	            }
+
+	        });
+
+
+	        //------------------------------------------------------------
+	        // Rename Dialog			
+	        //------------------------------------------------------------
+	        $('#divDlgRename').dialog({
+	            title: "Rename User Type",
+	            autoOpen: false,
+	            modal: true,
+	            resizable: false,
+	            width: 360,
+	            buttons: {
+	                "Rename": function () {
+
+	                    var bValid = checkLength(renameUserType, "User Type Name", 1, 50, $("#helpRenameUserType"));
+
+	                    if (bValid) {
+	                        $(this).dialog("close");
+	                        __doPostBack($('#MainContent_cmdRename').attr("id"), '');
+	                        $('#divDlgRename input[type="text"]').val('');      // clear after postback
+	                    };
+	                },
+
+	                "Cancel": function () {
+	                    $(this).dialog("close");
+	                }
+	            },
+
+	            close: function () {
+	                renameUserType.removeClass("ui-state-error");
+	            },
+
+	            open: function () {
+	                // add dialog to the MasterPage Form
+	                $(this).parent().appendTo($("form:first"));
+
+	                // clear the error messages
+	                $("#helpRenameUserType").addClass("ui-helper-hidden");
+	            }
+	        });
+
+
+	        // Add Open dialog onClick to the 'New' button
+	        $('#MainContent_cmdNew').click(function () {
+	            $('#divDlgNewUserType').dialog('open');
+	            return false;
+	        });
+
+	        // Add Open dialog onClick to the 'Delete' button
+	        $('#MainContent_cmdDelete').click(function () {
+	            $('#divDlgDeleteUserType').dialog('open');
+	            return false;
+	        });
+
+
+	        // Add Open dialog onClick to the 'Rename' button
+	        $('#MainContent_cmdRename').click(function () {
+	            $('#divDlgRename').dialog('open');
+	            return false;
+	        });
+	    }
+
+	</script>
+</asp:Content>
+<asp:Content ID="Content2" ContentPlaceHolderID="MainContent" runat="server">
+    <div id="divOverlay" class="ui-widget-overlay" style="z-index: 1000;"></div>
+<asp:UpdatePanel ID="UpdatePanel1" runat="server">
+<ContentTemplate >
+	<div id="divUserTypeList">
+		<table id="Table1" style="left: 16px;">
+			<tr>
+				<td>
+					<asp:Label ID="Label11" runat="server" CssClass="h3">User Types:</asp:Label>
+				</td>
+			</tr>
+			<tr>
+				<td>
+					<asp:ListBox ID="lbUserTypes" runat="server" Height="300px" AutoPostBack="True" Width="144px" cssclass="listBox"></asp:ListBox>
+				</td>
+			</tr>
+			<tr>
+				<td style="height: 6;">
+				</td>
+			</tr>
+			<tr>
+				<td style="text-align: center">
+					<asp:Button ID="cmdNew" runat="server" Width="75px" Height="28px" Text="New" ToolTip="Add New User Type"></asp:Button>
+				</td>
+			</tr>
+			<tr>
+				<td style="text-align: center">
+					<asp:Button ID="cmdDelete" runat="server" Width="75px" Height="28px" Text="Delete" ToolTip="Delete Current User Type"></asp:Button>
+				</td>
+			</tr>
+			<tr>
+				<td style="text-align: center">
+					<asp:Button ID="cmdRename" runat="server" Height="28px" ToolTip="Rename Current User Type" Text="Rename" Width="75px"></asp:Button>
+				</td>
+			</tr>
+		</table>
+	</div>
+</ContentTemplate>
+</asp:UpdatePanel>
+
+<!-- ui-dialog -->
+
+	<div id="divDlgNewUserType" style="text-align: center;">
+		<p class="validationHints">	All form fields are required.</p>
+		<table id="tblNewUserType" style="text-align: center; border-collapse: collapse; padding: 0;" >
+			<tr>
+				<td style="text-align: left">
+					<asp:Label ID="Label1" runat="server"> New User Type:</asp:Label>
+				</td>
+				<td style="text-align: left">
+					<asp:TextBox ID="txtUserType" TabIndex="4" runat="server" CssClass="realtimeControl" Width="164px"></asp:TextBox>
+				</td>
+				<td>
+					<div id="helpUserType" class="ui-state-default ui-corner-all">
+						<span class="ui-icon ui-icon-help"></span>
+					</div>
+				</td>
+			</tr>
+			<tr>
+				<td style="text-align: right;">
+					<asp:Label ID="Label2" runat="server">Copy Permissions From:</asp:Label>
+				</td>
+				<td style="text-align: left">
+					<asp:DropDownList ID="ddlUserTypes" runat="server" CssClass="realtimeControl" Width="170px" />
+				</td>
+				<td>
+				</td>
+			</tr>
+		</table>
+	</div>
+
+	<div id="divDlgDeleteUserType">
+		<p>
+			<span class="ui-icon ui-icon-alert" style="float: left; margin: 0 7px 50px 0;"></span>You are about to Delete the selected User Type. Do you wish to continue?.
+		</p>
+	</div>
+
+	<div id="divDlgRename" style="text-align: center;">
+		<table id="tblRename">
+			<tr>
+				<td>
+					<asp:Label ID="lblRename" runat="server">New Name: </asp:Label>
+				</td>
+				<td>
+					<asp:TextBox ID="txtRenameTo" runat="server" Width="180px"></asp:TextBox>
+				</td>
+				<td>
+					<div id="helpRenameUserType" class="ui-state-default ui-corner-all">
+						<span class="ui-icon ui-icon-help"></span>
+					</div>
+				</td>
+			</tr>
+		</table>
+	</div>
+
+</asp:Content>

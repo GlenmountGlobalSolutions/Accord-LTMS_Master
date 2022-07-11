@@ -1,0 +1,1269 @@
+﻿<%@ Page Title="" Language="vb" AutoEventWireup="false" MasterPageFile="~/Site.Master" CodeBehind="ConfigurationUploadDownload.aspx.vb" Inherits="LTMS_Master.ConfigurationUploadDownload" %>
+
+<%@ MasterType VirtualPath="~/Site.master" %>
+<asp:Content ID="Content1" ContentPlaceHolderID="HeadContent" runat="server">
+    <script type="text/javascript">
+        var $cmdRefresh;
+        var $cmdRefreshProgBars;
+        var varTimer;
+        var $divDialogConfirm;
+        var $dlgDownloadWarning;
+        var $dlgUploadWarning;
+        var $ddlLineNumber;
+        var $hidLineTypeID;
+        var $hidLineNumber;
+        var $hidMultiPLC;
+        var $hidUpgrade2015;
+
+        //Build
+        var $pbAuxUpld;
+        var $pbAuxDnld;
+        var $pbCompScanDnld;
+        var $pbCompScanUpld;
+        var $pbCompNameDnld;
+        var $pbCompNameUpld;
+        var $pbToolUpld;
+        var $pbToolDnld;
+        var $pbStationDnld;
+        var $pbStationUpld;
+        var $pbProdCodeDnld;
+        var $pbProdCodeUpld;
+        var $pbUserDnld;
+        var $pbUserUpld;
+
+        var $hidpbAuxDnld;
+        var $cmdAuxUpld;
+        var $hidpbAuxUpld;
+        var $cmdAuxDnld;
+
+        var $hidpbCompScanDnld;
+        var $cmdCompScanUpld;
+        var $hidpbCompScanUpld;
+        var $cmdCompScanDnld;
+
+        var $hidpbCompNameDnld;
+        var $cmdCompNameUpld;
+        var $hidpbCompNameUpld;
+        var $cmdCompNameDnld;
+
+        var $hidpbToolDnld;
+        var $cmdToolUpld;
+        var $hidpbToolUpld;
+        var $cmdToolDnld;
+
+        var $hidpbStationDnld;
+        var $cmdStationUpld;
+        var $hidpbStationUpld;
+        var $cmdStationDnld;
+
+        var $hidpbProdCodeDnld;
+        var $cmdProdCodeUpld;
+        var $hidpbProdCodeUpld;
+        var $cmdProdCodeDnld;
+
+        var $hidpbUserDnld;
+        var $cmdUserUpld;
+        var $hidpbUserUpld;
+        var $cmdUserDnld;
+                
+        var $hidInitpbAuxDnld;
+        var $hidInitpbAuxUpld;
+        var $hidInitpbCompScanDnld;
+        var $hidInitpbCompScanUpld;
+        var $hidInitpbCompNameDnld;
+        var $hidInitpbCompNameUpld;
+        var $hidInitpbToolDnld;
+        var $hidInitpbToolUpld;
+        var $hidInitpbStationDnld;
+        var $hidInitpbStationUpld;
+        var $hidInitpbProdCodeDnld;
+        var $hidInitpbProdCodeUpld;
+        var $hidInitpbUserDnld;
+        var $hidInitpbUserUpld;
+
+        //Quality
+        var $pbAuxUpldQual;
+        var $pbAuxDnldQual;
+        var $pbCompScanDnldQual;
+        var $pbCompScanUpldQual;
+        var $pbCompNameDnldQual;
+        var $pbCompNameUpldQual;
+        var $pbToolUpldQual;
+        var $pbToolDnldQual;
+        var $pbStationDnldQual;
+        var $pbStationUpldQual;
+        var $pbProdCodeDnldQual;
+        var $pbProdCodeUpldQual;
+        var $pbUserDnldQual;
+        var $pbUserUpldQual;
+
+        var $hidpbAuxDnldQual;
+        var $cmdAuxUpldQual;
+        var $hidpbAuxUpldQual;
+        var $cmdAuxDnldQual;
+
+        var $hidpbCompScanDnldQual;
+        var $cmdCompScanUpldQual;
+        var $hidpbCompScanUpldQual;
+        var $cmdCompScanDnldQual;
+
+        var $hidpbCompNameDnldQual;
+        var $cmdCompNameUpldQual;
+        var $hidpbCompNameUpldQual;
+        var $cmdCompNameDnldQual;
+
+        var $hidpbToolDnldQual;
+        var $cmdToolUpldQual;
+        var $hidpbToolUpldQual;
+        var $cmdToolDnldQual;
+
+        var $hidpbStationDnldQual;
+        var $cmdStationUpldQual;
+        var $hidpbStationUpldQual;
+        var $cmdStationDnldQual;
+
+        var $hidpbProdCodeDnldQual;
+        var $cmdProdCodeUpldQual;
+        var $hidpbProdCodeUpldQual;
+        var $cmdProdCodeDnldQual;
+
+        var $hidpbUserDnldQual;
+        var $cmdUserUpldQual;
+        var $hidpbUserUpldQual;
+        var $cmdUserDnldQual;
+
+        var $hidInitpbAuxDnldQual;
+        var $hidInitpbAuxUpldQual;
+        var $hidInitpbCompScanDnldQual;
+        var $hidInitpbCompScanUpldQual;
+        var $hidInitpbCompNameDnldQual;
+        var $hidInitpbCompNameUpldQual;
+        var $hidInitpbToolDnldQual;
+        var $hidInitpbToolUpldQual;
+        var $hidInitpbStationDnldQual;
+        var $hidInitpbStationUpldQual;
+        var $hidInitpbProdCodeDnldQual;
+        var $hidInitpbProdCodeUpldQual;
+        var $hidInitpbUserDnldQual;
+        var $hidInitpbUserUpldQual;
+
+        function contentPageLoad(sender, args) {
+            CacheGenControls();
+            CachePBControls();
+           
+            if (args.get_isPartialLoad()) {
+
+                CreateProgressBars();
+            }
+            else {
+                //
+            }
+
+            CreateDialog_ConfirmDownload();
+            CreateDialog_ConfirmUpload();
+            CreateDialog_Confirm();
+            AddDropDownAndButtonEvents();
+            AddEventToControlsWithClass_downloadButton();
+            AddEventToControlsWithClass_uploadButton();
+        }
+
+        function CacheGenControls() {
+            $cmdRefresh = $('#MainContent_cmdRefresh');
+            $cmdRefreshProgBars = $('#MainContent_cmdRefreshProgBars');
+            $ddlLineNumber = $('#MainContent_ddlLineNumber');
+        }
+
+        function CachePBControls() {
+
+            $hidLineTypeID = $('#MainContent_hidLineTypeID');
+            $hidMultiPLC = $('#MainContent_hidMultiPLC');
+
+            //Build
+            $pbAuxUpld = $('#pbAuxUpld');
+            $pbAuxDnld = $('#pbAuxDnld');
+            $pbCompScanDnld = $('#pbCompScanDnld');
+            $pbCompScanUpld = $('#pbCompScanUpld');
+            $pbCompNameDnld = $('#pbCompNameDnld');
+            $pbCompNameUpld = $('#pbCompNameUpld');
+            $pbToolUpld = $('#pbToolUpld');
+            $pbToolDnld = $('#pbToolDnld');
+            $pbStationDnld = $('#pbStationDnld');
+            $pbStationUpld = $('#pbStationUpld');
+            $pbProdCodeDnld = $('#pbProdCodeDnld');
+            $pbProdCodeUpld = $('#pbProdCodeUpld');
+            $pbUserDnld = $('#pbUserDnld');
+            $pbUserUpld = $('#pbUserUpld');
+
+            $hidpbAuxDnld = $('#MainContent_hidpbAuxDnld');
+            $hidpbAuxUpld = $('#MainContent_hidpbAuxUpld');
+            $cmdAuxUpld = $("#MainContent_cmdAuxUpld");
+            $cmdAuxDnld = $("#MainContent_cmdAuxDnld");
+
+            $hidpbCompScanDnld = $('#MainContent_hidpbCompScanDnld');
+            $hidpbCompScanUpld = $('#MainContent_hidpbCompScanUpld');
+            $cmdCompScanUpld = $("#MainContent_cmdCompCodeUpld");
+            $cmdCompScanDnld = $("#MainContent_cmdCompCodeDnld");
+
+            $hidpbCompNameDnld = $('#MainContent_hidpbCompNameDnld');
+            $hidpbCompNameUpld = $('#MainContent_hidpbCompNameUpld');
+            $cmdCompNameUpld = $("#MainContent_cmdCompNameUpld");
+            $cmdCompNameDnld = $("#MainContent_cmdCompNameDnld");
+
+            $hidpbToolDnld = $('#MainContent_hidpbToolDnld');
+            $hidpbToolUpld = $('#MainContent_hidpbToolUpld');
+            $cmdToolUpld = $("#MainContent_cmdToolUpld");
+            $cmdToolDnld = $("#MainContent_cmdToolDnld");
+
+            $hidpbStationDnld = $('#MainContent_hidpbStationDnld');
+            $hidpbStationUpld = $('#MainContent_hidpbStationUpld');
+            $cmdStationUpld = $("#MainContent_cmdStationUpld");
+            $cmdStationDnld = $("#MainContent_cmdStationDnld");
+
+            $hidpbProdCodeDnld = $('#MainContent_hidpbProdCodeDnld');
+            $hidpbProdCodeUpld = $('#MainContent_hidpbProdCodeUpld');
+            $cmdProdCodeUpld = $("#MainContent_cmdProdCodeUpld");
+            $cmdProdCodeDnld = $("#MainContent_cmdProdCodeDnld");
+
+            $hidpbUserDnld = $('#MainContent_hidpbUserDnld');
+            $hidpbUserUpld = $('#MainContent_hidpbUserUpld');
+            $cmdUserUpld = $("#MainContent_cmdUserUpld");
+            $cmdUserDnld = $("#MainContent_cmdUserDnld");
+
+            $hidInitpbAuxDnld = $('#MainContent_hidInitpbAuxDnld');
+            $hidInitpbAuxUpld = $('#MainContent_hidInitpbAuxUpld');
+            $hidInitpbCompScanDnld = $('#MainContent_hidInitpbCompScanDnld');
+            $hidInitpbCompScanUpld = $('#MainContent_hidInitpbCompScanUpld');
+            $hidInitpbCompNameDnld = $('#MainContent_hidInitpbCompNameDnld');
+            $hidInitpbCompNameUpld = $('#MainContent_hidInitpbCompNameUpld');
+            $hidInitpbToolDnld = $('#MainContent_hidInitpbToolDnld');
+            $hidInitpbToolUpld = $('#MainContent_hidInitpbToolUpld');
+            $hidInitpbStationDnld = $('#MainContent_hidInitpbStationDnld');
+            $hidInitpbStationUpld = $('#MainContent_hidInitpbStationUpld');
+            $hidInitpbProdCodeDnld = $('#MainContent_hidInitpbProdCodeDnld');
+            $hidInitpbProdCodeUpld = $('#MainContent_hidInitpbProdCodeUpld');
+            $hidInitpbUserDnld = $('#MainContent_hidInitpbUserDnld');
+            $hidInitpbUserUpld = $('#MainContent_hidInitpbUserUpld');
+
+            //Quality
+            $pbAuxUpldQual = $('#pbAuxUpldQual');
+            $pbAuxDnldQual = $('#pbAuxDnldQual');
+            $pbCompScanDnldQual = $('#pbCompScanDnldQual');
+            $pbCompScanUpldQual = $('#pbCompScanUpldQual');
+            $pbCompNameDnldQual = $('#pbCompNameDnldQual');
+            $pbCompNameUpldQual = $('#pbCompNameUpldQual');
+            $pbToolUpldQual = $('#pbToolUpldQual');
+            $pbToolDnldQual = $('#pbToolDnldQual');
+            $pbStationDnldQual = $('#pbStationDnldQual');
+            $pbStationUpldQual = $('#pbStationUpldQual');
+            $pbProdCodeDnldQual = $('#pbProdCodeDnldQual');
+            $pbProdCodeUpldQual = $('#pbProdCodeUpldQual');
+            $pbUserDnldQual = $('#pbUserDnldQual');
+            $pbUserUpldQual = $('#pbUserUpldQual');
+
+            $hidpbAuxDnldQual = $('#MainContent_hidpbAuxDnldQual');
+            $hidpbAuxUpldQual = $('#MainContent_hidpbAuxUpldQual');
+            $cmdAuxUpldQual = $("#MainContent_cmdAuxUpldQual");
+            $cmdAuxDnldQual = $("#MainContent_cmdAuxDnldQual");
+
+            $hidpbCompScanDnldQual = $('#MainContent_hidpbCompScanDnldQual');
+            $hidpbCompScanUpldQual = $('#MainContent_hidpbCompScanUpldQual');
+            $cmdCompScanUpldQual = $("#MainContent_cmdCompCodeUpldQual");
+            $cmdCompScanDnldQual = $("#MainContent_cmdCompCodeDnldQual");
+
+            $hidpbCompNameDnldQual = $('#MainContent_hidpbCompNameDnldQual');
+            $hidpbCompNameUpldQual = $('#MainContent_hidpbCompNameUpldQual');
+            $cmdCompNameUpldQual = $("#MainContent_cmdCompNameUpldQual");
+            $cmdCompNameDnldQual = $("#MainContent_cmdCompNameDnldQual");
+
+            $hidpbToolDnldQual = $('#MainContent_hidpbToolDnldQual');
+            $hidpbToolUpldQual = $('#MainContent_hidpbToolUpldQual');
+            $cmdToolUpldQual = $("#MainContent_cmdToolUpldQual");
+            $cmdToolDnldQual = $("#MainContent_cmdToolDnldQual");
+
+            $hidpbStationDnldQual = $('#MainContent_hidpbStationDnldQual');
+            $hidpbStationUpldQual = $('#MainContent_hidpbStationUpldQual');
+            $cmdStationUpldQual = $("#MainContent_cmdStationUpldQual");
+            $cmdStationDnldQual = $("#MainContent_cmdStationDnldQual");
+
+            $hidpbProdCodeDnldQual = $('#MainContent_hidpbProdCodeDnldQual');
+            $hidpbProdCodeUpldQual = $('#MainContent_hidpbProdCodeUpldQual');
+            $cmdProdCodeUpldQual = $("#MainContent_cmdProdCodeUpldQual");
+            $cmdProdCodeDnldQual = $("#MainContent_cmdProdCodeDnldQual");
+
+            $hidpbUserDnldQual = $('#MainContent_hidpbUserDnldQual');
+            $hidpbUserUpldQual = $('#MainContent_hidpbUserUpldQual');
+            $cmdUserUpldQual = $("#MainContent_cmdUserUpldQual");
+            $cmdUserDnldQual = $("#MainContent_cmdUserDnldQual");
+
+            $hidInitpbAuxDnldQual = $('#MainContent_hidInitpbAuxDnldQual');
+            $hidInitpbAuxUpldQual = $('#MainContent_hidInitpbAuxUpldQual');
+            $hidInitpbCompScanDnldQual = $('#MainContent_hidInitpbCompScanDnldQual');
+            $hidInitpbCompScanUpldQual = $('#MainContent_hidInitpbCompScanUpldQual');
+            $hidInitpbCompNameDnldQual = $('#MainContent_hidInitpbCompNameDnldQual');
+            $hidInitpbCompNameUpldQual = $('#MainContent_hidInitpbCompNameUpldQual');
+            $hidInitpbToolDnldQual = $('#MainContent_hidInitpbToolDnldQual');
+            $hidInitpbToolUpldQual = $('#MainContent_hidInitpbToolUpldQual');
+            $hidInitpbStationDnldQual = $('#MainContent_hidInitpbStationDnldQual');
+            $hidInitpbStationUpldQual = $('#MainContent_hidInitpbStationUpldQual');
+            $hidInitpbProdCodeDnldQual = $('#MainContent_hidInitpbProdCodeDnldQual');
+            $hidInitpbProdCodeUpldQual = $('#MainContent_hidInitpbProdCodeUpldQual');
+            $hidInitpbUserDnldQual = $('#MainContent_hidInitpbUserDnldQual');
+            $hidInitpbUserUpldQual = $('#MainContent_hidInitpbUserUpldQual');
+        }
+
+        function DoRefreshPostBack() {
+            ShowWaitOverlay();
+            __doPostBack($cmdRefresh.attr("id"), '');
+        }
+
+        function AddDropDownAndButtonEvents() {
+            $cmdRefresh.click(function () {
+                ShowWaitOverlay();
+                CreateProgressBars(); 
+            });
+            $cmdRefreshProgBars.click(function () { RefreshProgressBars(); });
+        }
+
+     
+        function RefreshProgressBars() {
+            $hidpbAuxDnldQual.val(0);
+            $hidpbAuxUpldQual.val(0);
+            $hidpbCompScanDnldQual.val(0);
+            $hidpbCompScanUpldQual.val(0);
+            $hidpbCompNameDnldQual.val(0);
+            $hidpbCompNameUpldQual.val(0);
+            $hidpbToolDnldQual.val(0);
+            $hidpbToolUpldQual.val(0);
+            $hidpbStationDnldQual.val(0);
+            $hidpbStationUpldQual.val(0);
+            $hidpbProdCodeDnldQual.val(0);
+            $hidpbProdCodeUpldQual.val(0);
+            $hidpbUserDnldQual.val(0);
+            $hidpbUserUpldQual.val(0);
+            $hidInitpbAuxDnldQual.val(0);
+            $hidInitpbAuxUpldQual.val(0);
+            $hidInitpbCompScanDnldQual.val(0);
+            $hidInitpbCompScanUpldQual.val(0);
+            $hidInitpbCompNameDnldQual.val(0);
+            $hidInitpbCompNameUpldQual.val(0);
+            $hidInitpbToolDnldQual.val(0);
+            $hidInitpbToolUpldQual.val(0);
+            $hidInitpbStationDnldQual.val(0);
+            $hidInitpbStationUpldQual.val(0);
+            $hidInitpbProdCodeDnldQual.val(0);
+            $hidInitpbProdCodeUpldQual.val(0);
+            $hidInitpbUserDnldQual.val(0);
+            $hidInitpbUserUpldQual.val(0);
+            $hidpbAuxDnld.val(0);
+            $hidpbAuxUpld.val(0);
+            $hidpbCompScanDnld.val(0);
+            $hidpbCompScanUpld.val(0);
+            $hidpbCompNameDnld.val(0);
+            $hidpbCompNameUpld.val(0);
+            $hidpbToolDnld.val(0);
+            $hidpbToolUpld.val(0);
+            $hidpbStationDnld.val(0);
+            $hidpbStationUpld.val(0);
+            $hidpbProdCodeDnld.val(0);
+            $hidpbProdCodeUpld.val(0);
+            $hidpbUserDnld.val(0);
+            $hidpbUserUpld.val(0);
+            $hidInitpbAuxDnld.val(0);
+            $hidInitpbAuxUpld.val(0);
+            $hidInitpbCompScanDnld.val(0);
+            $hidInitpbCompScanUpld.val(0);
+            $hidInitpbCompNameDnld.val(0);
+            $hidInitpbCompNameUpld.val(0);
+            $hidInitpbToolDnld.val(0);
+            $hidInitpbToolUpld.val(0);
+            $hidInitpbStationDnld.val(0);
+            $hidInitpbStationUpld.val(0);
+            $hidInitpbProdCodeDnld.val(0);
+            $hidInitpbProdCodeUpld.val(0);
+            $hidInitpbUserDnld.val(0);
+            $hidInitpbUserUpld.val(0);
+        }
+
+        function updatePageData() {
+            varTimer = setInterval(function () { DoRefreshPostBack(); }, 10000);
+        }
+
+        function CreateProgressBars() {
+            //Build
+            if (($hidpbAuxDnld.val() > 0 && $hidpbAuxDnld.val() < 100) || ($hidInitpbAuxDnld.val() == 1)) {
+                $pbAuxDnld.progressbar({ disabled: false, value: parseInt($hidpbAuxDnld.val(), 10) });
+                $cmdAuxUpld.button("option", "disabled", true);
+            }
+            else {                
+                $hidInitpbAuxDnld.val(0);
+            }
+
+            if (($hidpbAuxUpld.val() > 0 && $hidpbAuxUpld.val() < 100) || ($hidInitpbAuxUpld.val() == 1)) {
+                $pbAuxUpld.progressbar({ disabled: false, value: parseInt($hidpbAuxUpld.val(), 10) });
+                $cmdAuxDnld.button("option", "disabled", true);
+            }
+            else {               
+                $hidInitpbAuxUpld.val(0);
+            }
+
+
+            if ($hidpbCompScanDnld.val() > 0 && $hidpbCompScanDnld.val() < 100 || $hidInitpbCompScanDnld.val() == 1) {
+               $pbCompScanDnld.progressbar({ disabled: false, value: parseInt($hidpbCompScanDnld.val(), 10) }); 
+               $cmdCompScanUpld.button("option", "disabled", true);
+           }
+           else {               
+               $hidInitpbCompScanDnld.val(0);
+           }
+
+           if ($hidpbCompScanUpld.val() > 0 && $hidpbCompScanUpld.val() < 100 || $hidInitpbCompScanUpld.val() == 1) {
+                $pbCompScanUpld.progressbar({ disabled: false, value: parseInt($hidpbCompScanUpld.val(), 10) });
+                $cmdCompScanDnld.button("option", "disabled", true);
+            }
+            else {                
+                $hidInitpbCompScanUpld.val(0);
+            }
+
+
+            if ($hidpbCompNameDnld.val() > 0 && $hidpbCompNameDnld.val() < 100 || $hidInitpbCompNameDnld.val() == 1) {
+                $pbCompNameDnld.progressbar({ disabled: false, value: parseInt($hidpbCompNameDnld.val(), 10) });
+                $cmdCompNameUpld.button("option", "disabled", true);
+            }
+            else {
+                $hidInitpbCompNameDnld.val(0);
+            }
+
+            if ($hidpbCompNameUpld.val() > 0 && $hidpbCompNameUpld.val() < 100 || $hidInitpbCompNameUpld.val() == 1) {
+                $pbCompNameUpld.progressbar({ disabled: false, value: parseInt($hidpbCompNameUpld.val(), 10) });
+                $cmdCompNameDnld.button("option", "disabled", true);
+            }
+            else {
+                $hidInitpbCompNameUpld.val(0);
+            }
+
+            if ($hidpbToolDnld.val() > 0 && $hidpbToolDnld.val() < 100 || $hidInitpbToolDnld.val() == 1) {
+                $pbToolDnld.progressbar({ disabled: false, value: parseInt($hidpbToolDnld.val(), 10) });
+                $cmdToolUpld.button("option", "disabled", true);
+            }
+            else {
+                $hidInitpbToolDnld.val(0);
+            }
+
+            if ($hidpbToolUpld.val() > 0 && $hidpbToolUpld.val() < 100 || $hidInitpbToolUpld.val() == 1) {
+                $pbToolUpld.progressbar({ disabled: false, value: parseInt($hidpbToolUpld.val(), 10) });
+                $cmdToolDnld.button("option", "disabled", true);
+            }
+            else {
+                $hidInitpbToolUpld.val(0);
+            }
+
+            if ($hidpbStationDnld.val() > 0 && $hidpbStationDnld.val() < 100 || $hidInitpbStationDnld.val() == 1) {
+                $pbStationDnld.progressbar({ disabled: false, value: parseInt($hidpbStationDnld.val(), 10) });
+                $cmdStationUpld.button("option", "disabled", true);
+            }
+            else {
+                $hidInitpbStationDnld.val(0);
+            }
+
+            if ($hidpbStationUpld.val() > 0 && $hidpbStationUpld.val() < 100 || $hidInitpbStationUpld.val() == 1) {
+                $pbStationUpld.progressbar({ disabled: false, value: parseInt($hidpbStationUpld.val(), 10) });
+                $cmdStationDnld.button("option", "disabled", true);
+            }
+            else {
+                $hidInitpbStationUpld.val(0);
+            }
+
+
+            if ($hidpbProdCodeDnld.val() > 0 && $hidpbProdCodeDnld.val() < 100 || $hidInitpbProdCodeDnld.val() == 1) {
+                $pbProdCodeDnld.progressbar({ disabled: false, value: parseInt($hidpbProdCodeDnld.val(), 10) });
+                $cmdProdCodeUpld.button("option", "disabled", true);
+            }
+            else {
+                $hidInitpbProdCodeDnld.val(0);
+            }
+
+            if ($hidpbProdCodeUpld.val() > 0 && $hidpbProdCodeUpld.val() < 100 || $hidInitpbProdCodeUpld.val() == 1) {
+                $pbProdCodeUpld.progressbar({ disabled: false, value: parseInt($hidpbProdCodeUpld.val(), 10) });
+                $cmdProdCodeDnld.button("option", "disabled", true);
+            }
+            else {
+                $hidInitpbProdCodeUpld.val(0);
+            }
+            
+            if ($hidpbUserDnld.val() > 0 && $hidpbUserDnld.val() < 100 || $hidInitpbUserDnld.val() == 1) {
+                $pbUserDnld.progressbar({ disabled: false, value: parseInt($hidpbUserDnld.val(), 10) });
+                $cmdUserUpld.button("option", "disabled", true);
+            }
+            else {
+                $hidInitpbUserDnld.val(0);
+            }
+
+            if ($hidpbUserUpld.val() > 0 && $hidpbUserUpld.val() < 100 || $hidInitpbUserUpld.val() == 1) {
+                $pbUserUpld.progressbar({ disabled: false, value: parseInt($hidpbUserUpld.val(), 10) });                
+                $cmdUserDnld.button("option", "disabled", true);
+            }
+            else {
+                $hidInitpbUserUpld.val(0);
+            }
+
+            // Quality
+            if (($hidpbAuxDnldQual.val() > 0 && $hidpbAuxDnldQual.val() < 100) || ($hidInitpbAuxDnldQual.val() == 1)) {
+                $pbAuxDnldQual.progressbar({ disabled: false, value: parseInt($hidpbAuxDnldQual.val(), 10) });
+                $cmdAuxUpldQual.button("option", "disabled", true);
+            }
+            else {
+                $hidInitpbAuxDnldQual.val(0);
+            }
+
+            if (($hidpbAuxUpldQual.val() > 0 && $hidpbAuxUpldQual.val() < 100) || ($hidInitpbAuxUpldQual.val() == 1)) {
+                $pbAuxUpldQual.progressbar({ disabled: false, value: parseInt($hidpbAuxUpldQual.val(), 10) });
+                $cmdAuxDnldQual.button("option", "disabled", true);
+            }
+            else {
+                $hidInitpbAuxUpldQual.val(0);
+            }
+
+
+            if ($hidpbCompScanDnldQual.val() > 0 && $hidpbCompScanDnldQual.val() < 100 || $hidInitpbCompScanDnldQual.val() == 1) {
+                $pbCompScanDnldQual.progressbar({ disabled: false, value: parseInt($hidpbCompScanDnldQual.val(), 10) });
+                $cmdCompScanUpldQual.button("option", "disabled", true);
+            }
+            else {
+                $hidInitpbCompScanDnldQual.val(0);
+            }
+
+            if ($hidpbCompScanUpldQual.val() > 0 && $hidpbCompScanUpldQual.val() < 100 || $hidInitpbCompScanUpldQual.val() == 1) {
+                $pbCompScanUpldQual.progressbar({ disabled: false, value: parseInt($hidpbCompScanUpldQual.val(), 10) });
+                $cmdCompScanDnldQual.button("option", "disabled", true);
+            }
+            else {
+                $hidInitpbCompScanUpldQual.val(0);
+            }
+            
+            if ($hidpbCompNameDnldQual.val() > 0 && $hidpbCompNameDnldQual.val() < 100 || $hidInitpbCompNameDnldQual.val() == 1) {
+                $pbCompNameDnldQual.progressbar({ disabled: false, value: parseInt($hidpbCompNameDnldQual.val(), 10) });
+                $cmdCompNameUpldQual.button("option", "disabled", true);
+            }
+            else {
+                $hidInitpbCompNameDnldQual.val(0);
+            }
+
+            if ($hidpbCompNameUpldQual.val() > 0 && $hidpbCompNameUpldQual.val() < 100 || $hidInitpbCompNameUpldQual.val() == 1) {
+                $pbCompNameUpldQual.progressbar({ disabled: false, value: parseInt($hidpbCompNameUpldQual.val(), 10) });
+                $cmdCompNameDnldQual.button("option", "disabled", true);
+            }
+            else {
+                $hidInitpbCompNameUpldQual.val(0);
+            }
+
+            if ($hidpbToolDnldQual.val() > 0 && $hidpbToolDnldQual.val() < 100 || $hidInitpbToolDnldQual.val() == 1) {
+                $pbToolDnldQual.progressbar({ disabled: false, value: parseInt($hidpbToolDnldQual.val(), 10) });
+                $cmdToolUpldQual.button("option", "disabled", true);
+            }
+            else {
+                $hidInitpbToolDnldQual.val(0);
+            }
+
+            if ($hidpbToolUpldQual.val() > 0 && $hidpbToolUpldQual.val() < 100 || $hidInitpbToolUpldQual.val() == 1) {
+                $pbToolUpldQual.progressbar({ disabled: false, value: parseInt($hidpbToolUpldQual.val(), 10) });
+                $cmdToolDnldQual.button("option", "disabled", true);
+            }
+            else {
+                $hidInitpbToolUpldQual.val(0);
+            }
+
+            if ($hidpbStationDnldQual.val() > 0 && $hidpbStationDnldQual.val() < 100 || $hidInitpbStationDnldQual.val() == 1) {
+                $pbStationDnldQual.progressbar({ disabled: false, value: parseInt($hidpbStationDnldQual.val(), 10) });
+                $cmdStationUpldQual.button("option", "disabled", true);
+            }
+            else {
+                $hidInitpbStationDnldQual.val(0);
+            }
+
+            if ($hidpbStationUpldQual.val() > 0 && $hidpbStationUpldQual.val() < 100 || $hidInitpbStationUpldQual.val() == 1) {
+                $pbStationUpldQual.progressbar({ disabled: false, value: parseInt($hidpbStationUpldQual.val(), 10) });
+                $cmdStationDnldQual.button("option", "disabled", true);
+            }
+            else {
+                $hidInitpbStationUpldQual.val(0);
+            }
+
+            if ($hidpbProdCodeDnldQual.val() > 0 && $hidpbProdCodeDnldQual.val() < 100 || $hidInitpbProdCodeDnldQual.val() == 1) {
+                $pbProdCodeDnldQual.progressbar({ disabled: false, value: parseInt($hidpbProdCodeDnldQual.val(), 10) });
+                $cmdProdCodeUpldQual.button("option", "disabled", true);
+            }
+            else {
+                $hidInitpbProdCodeDnldQual.val(0);
+            }
+
+            if ($hidpbProdCodeUpldQual.val() > 0 && $hidpbProdCodeUpldQual.val() < 100 || $hidInitpbProdCodeUpldQual.val() == 1) {
+                $pbProdCodeUpldQual.progressbar({ disabled: false, value: parseInt($hidpbProdCodeUpldQual.val(), 10) });
+                $cmdProdCodeDnldQual.button("option", "disabled", true);
+            }
+            else {
+                $hidInitpbProdCodeUpldQual.val(0);
+            }
+
+            if ($hidpbUserDnldQual.val() > 0 && $hidpbUserDnldQual.val() < 100 || $hidInitpbUserDnldQual.val() == 1) {
+                $pbUserDnldQual.progressbar({ disabled: false, value: parseInt($hidpbUserDnldQual.val(), 10) });
+                $cmdUserUpldQual.button("option", "disabled", true);
+            }
+            else {
+                $hidInitpbUserDnldQual.val(0);
+            }
+
+            if ($hidpbUserUpldQual.val() > 0 && $hidpbUserUpldQual.val() < 100 || $hidInitpbUserUpldQual.val() == 1) {
+                $pbUserUpldQual.progressbar({ disabled: false, value: parseInt($hidpbUserUpldQual.val(), 10) });
+                $cmdUserDnldQual.button("option", "disabled", true);
+            }
+            else {
+                $hidInitpbUserUpldQual.val(0);
+            }
+
+            
+            clearInterval(varTimer);
+            updatePageData();
+        }
+
+       
+        function CreateDialog_ConfirmDownload() {
+            var $button = $(this);
+            $dlgDownloadWarning = $('#dlgDownloadWarning');
+            $dlgDownloadWarning.deleteDialog({ width: 380, "buttons": [
+                              { text: "Yes", click: function () { __doPostBack($button.prop('name'), ''); $(this).dialog("close"); } }
+                            , { text: "Cancel", click: function () { showMessage('Action Cancelled'); $(this).dialog("close"); } }
+                    ] });
+        }
+
+        function CreateDialog_ConfirmUpload() {
+            var $button = $(this);
+            $dlgUploadWarning = $('#dlgUploadWarning');
+            $dlgUploadWarning.deleteDialog({ width: 380, "buttons": [
+                             { text: "Yes", click: function () { __doPostBack($button.prop('name'), ''); $(this).dialog("close"); } }
+                            , { text: "Cancel", click: function () { showMessage('Action Cancelled'); $(this).dialog("close"); } }
+                    ] });
+        }
+
+
+        function CreateDialog_Confirm() {
+            var $button = $(this);
+            $divDialogConfirm = $('#divDlgConfirmation');
+            $divDialogConfirm.deleteDialog({ width: 400, "buttons": [
+                              { text: "Yes", click: function () { __doPostBack($button.prop('name'), ''); $(this).dialog("close"); } }
+                            , { text: "Cancel", click: function () { showMessage('Action Cancelled'); $(this).dialog("close"); } }
+                    ]
+            });
+        }
+
+
+        function AddEventToControlsWithClass_downloadButton() {
+            //the selector $('.downloadButton') adds the function to click event of all controls with the class 'downloadButton'
+            $('.downloadButton').click(function () {
+                var $button = $(this);
+                var boolComparison = false;
+                showMessage('');
+                clearInterval(varTimer);
+
+                // This code is to check to see if the PLC timestamp is newer than the JIT 
+                //  timestamp.  If it is, then we want to display the warning dialog to ask the 
+                //  operator if they are sure they want to overwrite the PLC data.  We need to
+                //  use the switch statement because each button compares different values.
+                switch (this.id) {
+                    case "MainContent_cmdAuxDnld":
+                        if ($('#MainContent_lblAuxPLC').text() > $('#MainContent_lblAuxJIT').text()) {
+                            boolComparison = true;
+                        }
+                        break;
+                    case "MainContent_cmdCompCodeDnld":
+                        if ($('#MainContent_lblCompCodePLC').text() > $('#MainContent_lblCompcodeJIT').text()) {
+                            boolComparison = true;
+                        }
+                        break;
+                    case "MainContent_cmdCompNameDnld":
+                        if ($('#MainContent_lblCompNamePLC').text() > $('#MainContent_lblCompNameJIT').text()) {
+                            boolComparison = true;
+                        }
+                        break;
+                    case "MainContent_cmdToolDnld":
+                        if ($('#MainContent_lblToolPLC').text() > $('#MainContent_lblToolJIT').text()) {
+                            boolComparison = true;
+                        }
+                        break;
+                    case "MainContent_cmdStationDnld":
+                        if ($('#MainContent_lblStationPLC').text() > $('#MainContent_lblStationJIT').text()) {
+                            boolComparison = true;
+                        }
+                        break;
+                    case "MainContent_cmdProdCodeDnld":
+                        if ($('#MainContent_lblProdCodePLC').text() > $('#MainContent_lblProdCodeJIT').text()) {
+                            boolComparison = true;
+                        }
+                        break;
+                    case "MainContent_cmdAuxDnldQual":
+                        if ($('#MainContent_lblAuxPLCQual').text() > $('#MainContent_lblAuxJITQual').text()) {
+                            boolComparison = true;
+                        }
+                        break;
+                    case "MainContent_cmdCompCodeDnldQual":
+                        if ($('#MainContent_lblCompCodePLCQual').text() > $('#MainContent_lblCompcodeJITQual').text()) {
+                            boolComparison = true;
+                        }
+                        break;
+//                    case "MainContent_cmdCompNameDnldQual":
+//                        if ($('#MainContent_lblCompNamePLCQual').text() > $('#MainContent_lblCompNameJITQual').text()) {
+//                            boolComparison = true;
+//                        }
+//                        break;
+                    case "MainContent_cmdToolDnldQual":
+                        if ($('#MainContent_lblToolPLCQual').text() > $('#MainContent_lblToolJITQual').text()) {
+                            boolComparison = true;
+                        }
+                        break;
+                    case "MainContent_cmdStationDnldQual":
+                        if ($('#MainContent_lblStationPLCQual').text() > $('#MainContent_lblStationJITQual').text()) {
+                            boolComparison = true;
+                        }
+                        break;
+//                    case "MainContent_cmdProdCodeDnldQual":
+//                        if ($('#MainContent_lblProdCodePLCQual').text() > $('#MainContent_lblProdCodeJITQual').text()) {
+//                            boolComparison = true;
+//                        }
+//                        break;
+                    default: boolComparison = false;
+                }
+
+                if (boolComparison) {
+                    $dlgDownloadWarning.dialog("option", "title", "Download Warning").dialog("option", "buttons", [
+                             { text: "Yes", click: function () { __doPostBack($button.prop('name'), ''); $(this).dialog("close"); } }
+                            , { text: "Cancel", click: function () { showMessage('Action Cancelled'); $(this).dialog("close"); } }
+                    ]).dialog('open');
+                    return false;
+                } else {
+                    var task = $button.parent().parent().find('.task').text();
+                    var line = $('#MainContent_ddLineNum option:selected').text();
+                    var msg = 'Are you sure you want to Download ' + task + ' for ' + line + "?";
+                    $('#message').text(msg);
+                    $divDialogConfirm.dialog("option", "title", "Download Warning").dialog("option", "buttons", [
+                             { text: "Yes", click: function () { __doPostBack($button.prop('name'), ''); $(this).dialog("close"); } }
+                            , { text: "Cancel", click: function () { showMessage('Action Cancelled'); $(this).dialog("close"); } }
+                    ]).dialog('open');
+                    return false;
+                }
+                updatePageData();
+            });
+        }
+
+        function AddEventToControlsWithClass_uploadButton() {
+            //the selector $('.uploadButton') adds the function to click event of all controls with the class 'uploadButton'
+            $('.uploadButton').click(function () {
+                var $button = $(this);
+                var boolComparison = false;
+                showMessage('');
+                clearInterval(varTimer);
+
+                // This code is to check to see if the JIT timestamp is newer than the PLC 
+                //  timestamp.  If it is, then we want to display the warning dialog to ask the 
+                //  operator if they are sure they want to overwrite the JIT data.  We need to
+                //  use the switch statement because each button compares different values.
+                switch (this.id) {
+                    case "MainContent_cmdAuxUpld":
+                        if ($('#MainContent_lblAuxPLC').text() < $('#MainContent_lblAuxJIT').text()) {
+                            boolComparison = true;
+                        }
+                        break;
+                    case "MainContent_cmdCompCodeUpld":
+                        if ($('#MainContent_lblCompCodePLC').text() < $('#MainContent_lblCompcodeJIT').text()) {
+                            boolComparison = true;
+                        }
+                        break;
+                    case "MainContent_cmdCompNameUpld":
+                        if ($('#MainContent_lblCompNamePLC').text() < $('#MainContent_lblCompNameJIT').text()) {
+                            boolComparison = true;
+                        }
+                        break;
+                    case "MainContent_cmdToolUpld":
+                        if ($('#MainContent_lblToolPLC').text() < $('#MainContent_lblToolJIT').text()) {
+                            boolComparison = true;
+                        }
+                        break;
+                    case "MainContent_cmdStationUpld":
+                        if ($('#MainContent_lblStationPLC').text() < $('#MainContent_lblStationJIT').text()) {
+                            boolComparison = true;
+                        }
+                        break;
+                    case "MainContent_cmdProdCodeUpld":
+                        if ($('#MainContent_lblProdCodePLC').text() < $('#MainContent_lblProdCodeJIT').text()) {
+                            boolComparison = true;
+                        }
+                        break;
+                    case "MainContent_cmdAuxUpldQual":
+                        if ($('#MainContent_lblAuxPLCQual').text() < $('#MainContent_lblAuxJITQual').text()) {
+                            boolComparison = true;
+                        }
+                        break;
+                    case "MainContent_cmdCompCodeUpldQual":
+                        if ($('#MainContent_lblCompCodePLCQual').text() < $('#MainContent_lblCompcodeJITQual').text()) {
+                            boolComparison = true;
+                        }
+                        break;
+//                    case "MainContent_cmdCompNameUpldQual":
+//                        if ($('#MainContent_lblCompNamePLCQual').text() < $('#MainContent_lblCompNameJITQual').text()) {
+//                            boolComparison = true;
+//                        }
+//                        break;
+                    case "MainContent_cmdToolUpldQual":
+                        if ($('#MainContent_lblToolPLCQual').text() < $('#MainContent_lblToolJITQual').text()) {
+                            boolComparison = true;
+                        }
+                        break;
+                    case "MainContent_cmdStationUpldQual":
+                        if ($('#MainContent_lblStationPLCQual').text() < $('#MainContent_lblStationJITQual').text()) {
+                            boolComparison = true;
+                        }
+                        break;
+//                    case "MainContent_cmdProdCodeUpldQual":
+//                        if ($('#MainContent_lblProdCodePLCQual').text() < $('#MainContent_lblProdCodeJITQual').text()) {
+//                            boolComparison = true;
+//                        }
+//                        break;
+                    default: boolComparison = false;
+                }
+
+                if (boolComparison) {
+                    $dlgUploadWarning.dialog("option", "title", "Upload Warning").dialog("option", "buttons", [
+                             { text: "Yes", click: function () { __doPostBack($button.prop('name'), ''); $(this).dialog("close"); } }
+                            , { text: "Cancel", click: function () { showMessage('Action Cancelled'); $(this).dialog("close"); } }
+                    ]).dialog('open');
+                    return false;
+                } else {
+                    var task = $button.parent().parent().find('.task').text();
+                    var line = $('#MainContent_ddLineNum option:selected').text();
+                    var msg = 'Are you sure you want to Upload ' + task + ' for ' + line + "?";
+                    $('#message').text(msg);
+                    $divDialogConfirm.dialog("option", "title", "Upload Warning").dialog("option", "buttons", [
+                             { text: "Yes", click: function () { __doPostBack($button.prop('name'), ''); $(this).dialog("close"); } }
+                            , { text: "Cancel", click: function () { showMessage('Action Cancelled'); $(this).dialog("close"); } }
+                    ]).dialog('open');
+                    return false;
+                }
+                updatePageData();
+            });
+        }
+
+       
+
+    </script>
+    <style type="text/css">
+        #Table1
+        {
+            padding-bottom: 8px;
+        }
+        .datagrid td
+        {
+            vertical-align: middle;
+            text-align: center;
+        }
+        .datagrid span
+        {
+            white-space: nowrap;
+        }
+        
+        #divMainCenterPanel
+        {
+            width: 1000px;
+        }
+        .inputButton
+        {
+            margin: 4px;
+        }
+        .uploadDateTime
+        {
+            width: 200px;
+        }
+        .downloadDateTime
+        {
+            width: 200px;
+        }
+        .selectDropDown
+        {
+            height: 24px;
+            width: 200px;
+        }
+        .task
+        {
+            margin: 0px 6px 0px 6px;
+        }
+                
+        .ui-progressbar 
+        { 
+            height:1em ; text-align: left; 
+        }         
+        .ui-progressbar .ui-progressbar-value 
+        {                                             
+            height:100%; 
+        } 
+         
+        #MainContent_cmdRefresh
+        {
+            visibility:hidden;
+        }     
+
+    </style>
+</asp:Content>
+<asp:Content ID="Content2" ContentPlaceHolderID="MainContent" runat="server">
+    <div id="divMainCenterPanel">        
+        <asp:UpdatePanel ID="UpdatePanel2" runat="server">
+            <ContentTemplate>    
+                <div>             
+                    <asp:HiddenField id="hidMultiPLC" runat="server" Value="0" />
+                    <asp:HiddenField id="hidLineNumber" runat="server" Value="0" />
+                    <asp:HiddenField id="hidUpgrade2015" runat="server" Value="0" />                    
+                    <asp:HiddenField id="hidLineTypeID" runat="server" Value="0" />       
+                    <asp:HiddenField id="hidpbAuxDnld" runat="server" Value="0" /> 
+                    <asp:HiddenField id="hidpbAuxUpld" runat="server" Value="0" />
+                    <asp:HiddenField id="hidpbCompScanDnld" runat="server" Value="0" />
+                    <asp:HiddenField id="hidpbCompScanUpld" runat="server" Value="0" />
+                    <asp:HiddenField id="hidpbCompNameDnld" runat="server" Value="0" />
+                    <asp:HiddenField id="hidpbCompNameUpld" runat="server" Value="0" />
+                    <asp:HiddenField id="hidpbToolDnld" runat="server" Value="0" />
+                    <asp:HiddenField id="hidpbToolUpld" runat="server" Value="0" />
+                    <asp:HiddenField id="hidpbStationDnld" runat="server" Value="0" />
+                    <asp:HiddenField id="hidpbStationUpld" runat="server" Value="0" />
+                    <asp:HiddenField id="hidpbProdCodeDnld" runat="server" Value="0" />
+                    <asp:HiddenField id="hidpbProdCodeUpld" runat="server" Value="0" />
+                    <asp:HiddenField id="hidpbUserDnld" runat="server" Value="0" />
+                    <asp:HiddenField id="hidpbUserUpld" runat="server" Value="0" /> 
+                    <asp:HiddenField id="hidInitpbAuxDnld" runat="server" Value="0" /> 
+                    <asp:HiddenField id="hidInitpbAuxUpld" runat="server" Value="0" />
+                    <asp:HiddenField id="hidInitpbCompScanDnld" runat="server" Value="0" />
+                    <asp:HiddenField id="hidInitpbCompScanUpld" runat="server" Value="0" />
+                    <asp:HiddenField id="hidInitpbCompNameDnld" runat="server" Value="0" />
+                    <asp:HiddenField id="hidInitpbCompNameUpld" runat="server" Value="0" />
+                    <asp:HiddenField id="hidInitpbToolDnld" runat="server" Value="0" />
+                    <asp:HiddenField id="hidInitpbToolUpld" runat="server" Value="0" />
+                    <asp:HiddenField id="hidInitpbStationDnld" runat="server" Value="0" />
+                    <asp:HiddenField id="hidInitpbStationUpld" runat="server" Value="0" />
+                    <asp:HiddenField id="hidInitpbProdCodeDnld" runat="server" Value="0" />
+                    <asp:HiddenField id="hidInitpbProdCodeUpld" runat="server" Value="0" />
+                    <asp:HiddenField id="hidInitpbUserDnld" runat="server" Value="0" />
+                    <asp:HiddenField id="hidInitpbUserUpld" runat="server" Value="0" />
+                    
+                    <asp:HiddenField id="hidpbAuxDnldQual" runat="server" Value="0" /> 
+                    <asp:HiddenField id="hidpbAuxUpldQual" runat="server" Value="0" />
+                    <asp:HiddenField id="hidpbCompScanDnldQual" runat="server" Value="0" />
+                    <asp:HiddenField id="hidpbCompScanUpldQual" runat="server" Value="0" />
+                    <asp:HiddenField id="hidpbCompNameDnldQual" runat="server" Value="0" />
+                    <asp:HiddenField id="hidpbCompNameUpldQual" runat="server" Value="0" />
+                    <asp:HiddenField id="hidpbToolDnldQual" runat="server" Value="0" />
+                    <asp:HiddenField id="hidpbToolUpldQual" runat="server" Value="0" />
+                    <asp:HiddenField id="hidpbStationDnldQual" runat="server" Value="0" />
+                    <asp:HiddenField id="hidpbStationUpldQual" runat="server" Value="0" />
+                    <asp:HiddenField id="hidpbProdCodeDnldQual" runat="server" Value="0" />
+                    <asp:HiddenField id="hidpbProdCodeUpldQual" runat="server" Value="0" />
+                    <asp:HiddenField id="hidpbUserDnldQual" runat="server" Value="0" />
+                    <asp:HiddenField id="hidpbUserUpldQual" runat="server" Value="0" /> 
+                    <asp:HiddenField id="hidInitpbAuxDnldQual" runat="server" Value="0" /> 
+                    <asp:HiddenField id="hidInitpbAuxUpldQual" runat="server" Value="0" />
+                    <asp:HiddenField id="hidInitpbCompScanDnldQual" runat="server" Value="0" />
+                    <asp:HiddenField id="hidInitpbCompScanUpldQual" runat="server" Value="0" />
+                    <asp:HiddenField id="hidInitpbCompNameDnldQual" runat="server" Value="0" />
+                    <asp:HiddenField id="hidInitpbCompNameUpldQual" runat="server" Value="0" />
+                    <asp:HiddenField id="hidInitpbToolDnldQual" runat="server" Value="0" />
+                    <asp:HiddenField id="hidInitpbToolUpldQual" runat="server" Value="0" />
+                    <asp:HiddenField id="hidInitpbStationDnldQual" runat="server" Value="0" />
+                    <asp:HiddenField id="hidInitpbStationUpldQual" runat="server" Value="0" />
+                    <asp:HiddenField id="hidInitpbProdCodeDnldQual" runat="server" Value="0" />
+                    <asp:HiddenField id="hidInitpbProdCodeUpldQual" runat="server" Value="0" />
+                    <asp:HiddenField id="hidInitpbUserDnldQual" runat="server" Value="0" />
+                    <asp:HiddenField id="hidInitpbUserUpldQual" runat="server" Value="0" />                    
+                </div>          
+                <table id="Table1">
+                    <tr>
+                        <td>
+                            <asp:Label ID="Label1" runat="server" CssClass="spanLabel h2" Width="246px" Height="20px" Text="Line Number:"></asp:Label>
+                        </td>
+                    </tr>
+                    <tr>
+                    <td>
+                        <asp:DropDownList ID="ddLineNum" runat="server" CssClass="selectDropDown h3" AutoPostBack="True"></asp:DropDownList>                                
+                     </td>                           
+                    <td>
+                        <asp:Button ID="cmdRefreshProgBars" runat="server"  Text="Refresh" CssClass="inputButton"></asp:Button>                                                      
+                    </td>
+                     <td>                          
+                        <asp:Button ID="cmdRefresh" runat="server" Text="Hidden" CssClass="inputButton" style="margin-left: 10px"></asp:Button>                      
+                    </td>
+                    </tr>
+                </table>
+                <div class="datagrid">
+                    <table>
+                        <tr class="DataGrid_HeaderStyle">
+                            <td>
+                            </td>
+                            <td class="uploadDateTime">
+                                Last Modified in Build PLC
+                            </td>
+                            <td class="uploadDateTime">
+                                Last Modified in Quality PLC
+                            </td>
+                            <td class="downloadDateTime">
+                                Last Modified in JIT Manager
+                            </td>
+                            <td style="width:150px">
+                                Download to Build PLC
+                            </td>
+                            <td style="width:150px">
+                                Download to Quality PLC
+                            </td>
+                            <td style="width:150px">
+                                Upload Build to DB
+                            </td>
+                            <td style="width:150px">
+                                Upload Quality to DB
+                            </td>
+                        </tr>
+                        <tr>
+                            <td style="text-align: left;">
+                                <asp:Label ID="lblAuxCfg" runat="server" CssClass="spanLabel h2 task" Text="Aux Task Configuration"></asp:Label>
+                            </td>
+                            <td>
+                                <asp:Label ID="lblAuxPLC" runat="server" CssClass="spanLabel uploadDateTime" Text="--"></asp:Label>
+                            </td>
+                            <td>
+                                <asp:Label ID="lblAuxPLCQual" runat="server" CssClass="spanLabel uploadDateTime" Text="--"></asp:Label>
+                            </td>
+                            <td>
+                                <asp:Label ID="lblAuxJIT" runat="server" CssClass="spanLabel downloadDateTime" Text="--"></asp:Label>
+                            </td>
+                            <td>
+                                <asp:Button ID="cmdAuxDnld" runat="server" Text="Download" CssClass="inputButton downloadButton"></asp:Button>
+                                <div id="pbAuxDnld"></div>
+                            </td>
+                            <td>
+                                <asp:Button ID="cmdAuxDnldQual" runat="server" Text="Download" CssClass="inputButton downloadButton"></asp:Button>
+                                <div id="pbAuxDnldQual"></div>
+                            </td>
+                            <td>
+                                <asp:Button ID="cmdAuxUpld" runat="server" Text="Upload" CssClass="inputButton uploadButton"></asp:Button>
+                                <div id="pbAuxUpld"></div>                                  
+                            </td>                           
+                            <td>
+                                <asp:Button ID="cmdAuxUpldQual" runat="server" Text="Upload" CssClass="inputButton uploadButton"></asp:Button>
+                                <div id="pbAuxUpldQual"></div>                                  
+                            </td>
+                        </tr>
+                        <tr>
+                            <td style="text-align: left;">
+                                <asp:Label ID="Label8" runat="server" CssClass="spanLabel h2 task" Text="Component Scan Enable"></asp:Label>
+                            </td>
+                            <td>
+                                <asp:Label ID="lblCompCodePLC" runat="server" CssClass="spanLabel uploadDateTime" Text="--"></asp:Label>
+                            </td>
+                            <td>
+                                <asp:Label ID="lblCompCodePLCQual" runat="server" CssClass="spanLabel uploadDateTime" Text="--"></asp:Label>
+                            </td>
+                            <td>
+                                <asp:Label ID="lblCompcodeJIT" runat="server" CssClass="spanLabel downloadDateTime" Text="--"></asp:Label>
+                            </td>
+                            <td>
+                                <asp:Button ID="cmdCompCodeDnld" runat="server" Text="Download" CssClass="inputButton downloadButton"></asp:Button>
+                                <div id="pbCompScanDnld"></div>
+                            </td>
+                            <td>
+                                <asp:Button ID="cmdCompCodeDnldQual" runat="server" Text="Download" CssClass="inputButton downloadButton"></asp:Button>
+                                <div id="pbCompScanDnldQual"></div>
+                            </td>
+                            <td>
+                                <asp:Button ID="cmdCompCodeUpld" runat="server" Text="Upload" CssClass="inputButton uploadButton"></asp:Button>
+                                <div id="pbCompScanUpld"></div>
+                            </td>                            
+                            <td>
+                                <asp:Button ID="cmdCompCodeUpldQual" runat="server" Text="Upload" CssClass="inputButton uploadButton"></asp:Button>
+                                <div id="pbCompScanUpldQual"></div>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td style="text-align: left;">
+                                <asp:Label ID="Label9" runat="server" CssClass="spanLabel h2 task" Text="Component Name Configuration"></asp:Label>
+                            </td>
+                            <td>
+                                <asp:Label ID="lblCompNamePLC" runat="server" CssClass="spanLabel uploadDateTime" Text="--"></asp:Label>
+                            </td>
+                            <td>
+                                <asp:Label ID="lblCompNamePLCQual" runat="server" CssClass="spanLabel uploadDateTime" Text="--"></asp:Label>
+                            </td>
+                            <td>
+                                <asp:Label ID="lblCompNameJIT" runat="server" CssClass="spanLabel downloadDateTime" Text="--"></asp:Label>
+                            </td>
+                            <td>
+                                <asp:Button ID="cmdCompNameDnld" runat="server" Text="Download" CssClass="inputButton downloadButton"></asp:Button>
+                                <div id="pbCompNameDnld"></div>
+                            </td>
+                            <td>
+                                <asp:Button ID="cmdCompNameDnldQual" runat="server" Text="Download" Visible=false CssClass="inputButton downloadButton"></asp:Button>
+                                <div id="pbCompNameDnldQual"></div>
+                            </td>
+                            <td>
+                                <asp:Button ID="cmdCompNameUpld" runat="server" Text="Upload" CssClass="inputButton uploadButton"></asp:Button>
+                                <div id="pbCompNameUpld"></div>
+                            </td>                            
+                            <td>
+                                <asp:Button ID="cmdCompNameUpldQual" runat="server" Text="Upload"  Visible=false CssClass="inputButton uploadButton"></asp:Button>
+                                <div id="pbCompNameUpldQual"></div>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td style="text-align: left;">
+                                <asp:Label ID="lblToolCfg" runat="server" CssClass="spanLabel h2 task" Text="Tool Configuration"></asp:Label>
+                            </td>
+                            <td>
+                                <asp:Label ID="lblToolPLC" runat="server" CssClass="spanLabel uploadDateTime" Text="--"></asp:Label>
+                            </td>
+                            <td>
+                                <asp:Label ID="lblToolPLCQual" runat="server" CssClass="spanLabel uploadDateTime" Text="--"></asp:Label>
+                            </td>
+                            <td>
+                                <asp:Label ID="lblToolJIT" runat="server" CssClass="spanLabel downloadDateTime" Text="--"></asp:Label>
+                            </td>
+                            <td>
+                                <asp:Button ID="cmdToolDnld" runat="server" Text="Download" CssClass="inputButton downloadButton"></asp:Button>
+                                <div id="pbToolDnld"></div>
+                            </td>
+                            <td>
+                                <asp:Button ID="cmdToolDnldQual" runat="server" Text="Download" CssClass="inputButton downloadButton"></asp:Button>
+                                <div id="pbToolDnldQual"></div>
+                            </td>
+                            <td>
+                                <asp:Button ID="cmdToolUpld" runat="server" Text="Upload" CssClass="inputButton uploadButton"></asp:Button>                                
+                                <div id="pbToolUpld"></div>
+                            </td>                            
+                            <td>
+                                <asp:Button ID="cmdToolUpldQual" runat="server" Text="Upload" CssClass="inputButton uploadButton"></asp:Button>                                
+                                <div id="pbToolUpldQual"></div>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td style="text-align: left;">
+                                <asp:Label ID="Label11" runat="server" CssClass="spanLabel h2 task" Text="Station Configuration"></asp:Label>
+                            </td>
+                            <td>
+                                <asp:Label ID="lblStationPLC" runat="server" CssClass="spanLabel uploadDateTime" Text="--"></asp:Label>
+                            </td>
+                            <td>
+                                <asp:Label ID="lblStationPLCQual" runat="server" CssClass="spanLabel uploadDateTime" Text="--"></asp:Label>
+                            </td>
+                            <td>
+                                <asp:Label ID="lblStationJIT" runat="server" CssClass="spanLabel downloadDateTime" Text="--"></asp:Label>
+                            </td>
+                            <td>
+                                <asp:Button ID="cmdStationDnld" runat="server" Text="Download" CssClass="inputButton downloadButton"></asp:Button>
+                                <div id="pbStationDnld"></div>
+                            </td>
+                            <td>
+                                <asp:Button ID="cmdStationDnldQual" runat="server" Text="Download" CssClass="inputButton downloadButton"></asp:Button>
+                                <div id="pbStationDnldQual"></div>
+                            </td>
+                            <td>
+                                <asp:Button ID="cmdStationUpld" runat="server" Text="Upload" CssClass="inputButton uploadButton"></asp:Button>
+                                <div id="pbStationUpld"></div>
+                            </td>                             
+                            <td>
+                                <asp:Button ID="cmdStationUpldQual" runat="server" Text="Upload" CssClass="inputButton uploadButton"></asp:Button>
+                                <div id="pbStationUpldQual"></div>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td style="text-align: left;">
+                                <asp:Label ID="Label12" runat="server" CssClass="spanLabel h2 task" Text="Product Code Configuration"></asp:Label>
+                            </td>
+                            <td>
+                                <asp:Label ID="lblProdCodePLC" runat="server" CssClass="spanLabel uploadDateTime" Text="--"></asp:Label>
+                            </td>
+                            <td>
+                                <asp:Label ID="lblProdCodePLCQual" runat="server" CssClass="spanLabel uploadDateTime" Text="--"></asp:Label>
+                            </td>
+                            <td>
+                                <asp:Label ID="lblProdCodeJIT" runat="server" CssClass="spanLabel downloadDateTime" Text="--"></asp:Label>
+                            </td>
+                            <td>
+                                <asp:Button ID="cmdProdCodeDnld" runat="server" Text="Download" CssClass="inputButton downloadButton"></asp:Button>
+                                <div id="pbProdCodeDnld"></div>
+                            </td>
+                            <td>
+                                <asp:Button ID="cmdProdCodeDnldQual" runat="server" Text="Download"  Visible=false CssClass="inputButton downloadButton"></asp:Button>
+                                <div id="pbProdCodeDnldQual"></div>
+                            </td>
+                            <td>
+                                <asp:Button ID="cmdProdCodeUpld" runat="server" Text="Upload" CssClass="inputButton uploadButton"></asp:Button>
+                                <div id="pbProdCodeUpld"></div>
+                            </td>                            
+                            <td>
+                                <asp:Button ID="cmdProdCodeUpldQual" runat="server" Text="Upload"  Visible=false CssClass="inputButton uploadButton"></asp:Button>
+                                <div id="pbProdCodeUpldQual"></div>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td style="text-align: left;">
+                                <asp:Label ID="Label2" runat="server" CssClass="spanLabel h2 task" Text="User Configuration"></asp:Label>
+                            </td>
+                            <td>
+                                <asp:Label ID="lblUserPLC" runat="server" CssClass="spanLabel uploadDateTime" Text="--"></asp:Label>
+                            </td>
+                            <td>
+                                <asp:Label ID="lblUserPLCQual" runat="server" CssClass="spanLabel uploadDateTime" Text="--"></asp:Label>
+                            </td>
+                            <td>
+                                <asp:Label ID="lblUserJIT" runat="server" CssClass="spanLabel downloadDateTime" Text="--"></asp:Label>
+                            </td>
+                            <td>
+                                <asp:Button ID="cmdUserDnld" runat="server" Text="Download" CssClass="inputButton downloadButton"></asp:Button>
+                                <div id="pbUserDnld"></div>
+                            </td>
+                            <td>
+                                <asp:Button ID="cmdUserDnldQual" runat="server" Text="Download"  Visible=false CssClass="inputButton downloadButton"></asp:Button>
+                                <div id="pbUserDnldQual"></div>
+                            </td>
+                            <td>
+                                <asp:Button ID="cmdUserUpld" runat="server" Text="Upload" CssClass="inputButton uploadButton"></asp:Button>
+                                <div id="pbUserUpld"></div>
+                            </td>                            
+                            <td>
+                                <asp:Button ID="cmdUserUpldQual" runat="server" Text="Upload"  Visible=false CssClass="inputButton uploadButton"></asp:Button>
+                                <div id="pbUserUpldQual"></div>
+                            </td>
+                        </tr>
+                    </table>
+                </div>
+            </ContentTemplate>
+        </asp:UpdatePanel>
+    </div>
+    <div id="divDlgConfirmation" title="">
+        <div class="ui-corner-all ui-state-default" style="top: 40%; position: absolute;">
+            <span class="ui-icon ui-icon-alert"></span>
+        </div>
+        <p class="pCenter" style="margin-left: 30px;">
+            <span id="message" class="spanLabel h3"></span>
+        </p>
+    </div>
+    <div id="dlgDownloadWarning" title="Download Warning">
+        <div class="ui-corner-all ui-state-default" style="top: 40%; position: absolute;">
+            <span class="ui-icon ui-icon-alert"></span>
+        </div>
+        <p class="pCenter spanLabel  h3" style="margin-left: 30px;">
+            The timestamp of the PLC data is newer than the JIT database data.
+        </p>
+        <p class="pCenter spanLabel  h3" style="margin-left: 30px;">
+            Are you sure you want to overwrite the PLC data?
+        </p>
+    </div>
+    <div id="dlgUploadWarning" title="Upload Warning">
+        <div class="ui-corner-all ui-state-default" style="top: 40%; position: absolute;">
+            <span class="ui-icon ui-icon-alert"></span>
+        </div>
+        <p class="pCenter spanLabel  h3" style="margin-left: 30px;">
+            The timestamp of the JIT database data is newer than the PLC data.
+        </p>
+        <p class="pCenter spanLabel  h3" style="margin-left: 30px;">
+            Are you sure you want to overwrite the JIT database data? 
+        </p>
+    </div>
+</asp:Content>

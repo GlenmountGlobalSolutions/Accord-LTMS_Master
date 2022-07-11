@@ -1,0 +1,595 @@
+﻿<%@ Page Title="" Language="vb" AutoEventWireup="false" MasterPageFile="~/Site.Master" CodeBehind="DailyBuildQuantities.aspx.vb" Inherits="LTMS_Master.DailyBuildQuantities" EnableEventValidation="false" %>
+
+<%@ MasterType VirtualPath="~/Site.master" %>
+<asp:Content ID="Content1" ContentPlaceHolderID="HeadContent" runat="server">
+	<script type="text/javascript" src="<%# ResolveUrl("~/Scripts/systemOperations.js") %>"></script>
+	<script type="text/javascript" src="<%# ResolveUrl("~/Scripts/date.js") %>"></script>
+	<script type="text/javascript" src="<%# ResolveUrl("~/Scripts/jquery.alphanum.js") %>"></script>
+	<script type="text/javascript">
+		// variables to cache controls since they are referenced in the javascript more than once
+		// Edit Dialog
+		var $txtEditShift1;
+		var $txtEditShift2;
+		var $txtEditShift3;
+		var $txtPSQ;
+		var $txtJobQty;
+		var $ddlProd;
+		var $ddlShipped;
+		var $ddlProdHidden;
+		var $ddlShippedHidden;
+
+		//prePopulate dialog
+		var $txtBeginDate;
+		var $txtEndDate;
+		var $txtShift1;
+		var $txtShift2;
+		var $txtShift3;
+		var $txtQtyShip;
+		var $txtQtyProd;
+		var $cbShift1;
+		var $cbShift2;
+		var $cbShift3;
+
+		var orderType;
+
+		var $cmdPrePopulate;
+		var $dlgPrePopulate;
+		var $cmdEdit;
+		var $dlgEdit;
+
+		var $ddlMonth;
+
+		function contentPageLoad(sender, args) {
+			try {
+				AddAJAXSettings();
+
+				// cache the controls to $name variable for use later in the script; jQuery will not need to search the DOM for them again.
+				CacheDialogControls_Edit()
+				CacheDialogControls_PrePopulate()
+
+				orderType = $('#MainContent_rbOrders input:checked').val();
+
+
+				// Make the Radio button a UI radio button
+				$("#MainContent_rbOrders").buttonset();
+				$("#MainContent_rbOrders_0 + label").mouseover(function () { if (orderType == "1") { $(this).css('cursor', 'text'); } else { $(this).css('cursor', 'pointer').click(function () { $(this).css('cursor', 'progress'); }); } });
+				$("#MainContent_rbOrders_1 + label").mouseover(function () { if (orderType == "0") { $(this).css('cursor', 'text'); } else { $(this).css('cursor', 'pointer').click(function () { $(this).css('cursor', 'progress'); }); } });
+
+				//Add event to previous and next week icons to change cursor over calendar button
+				$("input:image, .calendarCellDiv").mouseover(function () { $(this).css('cursor', 'pointer'); });
+
+				$txtBeginDate.addDatePicker().datepicker("option", "firstDay", 1);  //Set the first day of the week: Sunday is 0, Monday is 1, ... 
+				$txtEndDate.addDatePicker().datepicker("option", "firstDay", 1);
+				PositionCalendarPickerIcon();
+
+				// add wait cursor when month navigation buttons are pressed.
+				$('[id^="MainContent_ib"]').on('click', function () { ShowCursor_Wait(); }).mouseover(function () { $(this).css('cursor', 'pointer'); });
+
+				// make controls with class 'numericOnly' into numeric only
+				$('.numericOnly').numeric({
+				    allowMinus: false,
+				    allowThouSep: false,
+				    allowDecSep: false
+				});
+
+				$('.cmdShowWait').on('click', function () { ShowWaitOverlay(); });
+
+
+				$txtShift1.enabledBasedOnCheckbox($cbShift1);
+				$txtShift2.enabledBasedOnCheckbox($cbShift2);
+				$txtShift3.enabledBasedOnCheckbox($cbShift3);
+
+				AddDialog_PrePopulate();
+				AddDialog_Edit();
+
+				AddjQueryUIFormatToCalendar();
+
+
+				// add dialog to the pre-populate button
+				AddEventToOpenPrePopulateDialog();
+
+				// add dialog to all calendar days with data
+				AddEventToOpenEditDialog();
+
+				if (!args.get_isPartialLoad()) {
+				    // set hidden fields for postback
+				    $ddlShipped.change(function () { $ddlShippedHidden.val($ddlShipped.val()); });
+				    $ddlProd.change(function () { GetLotSize(); $ddlProdHidden.val($ddlProd.val()); });
+				}
+
+			} catch (err) {
+				alert(err);
+			}
+		}
+
+		function CacheDialogControls_Edit() {
+			try {
+				$cmdEdit = $('#MainContent_cmdEdit');
+				$dlgEdit = $('#divDlg_Edit');
+
+				$txtEditShift1 = $('#MainContent_txtEditShift1');
+				$txtEditShift2 = $('#MainContent_txtEditShift2');
+				$txtEditShift3 = $('#MainContent_txtEditShift3');
+				$txtPSQ = $('#MainContent_txtPSQ');
+				$txtJobQty = $('#MainContent_txtJobQty');
+				$ddlProd = $('#MainContent_ddlProd');
+				$ddlShipped = $('#MainContent_ddlShipped');
+
+				$ddlProdHidden = $('#MainContent_hidDDLProd');
+				$ddlShippedHidden = $('#MainContent_hidDDLShip');
+
+				$cbShift1 = $('#MainContent_cbShift1');
+				$cbShift2 = $('#MainContent_cbShift2');
+				$cbShift3 = $('#MainContent_cbShift3');
+
+
+			} catch (err) {
+				alert(err);
+			}
+		}
+
+		function CacheDialogControls_PrePopulate() {
+			try {
+				$ddlMonth = $('#MainContent_ddlMonth');
+
+				$cmdPrePopulate = $('#MainContent_cmdPrePop');
+				$dlgPrePopulate = $('#divDlg_PrePopulate');
+
+				$txtBeginDate = $('#MainContent_txtBegin');
+				$txtEndDate = $('#MainContent_txtEnd');
+
+				$txtShift1 = $('#MainContent_txtShift1')
+				$txtShift2 = $('#MainContent_txtShift2')
+				$txtShift3 = $('#MainContent_txtShift3')
+				$txtQtyShip = $('#MainContent_txtShipQ');
+				$txtQtyProd = $('#MainContent_txtProdQ');
+
+			} catch (err) {
+				alert(err);
+			}
+		}
+
+		function AddDialog_PrePopulate() {
+			try {
+				$dlgPrePopulate.modalDialog({
+					control: $cmdPrePopulate,
+					width: 460,
+					validationFunction: function () { return ValidatePrePopulateDialog(); }
+				});
+			}
+			catch (err) {
+				alert(err);
+			}
+		}
+
+		function ValidatePrePopulateDialog() {
+			var bValid = true;
+			try {
+				//  compare in reverse order, then the error messages will display in order
+				bValid = checkRegexp($txtQtyProd, "^[0-9]+$", "Enter a value for Job Quantity.") && bValid;
+				bValid = checkRegexp($txtQtyShip, "^[0-9]+$", "Enter a value for Shipping Quantity.") && bValid;
+
+				bValid = checkRegexp($txtShift3, "^[0-9]+$", "Enter a value for 3rd Shift.") && bValid;
+				bValid = checkRegexp($txtShift2, "^[0-9]+$", "Enter a value for 2nd Shift.") && bValid;
+				bValid = checkRegexp($txtShift1, "^[0-9]+$", "Enter a value for 1st Shift.") && bValid;
+
+				bValid = checkDate($txtEndDate, "Enter a Valid End Date") && bValid;
+				bValid = checkDate($txtBeginDate, "Enter a Valid Begin Date") && bValid;
+
+
+			} catch (err) {
+				alert(err);
+			}
+			return bValid;
+		}
+
+		function AddDialog_Edit() {
+			try {
+				$dlgEdit.modalDialog({
+					control: $cmdEdit,
+					width: 400,
+					validationFunction: function () { return ValidateEditDialog(); }
+
+				});
+			}
+			catch (err) {
+				alert(err);
+			}
+		}
+
+		function ValidateEditDialog() {
+			var bValid = true;
+			try {
+				//  compare in reverse order, then the error messages will display in order
+				if (orderType == "0") { // Displaying ALL orders
+					//bValid = checkDropDownList($ddlShipped, "Please select an End Lot Shipped.") && bValid;
+					bValid = checkRegexp($txtPSQ, "^[0-9]+$", "Enter a value for # of Lots Shipped.") && bValid;
+				}
+
+				bValid = checkRegexp($txtJobQty, "^[0-9]+$", "Enter a value for End Lot Produced Job Quantity.") && bValid;
+				bValid = checkRegexp($txtEditShift3, "^[0-9]+$", "Enter a value for 3rd Shift.") && bValid;
+				bValid = checkRegexp($txtEditShift2, "^[0-9]+$", "Enter a value for 2nd Shift.") && bValid;
+				bValid = checkRegexp($txtEditShift1, "^[0-9]+$", "Enter a value for 1st Shift.") && bValid;
+
+			} catch (err) {
+				alert(err);
+			}
+			return bValid;
+		}
+
+		function AddEventToOpenEditDialog() {
+			// add to all DIV's with class 'calendarCellDiv'
+			$('.calendarCellDiv').click(function () {
+				var $this = $(this);
+				$dlgEdit.dialog('open');
+
+				DlgEditOverlay_FadeIn();
+
+				var prodDate = $('#lblDate', $this).text();
+
+				$('#MainContent_lblDlgDate', $dlgEdit).text(prodDate);
+				$("#MainContent_hidDailyBuildDate").val(prodDate);
+
+				$txtEditShift1.val($('#tdShift1', $this).text());
+				$txtEditShift2.val($('#tdShift2', $this).text());
+				$txtEditShift3.val($('#tdShift3', $this).text());
+				$txtPSQ.val($('#tdPlannedShipQty', $this).text());
+				$txtJobQty.val($('#lblJobQty', $this).text());
+
+				var isFutureDate = Date.today().isBefore(Date.parse(prodDate));
+
+				document.getElementById('MainContent_txtJobQty').disabled = isFutureDate;
+				document.getElementById('MainContent_ddlProd').disabled = isFutureDate;
+				document.getElementById('MainContent_ddlShipped').disabled = isFutureDate;
+
+				$("#MainContent_hidDDLProd").val("-1");
+				$("#MainContent_hidDDLShip").val("-1");
+
+				BuildDropDownLists(prodDate);
+
+				return false;
+			});
+
+		}
+
+		function AddEventToOpenPrePopulateDialog() {
+			try {
+
+			    $('#MainContent_cmdPrePop').click(function () {
+			        $('#divDlg_PrePopulate').dialog('open');
+
+			        d1 = Date.parse($ddlMonth.val());
+			        if (d1 != null) {
+			            $txtBeginDate.val(d1.toString("MM/dd/yyyy"));
+			            $txtEndDate.val(d1.toString("MM/dd/yyyy"));
+			        }
+			        $cbShift1.attr('checked', true);
+			        $cbShift2.attr('checked', true);
+			        $cbShift3.attr('checked', false);
+
+			        $txtShift1.removeAttr("disabled");
+			        $txtShift2.removeAttr("disabled");
+			        $txtShift3.attr("disabled", "disabled")
+
+			        $("#MainContent_cblDays_0").attr('checked', true)
+			        $("#MainContent_cblDays_1").attr('checked', true)
+			        $("#MainContent_cblDays_2").attr('checked', true)
+			        $("#MainContent_cblDays_3").attr('checked', true)
+			        $("#MainContent_cblDays_4").attr('checked', true)
+			        $("#MainContent_cblDays_5").attr('checked', true)
+			        $("#MainContent_cblDays_6").attr('checked', true)
+
+			        $txtShift1.val('0');
+			        $txtShift2.val('0');
+			        $txtShift3.val('0');
+
+			        $txtQtyShip.val('6');
+			        $txtQtyProd.val('30');
+
+			        return false;
+			    });
+
+			} catch (err) {
+				alert(err);
+			}
+		}
+
+		function BuildDropDownLists(prodDate) {
+			try {
+				var paramProd = "";
+				var paramShip = "";
+				var paramOrderType = "";
+
+				var row1 = document.getElementById("trNumberOfLotsShipped");
+				var row2 = document.getElementById("trLotShipped");
+
+				if (orderType == "0") {
+				    // Displaying ALL orders
+				    paramOrderType = "ALL";				    
+				} else {
+				    // Displaying Setex orders
+				    paramOrderType = "";
+				}
+
+                paramProd = '{"productionDate": "' + prodDate +
+							'", "orderType": "' + paramOrderType +
+							'", "prodOrShipType": "' + "PROD" +
+							'"}';
+
+				paramShip = '{"productionDate": "' + prodDate +
+							'", "orderType": "' + paramOrderType +
+							'", "prodOrShipType": "' + 'SHIP' +
+							'"}';
+
+
+				if (orderType == "0") {
+					// Displaying ALL orders					
+					if (row1 != null) { row1.style.display = ''; }
+					if (row2 != null) { row2.style.display = ''; }
+
+					GetDailyBuildQuantities_DialogEdit_DailyBuildGetEndLots('#MainContent_ddlProd', paramProd, GetLotSize, null);
+					GetDailyBuildQuantities_DialogEdit_DailyBuildGetEndLots('#MainContent_ddlShipped', paramShip, null, DlgEditOverlay_FadeOut);
+
+				} else {
+					// Hide the Rows: Number of Lots Shipped and Lot Shipped					
+					if (row1 != null) { row1.style.display = 'none'; }
+					if (row2 != null) { row2.style.display = 'none'; }
+					GetDailyBuildQuantities_DialogEdit_DailyBuildGetEndLots('#MainContent_ddlProd', paramProd, GetLotSize, DlgEditOverlay_FadeOut);
+				}
+
+
+
+
+			}
+			catch (err) {
+				alert(err);
+			}
+		}
+
+		function GetLotSize() {
+			var param = '{ "lotNumber":"' + $ddlProd.val() + '"}';
+			GetDailyBuildQuantities_DialogEdit_DailyBuildGetLotSize(param).success(function (data) {
+				var strEndtLotQty = "???";
+
+				if (data != null) {
+					strEndtLotQty = data.d;
+				}
+
+				$('#MainContent_lblEndLotQ').text(strEndtLotQty);
+				$("#MainContent_hidEndLotQty").val(strEndtLotQty);
+
+				// if the ddl is empty or no item is selected disable the txtJobQty
+				document.getElementById('MainContent_txtJobQty').disabled = ($ddlProd.val() == "-1");
+			});
+		}
+
+		function DlgEditOverlay_FadeIn() {
+		    ShowCursor_Wait();
+			$("#divDlgEditOverlay").fadeIn();
+		}
+
+		function DlgEditOverlay_FadeOut() {
+		    ShowCursor_Default();
+			$("#divDlgEditOverlay").fadeOut();
+		}
+
+	</script>
+	<style type="text/css">
+		#divDlg_Edit .selectDropDown
+		{
+			width: 126px;
+		}
+	</style>
+</asp:Content>
+<asp:Content ID="Content2" ContentPlaceHolderID="MainContent" runat="server">
+	<div id="divOverlay" class="ui-widget-overlay" style="z-index: 1000;">
+	</div>
+	<div>
+		<asp:UpdatePanel ID="UpdatePanel1" runat="server">
+			<ContentTemplate>
+				<div>
+					<input id="hidDDLShip" type="hidden" runat="server">
+					<input id="hidDDLProd" type="hidden" runat="server">
+					<input id="hidDailyBuildDate" type="hidden" runat="server">
+					<input id="hidEndLotQty" type="hidden" runat="server">
+				</div>
+				<table id="Table1" style="width: 1024px;" >
+					<tr>
+						<td style="width: 240px;">
+							<asp:RadioButtonList ID="rbOrders" runat="server" RepeatDirection="Horizontal" AutoPostBack="True" CssClass="inputRadioButton">
+								<asp:ListItem Value="1" Selected="True">Setex Orders</asp:ListItem>
+								<asp:ListItem Value="0">All Orders</asp:ListItem>
+							</asp:RadioButtonList>
+						</td>
+						<td style="width: 60px;">
+							<asp:Label ID="Label1" runat="server" CssClass="spanLabel h3">Month</asp:Label>
+						</td>
+						<td style="width: 14px;">
+							<asp:ImageButton ID="ibPrevMo" runat="server" ImageUrl="~/images/Arrows/bbPrevpage.gif"></asp:ImageButton>
+						</td>
+						<td style="width: 160px; text-align: center;">
+							<asp:DropDownList ID="ddlMonth" runat="server" AutoPostBack="True" CssClass="selectDropDown" Width="140px">
+							</asp:DropDownList>
+						</td>
+						<td style="width: 14px;">
+							<asp:ImageButton ID="ibNextMo" runat="server" ImageUrl="~/images/Arrows/bbNextpage.gif"></asp:ImageButton>
+						</td>
+						<td style="width: 100px; text-align: center;">
+							<asp:Button ID="cmdRefresh" runat="server" CssClass="inputButton cmdShowWait" Text="Refresh"></asp:Button>
+						</td>
+						<td style="width: 120px; text-align: center;">
+							<asp:Button ID="cmdPrePop" runat="server" Text="Pre-Populate" Width="100px" CssClass="inputButton"></asp:Button>
+							<asp:Button ID="cmdEdit" runat="server" Text="Edit Day" CssClass="inputButton" Style="display: none"></asp:Button>
+						</td>
+						<td>
+							<asp:Label ID="Label2" runat="server" Visible="False" CssClass="spanLabel">Last Recorded "End Lot"</asp:Label>
+							<asp:Label ID="lblEndLot" runat="server" Visible="False" CssClass="spanLabel">?</asp:Label>
+						</td>
+					</tr>
+					<tr>
+						<td colspan="8">
+							<div id="divCalendar" class="calendarBorderAndRadius">
+								<asp:Calendar ID="calDailyBuild" runat="server" CssClass="calendarStyle" EnableViewState="false" UseAccessibleHeader="False" DayNameFormat="Full" FirstDayOfWeek="Monday" ShowNextPrevMonth="False" ShowTitle="True" DayStyle-CssClass="calendarDayStyle" DayHeaderStyle-CssClass="calendarDayHeaderStyle" OtherMonthDayStyle-CssClass="calendarOtherMonthDayStyle" SelectedDayStyle-CssClass="calendarSelectedDayStyle" SelectorStyle-CssClass="calendarSelectorStyle" TitleStyle-CssClass="calendarTitleStyle" TodayDayStyle-CssClass="calendarTodayDayStyle" WeekendDayStyle-CssClass="calendarWeekendDayStyle" BorderStyle="None" TitleStyle-BackColor="#EEEEEE" CellPadding="0"></asp:Calendar>
+							</div>
+						</td>
+					</tr>
+				</table>
+			</ContentTemplate>
+		</asp:UpdatePanel>
+	</div>
+	<div id="divDlg_PrePopulate" title="Pre-Populate Daily Build Quantity" style="text-align: center;">
+		<p class="validationHints">
+			All form fields are required.</p>
+		<table id="Table2" style="text-align: left;" class="tableCenter">
+			<tr>
+				<td>
+					<asp:Label ID="Label3" runat="server" CssClass="spanLabel">Beginning Date</asp:Label>
+				</td>
+				<td>
+					<asp:TextBox ID="txtBegin" runat="server" CssClass="textEntry"></asp:TextBox>
+				</td>
+			</tr>
+			<tr>
+				<td>
+					<asp:Label ID="Label4" runat="server" CssClass="spanLabel">Ending Date</asp:Label>
+				</td>
+				<td>
+					<asp:TextBox ID="txtEnd" runat="server" CssClass="textEntry"></asp:TextBox>
+				</td>
+			</tr>
+			<tr>
+				<td colspan="2" style="padding-left: 30px; height: 60px;" class="h3">
+					<asp:CheckBoxList ID="cblDays" runat="server" RepeatDirection="Horizontal">
+						<asp:ListItem Value="M" Selected="True" Text="M">M</asp:ListItem>
+						<asp:ListItem Value="Tu" Selected="True" Text="Tu"></asp:ListItem>
+						<asp:ListItem Value="We" Selected="True" Text="We"></asp:ListItem>
+						<asp:ListItem Value="Th" Selected="True" Text="Th"></asp:ListItem>
+						<asp:ListItem Value="Fr" Selected="True" Text="Fr"></asp:ListItem>
+						<asp:ListItem Value="Sa" Text="Sa"></asp:ListItem>
+						<asp:ListItem Value="Su" Text="Su"></asp:ListItem>
+					</asp:CheckBoxList>
+				</td>
+			</tr>
+			<tr>
+				<td>
+					<asp:CheckBox ID="cbShift1" runat="server" Checked="True" CssClass="selectCheckBox" Text="1st Shift"></asp:CheckBox>
+				</td>
+				<td>
+					<asp:TextBox ID="txtShift1" runat="server" CssClass="textEntry numericOnly">0</asp:TextBox>
+				</td>
+			</tr>
+			<tr>
+				<td>
+					<asp:CheckBox ID="cbShift2" runat="server" Checked="True" CssClass="selectCheckBox" Text="2nd Shift"></asp:CheckBox>
+				</td>
+				<td>
+					<asp:TextBox ID="txtShift2" runat="server" CssClass="textEntry numericOnly">0</asp:TextBox>
+				</td>
+			</tr>
+			<tr>
+				<td>
+					<asp:CheckBox ID="cbShift3" runat="server" CssClass="selectCheckBox" Text="3rd Shift"></asp:CheckBox>
+				</td>
+				<td>
+					<asp:TextBox ID="txtShift3" runat="server" CssClass="textEntry numericOnly">0</asp:TextBox>
+				</td>
+			</tr>
+			<tr>
+				<td style="padding-top: 10px;">
+					<asp:Label ID="LABEL8" runat="server" CssClass="spanLabel">Shipping Quantity</asp:Label>
+				</td>
+				<td style="padding-top: 10px;">
+					<asp:TextBox ID="txtShipQ" runat="server" CssClass="textEntry numericOnly">6</asp:TextBox>
+				</td>
+			</tr>
+			<tr>
+				<td>
+					<asp:Label ID="LABEL9" runat="server" CssClass="spanLabel">Job Quantity</asp:Label>
+				</td>
+				<td>
+					<asp:TextBox ID="txtProdQ" runat="server" CssClass="textEntry numericOnly">30</asp:TextBox>
+				</td>
+			</tr>
+		</table>
+	</div>
+	<div id="divDlg_Edit" title="Edit Daily Build Quantity" style="text-align: center;">
+		<div id="divDlgEditOverlay" class="ui-widget-overlay" style="z-index: 1000;">
+		</div>
+		<p class="validationHints">
+			All form fields are required.</p>
+		<table id="Table3" style="text-align: left;" class="tableCenter">
+			<tr>
+				<td colspan="2">
+				</td>
+			</tr>
+			<tr>
+				<td>
+					<asp:Label ID="Label11" runat="server" CssClass="spanLabel" Width="230px">Date</asp:Label>
+				</td>
+				<td>
+					<asp:Label ID="lblDlgDate" runat="server" CssClass="spanLabel"></asp:Label>
+				</td>
+			</tr>
+			<tr>
+				<td style="padding-top: 10px;">
+					<asp:Label ID="Label12" runat="server" CssClass="spanLabel">1st Shift</asp:Label>
+				</td>
+				<td style="padding-top: 10px;">
+					<asp:TextBox ID="txtEditShift1" runat="server" CssClass="textEntry numericOnly" Width="120px"></asp:TextBox>
+				</td>
+			</tr>
+			<tr>
+				<td>
+					<asp:Label ID="Label13" runat="server" CssClass="spanLabel">2nd Shift</asp:Label>
+				</td>
+				<td>
+					<asp:TextBox ID="txtEditShift2" runat="server" CssClass="textEntry numericOnly" Width="120px"></asp:TextBox>
+				</td>
+			</tr>
+			<tr>
+				<td>
+					<asp:Label ID="Label14" runat="server" CssClass="spanLabel">3rd Shift</asp:Label>
+				</td>
+				<td>
+					<asp:TextBox ID="txtEditShift3" runat="server" CssClass="textEntry numericOnly" Width="120px"></asp:TextBox>
+				</td>
+			</tr>
+			<tr id="trNumberOfLotsShipped">
+				<td style="padding-top: 10px;">
+					<asp:Label ID="LABEL15" runat="server" CssClass="spanLabel"># of Lots Shipped</asp:Label>
+				</td>
+				<td style="padding-top: 10px;">
+					<asp:TextBox ID="txtPSQ" runat="server" CssClass="textEntry numericOnly" Width="120px"></asp:TextBox>
+				</td>
+			</tr>
+			<tr>
+				<td>
+					<asp:Label ID="Label16" runat="server" CssClass="spanLabel">End Lot Produced</asp:Label>
+				</td>
+				<td>
+					<asp:DropDownList ID="ddlProd" runat="server" CssClass="selectDropDown">
+					</asp:DropDownList>
+				</td>
+			</tr>
+			<tr>
+				<td>
+					<asp:Label ID="LABEL17" runat="server" CssClass="spanLabel">End Lot Produced Job Quantity</asp:Label>
+				</td>
+				<td>
+					<asp:TextBox ID="txtJobQty" runat="server" CssClass="textEntry numericOnly" Width="32px"></asp:TextBox>
+					<asp:Label ID="LABEL18" runat="server" CssClass="spanLabel">of&nbsp;</asp:Label>
+					<asp:Label ID="lblEndLotQ" runat="server" CssClass="spanLabel"></asp:Label>
+				</td>
+			</tr>
+			<tr id="trLotShipped">
+				<td>
+					<asp:Label ID="Label19" runat="server" CssClass="spanLabel">End Lot Shipped</asp:Label>
+				</td>
+				<td>
+					<asp:DropDownList ID="ddlShipped" runat="server" CssClass="selectDropDown">
+					</asp:DropDownList>
+				</td>
+			</tr>
+		</table>
+	</div>
+</asp:Content>

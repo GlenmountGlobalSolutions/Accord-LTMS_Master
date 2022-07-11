@@ -1,0 +1,436 @@
+﻿/* General
+----------------------------------------------------------*/
+.boldLabel
+{
+    font-weight:bold;
+}
+.textLeft 
+{
+    text-align:left;
+}
+.textCenter
+{
+    text-align:center;
+}
+
+#divMainContent
+{
+    position: relative;
+}
+
+#ODSPreview
+{
+    font-family: Arial, Helvetica, sans-serif;    
+    min-width: 1700px;
+}
+
+.divSimulateForm
+{
+    background-color: silver;
+    top:60px;
+    position: relative;
+    margin: 0px 0px 100px 0px;
+    padding-left: 10px;
+    height:1212px;
+    width:1622px;
+}
+
+/* DROP DOWN LIST PANEL  (overlayed on top of the grids)
+----------------------------------------------------------*/
+#divFilterPanel
+{
+    width: 1640px;
+    position: absolute;
+}
+#divFilterPanel p
+{
+    margin: 0px 8px 5px 0px;
+    float: left;
+}
+#divFilterPanel .spanLabel
+{
+    display: block;
+    text-align: Left;
+}
+#divFilterPanel .selectDropDown
+{
+    width: 220px;
+}
+#divFilterPanel .selectDropDown2
+{
+    width: 110px;
+}
+#MainContent_cmdRefresh
+{
+    margin-top:15px;
+}
+
+/*  ODS Preview header area / station name
+-----------------------------------------------------*/
+#logoHeader
+{
+    border: 2px ridge lightgray;
+    width: 100%;
+    min-width:1608px;
+    max-width:1608px;
+    height: 80px;
+    position: relative; 
+    top:10px;
+    float: left;
+    display: inline;
+}
+
+.imgSetexLogo
+{
+    height: 100%;
+    float: left;
+    margin: 0px 20px 0px 10px;
+    width: 134px;
+}
+
+.imgGGSLogo
+{
+    margin: 18px 0px 0px 4px;
+    width: 180px;
+}
+
+.divProductHeader
+{
+    border-width: thin;
+    border-right: 2px ridge lightgray;
+    border-left: 2px ridge lightgray;
+    height: 100%;
+    width: 78%;
+    font-size: 4em;
+    float: left;
+    text-align: center;
+}
+
+.stationNameLabel
+{
+    display: block;
+    padding-top: 16px;
+}
+
+/*  ODS Preview header area / station name
+-----------------------------------------------------*/
+#previewProductInfo
+{
+    width: 100%;
+    height: 50px;
+    top:22px;
+    position: relative; 
+    float: left;
+    display: inline-block;
+    clear: both;
+}
+
+#previewProductInfo span
+{
+    float: left;
+    font-size: 2.8em;
+}
+.verticleBar
+{
+    border-left: 2px ridge lightgray;
+    width: 0px;
+    height: 33px;
+    margin: 0px 30px 0px 30px;
+}
+.productInfoLabel
+{
+    padding-right:20px;
+}
+#MainContent_lblProductCode
+{
+    display: inline-block;
+    width: 130px;
+}
+/*
+    column with MCR PPE and Tools Grid views
+-----------------------------------------------------*/
+#MCRColumn
+{
+    width: 100%;
+    top:9px;
+    left:5px;
+    position: relative; 
+    border-collapse: collapse;
+}
+.mcrColumnWrapper
+{
+    display: table;
+    height: 100%;
+    min-height:758px;
+}
+
+.mcrName_ItemStyle
+{
+    width:120px;
+}
+.mcrValue_ItemStyle
+{
+    text-align:center;
+}
+
+#divBelowSteps
+{
+    top:10px;
+    position: relative;
+    float: left;
+}
+
+/* Grids
+----------------------------------------------------------*/
+.auxGridDiv
+{
+    margin-top:10px;
+}
+
+.auxGridDiv table
+{
+    border: 2px ridge lightgray;
+    background-color: White;
+    width:286px;
+    min-width:286px;
+    border-collapse: collapse; 
+}
+
+.auxGridDiv td
+{
+    padding-left:4px;
+    padding-right:4px;
+    font-size:1.6em;
+}
+
+.auxGridDiv th
+{
+    padding-left:4px;
+    text-align:center;
+    font-size:0.9em;
+    height: 34px;
+}
+.auxGridDiv img
+{
+    width:30px;
+    height:30px;
+}
+
+
+/*  PPE Grid
+-------------------------------*/
+#divPPE
+{
+    margin-bottom:10px;
+}
+
+
+/*  Tools Grid
+-------------------------------*/
+.toolsBorderWrapper
+{
+    height: 100%;
+    display:table-row;
+    background-color: gray;
+}
+
+.toolsTableWrapper
+{
+    /*max-height:200px;  -- handled by jQuery on page*/
+    min-height:380px;
+    overflow:hidden;
+}
+
+.toolsBorder
+{
+    border: 2px ridge lightgray;
+    margin-left:1200px;
+    margin-top:0px;
+    padding: 0px;
+    display:table-row;
+
+}
+.toolsBorder table
+{
+    background-color: White;
+    width:282px;
+    min-width:282px;
+}
+.toolsBorder tr, .auxGridDiv tr, .auxGridDiv td
+{
+    border: 1px solid lightgray;
+    padding:6px;
+}
+.toolsBorder td
+{
+    font-size:1.7em;
+    padding:4px;
+}
+
+/*  symbol Key
+-------------------------------*/
+.symbolKey
+{
+    text-align: center;
+    vertical-align: middle;
+    margin-top:7px;
+}
+
+.symbolKeyDiv
+{
+    margin-top:8px;
+}
+.symbolKeyDiv table
+{
+    border: 2px ridge lightgray;
+    background-color: White;
+    width:286px;
+    min-width:286px;
+    border-collapse: collapse; 
+}
+.symbolKeyDiv tr, .symbolKeyDiv td
+{
+    border: 1px solid lightgray;
+    padding:4px;
+}
+.symbolKeyDiv td
+{
+    font-size:1.8em;
+}
+.symbolKeyDiv img
+{
+    width:30px;
+    height:30px;
+}
+
+
+/*  Instruction Steps Grid
+-------------------------------*/
+#divOdsSteps
+{
+    padding-top: 20px; /*push the grid down so that the headings have room to rotate*/
+    float: left;
+}
+
+div.odsGrid
+{
+    display: inline-block;
+    border-collapse: collapse;
+    margin: 0px;
+    padding: 0px;
+}
+.odsGrid table
+{
+    border: 2px groove lightgray;
+    background-color: White;
+    min-width:900px;
+    max-width:900px;
+    width:900px;
+    table-layout: fixed;
+}
+
+.odsGrid tr, .odsGrid td
+{
+    border: 1px solid #999999;
+    height: 45px;
+}
+
+.odsGrid td
+{
+    font-size:2.55em;
+}
+
+.odsGrid img
+{
+    width:40px;
+    height:40px;
+}
+tr.odsGrid_HeaderStyle
+{
+    font-weight: normal;
+    line-height: normal;
+    font-size: 2em;
+}
+
+.odsColumnStepID
+{
+    width:36px;
+    text-align:center;
+}
+
+.odsColumnSymbol
+{
+    border: 2px groove lightgray;
+    border: 1px solid #999999;
+    width:120px;
+    text-align: center;
+}
+.odsColumnDescription
+{
+    max-width: 1155px;
+    width: 1155px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    text-align:Left;
+    white-space: nowrap;
+    padding-right:0px;
+}
+
+/*  Wire Harness image
+----------------------------------*/
+.divEDSImage
+{
+    /*display: inline-block;*/
+    float: left;
+    margin-top:10px;
+    min-width:1320px;
+    max-width:1320px;
+    width:1320px;
+    min-height:1060px;
+    max-height:1060px;
+    height:1060px;
+}
+
+.imgEDSImage
+{
+    max-height: 100%;
+    max-width: 100%;
+}
+
+
+/*  Abnormal Control Grid
+----------------------------------*/
+.abnormalControl
+{
+    min-width: 500px;
+    float:left;
+}
+
+.abnormalControl table
+{
+    background-color: White;
+    border: 2px ridge lightgray;
+    border-collapse: collapse;
+    color: Red;
+    margin-left:1072px;
+    margin-bottom:30px;
+    width:540px;
+}
+
+.abnormalControl td
+{
+    border: 1px solid lightgray;
+    padding:4px;
+}
+
+.acFont1
+{
+    font-size: 1.4em;
+    font-weight:bold;   
+}
+.acFont2
+{
+    font-size: 1.5em;
+    font-weight:bolder;
+}
+

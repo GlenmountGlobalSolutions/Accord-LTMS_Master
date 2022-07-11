@@ -1,0 +1,189 @@
+﻿<%@ Master Language="VB" AutoEventWireup="false" CodeBehind="Site.master.vb" Inherits="LTMS_Master.Site" %>
+
+<!DOCTYPE html>
+<html lang="en">
+<head runat="server">
+	
+	<meta charset="utf-8">
+	<link type="text/css" href="~/Styles/jitm/jquery-ui.min.css?ver=1.8" rel="stylesheet" />
+	<link type="text/css" href="~/Styles/Site.css?ver=1.8" rel="stylesheet" />
+	<!-- Use the baseURL global variable to get the 'root' of this web site, for use elsewhere in javascript -->
+	<script type="text/javascript">  var baseUrl = "<%# Request.Url.GetLeftPart(UriPartial.Authority) + Request.ApplicationPath.TrimEnd(" / ") %>";  </script>
+	<script type="text/javascript" src="<%# ResolveUrl("~/Scripts/jquery-1.12.1.min.js") %>"></script>
+	<script type="text/javascript" src="<%# ResolveUrl("~/Scripts/jquery-ui.min.js") %>"></script>
+	
+	<script type="text/javascript" src="<%# ResolveUrl("~/Scripts/jquery-idleTimeout.js?ver=1.6") %>"></script>
+	<script type="text/javascript" src="<%# ResolveUrl("~/Scripts/contextMenu.js?ver=1.6") %>"></script>
+	<script type="text/javascript" src="<%# ResolveUrl("~/Scripts/aesthetics.js?ver=1.6") %>"></script>
+	<script type="text/javascript" src="<%# ResolveUrl("~/Scripts/utility.js?ver=1.6") %>"></script>
+	<title></title>
+	<style type="text/css">
+		#cblistButtonAccess
+		{
+			text-align: left;
+			white-space: nowrap;
+		}
+		
+		#cblistButtonAccess label
+		{
+			margin-left: 5px;
+		}
+		
+		#cmdApply
+		{
+			margin-top: 10px;
+		}
+	</style>
+	<asp:ContentPlaceHolder ID="HeadContent" runat="server">
+	</asp:ContentPlaceHolder>
+</head>
+<body>
+	<form id="MasterForm" runat="server">
+    <telerik:RadScriptManager runat="server" ID="ScriptManager1"  EnableEmbeddedjQuery="False" />
+	<script type="text/javascript">
+
+		// place pageLoad after the ScriptManager in order for it to be called. (The pageLoad shortcut is created by AJAX)
+		function pageLoad(sender, args) {
+			try {
+
+				AddUIClasses();
+				AddDialog_ContextMenu();
+
+				// If this is the first load of the page
+				if (!args.get_isPartialLoad()) {
+					var timeout = eval('<%=GetSessionTimeoutFromApplicationParameters()%>');
+					AddInactivityTimeoutToPage(timeout);
+					AddWaitCursurOnWebMenuClick();
+					AddcmdSecureClickEvent()
+				}
+
+				// If function contentPageLoad exists, execute it.
+				if (typeof contentPageLoad == 'function') {
+					contentPageLoad(sender, args);
+				}
+			}
+			catch (e) {
+				alert('A JavaScript error has occurred: ' + e.message);
+			}
+			finally {
+				$(".mainInner").css({ visibility: 'visible' });
+				ClearWaitOverlay();
+				eval('<%=InsertRightClickContextMenu()%>');
+			}
+		}
+						
+	</script>
+	<div id="stickyWrapper">
+		<div id="divOverlay" class="ui-widget-overlay" style="z-index: 1000; display:none;">
+		</div>
+		<div class="header">
+			<img alt="" src="~/Images/Header/ggsJITM.png" class="JITMHeaderImg" runat="server"/>
+			<div id="divJITMHeaderInfo" class="JITMHeader">
+                <asp:Label ID="lblHeaderDescription" runat="server" CssClass="headerLabel">18M Accord</asp:Label>
+                <img alt="" style="border-width: 0px; width: 100px; height: 0px;" src="~/Images/Misc/trans.gif" runat="server" />
+                <asp:Label ID="Label2" runat="server" CssClass="headerLabelCurrentUser">Current User:</asp:Label>
+                <asp:Label ID="lblUser" runat="server" CssClass="headerLabelCurrentUser">N/A</asp:Label><br>
+            </div>
+			<table id="tblSiteHeader" class="siteHeader" border="0">
+				<tr>
+					<td class="siteHeaderLeft">
+						<a id="A3" href="~/Home.aspx" runat="server">
+							<img id="Img1" alt="" style="border-width: 0px; width: 100px; height: 59px; margin-top: 4px;" src="~/Images/home.gif" runat="server" />
+						</a>
+					</td>
+					<td class="siteHeaderMiddle">
+					</td>
+					<td class="siteHeaderRight">
+						<img alt="" src="~/Images/Header/ggsAspire.png" style="float: right; margin-top: 6px;" runat="server"/>
+					</td>
+				</tr>
+				<tr>
+					<td colspan="6" style="background: #808080; min-height: 6px;">
+						<div id="divMainMenu" style="z-index: 99; position: relative;">
+							<asp:Menu ID="mnMainMenu" runat="server" DataSourceID="SiteMapDataSource1" Orientation="Horizontal" BackColor="#808080" Font-Bold="False" Font-Names="Verdana" Font-Size=".9em" ForeColor="White" DynamicPopOutImageUrl="~/Images/Arrows/arrow1.gif" StaticEnableDefaultPopOutImage="False">
+								<DynamicHoverStyle BackColor="#A0A0A0" ForeColor="#FFFF9C" />
+								<DynamicMenuItemStyle HorizontalPadding="7px" VerticalPadding="5px" Font-Bold="True" />
+								<DynamicMenuStyle BackColor="#808080" />
+								<StaticHoverStyle BackColor="#A0A0A0" ForeColor="White" />
+								<StaticMenuItemStyle HorizontalPadding="7px" VerticalPadding="5px" Font-Bold="True" />
+								<DataBindings>
+									<asp:MenuItemBinding DataMember="SiteMapNode" NavigateUrlField="url" EnabledField="Title" TextField="Title" />
+								</DataBindings>
+							</asp:Menu>
+							<asp:SiteMapDataSource ID="SiteMapDataSource1" runat="server" ShowStartingNode="False" />
+						</div>
+					</td>
+				</tr>
+			</table>
+			<table id="tblMessage" class="headerMessage">
+				<tr>
+					<td style="text-align: left; width: 35%;">
+						<asp:HyperLink ID="HyperLinkRefreshPage" runat="server" CssClass="pageRefresh h0" ToolTip="Left Click Here To  Refresh - Right Click To Secure">HyperLink</asp:HyperLink>
+					</td>
+					<td style="text-align: left;">
+						<div id="divMessageLabel">
+							<asp:UpdatePanel ID="upMasterPageLabelMessage" runat="server">
+								<ContentTemplate>
+									<asp:Label ID="lblMessage" runat="server" EnableViewState="False"></asp:Label>
+									<input id="hidClickedControlName" type="hidden" runat="server">
+									<input id="hidCheckedUserTypes" type="hidden" runat="server">
+								</ContentTemplate>
+							</asp:UpdatePanel>
+						</div>
+					</td>
+				</tr>
+			</table>
+		</div>
+		<div id="divMainContent" class="main">
+			<div id="divMainContentInner" class="mainInner">
+				<asp:ContentPlaceHolder ID="MainContent" runat="server" />
+			</div>
+		</div>
+	</div>
+	<div id="stickyFooter">
+		<table id="Table3" style="padding: 0px; border-collapse: collapse; width: 100%;">
+			<tr>
+				<td style="height: 12px; padding: 0px 12px 0px 12px;">
+					<table style="background-color: #808080; padding: 0px; border-collapse: collapse; width: 100%;" class="borderRadius">
+						<tr>
+							<td style="text-align: right; min-width: 448px;">
+								<a id="A1" href="~/Home.aspx" class="footer" runat="server">Home</a>
+							</td>
+							<td style="text-align: center; min-width: 120px;">
+								<asp:LinkButton ID="linkBtnLogout" CssClass="footer" runat="server" Text="Log Out"></asp:LinkButton>
+							</td>
+							<td style="text-align: left; min-width: 448px">
+								<asp:LinkButton ID="linkBtnSecurity" CssClass="footer" runat="server" Text="Security"></asp:LinkButton>
+							</td>
+						</tr>
+					</table>
+				</td>
+			</tr>
+			<tr>
+				<td style="height: 10px;">
+					<table style="padding: 0px; border-collapse: collapse; text-align: center; width: 730px;" class="tableCenter">
+						<tr>
+							<td class="smallText" style="width: 33%;">
+								This site requires Internet Explorer 9+.
+							</td>
+							<td class="smallText" style="width: 33%;">
+								Recommended Resolution 1024x768
+							</td>
+							<td class="smallText" style="width: 33%;">
+								Glenmount Global Solutions, © 2016
+							</td>
+						</tr>
+					</table>
+				</td>
+			</tr>
+		</table>
+	</div>
+	<div id="divSecurityContextMenu" style="text-align: center">
+		<div id="divDlgSecurityOverlay" class="internalOverlay" ></div>
+		<asp:CheckBoxList ID="cblistButtonAccess" runat="server" CssClass="selectCheckBox">
+		</asp:CheckBoxList>
+		<asp:Button ID="cmdSecure" runat="server" Text="Secure" CssClass="inputButton"></asp:Button>
+	</div>
+	</form>
+</body>
+</html>

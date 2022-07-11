@@ -1,0 +1,838 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="12.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props" Condition="Exists('$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props')" />
+  <PropertyGroup>
+    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
+    <ProductVersion>
+    </ProductVersion>
+    <SchemaVersion>
+    </SchemaVersion>
+    <ProjectGuid>{9B73B319-3B59-4D0E-8DFC-C34DBC7CE567}</ProjectGuid>
+    <ProjectTypeGuids>{349c5851-65df-11da-9384-00065b846f21};{F184B08F-C81C-45F6-A57F-5ABD9991F28F}</ProjectTypeGuids>
+    <OutputType>Library</OutputType>
+    <RootNamespace>LTMS_Master</RootNamespace>
+    <AssemblyName>LTMS_Master</AssemblyName>
+    <TargetFrameworkVersion>v4.8</TargetFrameworkVersion>
+    <MyType>Custom</MyType>
+    <UseIISExpress>false</UseIISExpress>
+    <FileUpgradeFlags>
+    </FileUpgradeFlags>
+    <UpgradeBackupLocation>
+    </UpgradeBackupLocation>
+    <OldToolsVersion>4.0</OldToolsVersion>
+    <TargetFrameworkProfile />
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
+    <DebugSymbols>true</DebugSymbols>
+    <DebugType>full</DebugType>
+    <DefineDebug>true</DefineDebug>
+    <DefineTrace>true</DefineTrace>
+    <OutputPath>bin\</OutputPath>
+    <DocumentationFile>
+    </DocumentationFile>
+    <NoWarn>42353,42354,42355</NoWarn>
+    <WarningsAsErrors>41999,42016,42017,42018,42019,42020,42021,42022,42032,42036</WarningsAsErrors>
+    <PlatformTarget>AnyCPU</PlatformTarget>
+    <Prefer32Bit>false</Prefer32Bit>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
+    <DebugType>pdbonly</DebugType>
+    <DefineDebug>false</DefineDebug>
+    <DefineTrace>true</DefineTrace>
+    <Optimize>true</Optimize>
+    <OutputPath>bin\</OutputPath>
+    <DocumentationFile>
+    </DocumentationFile>
+    <NoWarn>42353,42354,42355</NoWarn>
+    <WarningsAsErrors>41999,42016,42017,42018,42019,42020,42021,42022,42032,42036</WarningsAsErrors>
+    <DeployIisAppPath>Default Web Site/LTMS</DeployIisAppPath>
+    <ExcludeGeneratedDebugSymbol>true</ExcludeGeneratedDebugSymbol>
+    <ExcludeApp_Data>true</ExcludeApp_Data>
+    <PublishDatabases>false</PublishDatabases>
+    <PackageAsSingleFile>true</PackageAsSingleFile>
+    <Prefer32Bit>false</Prefer32Bit>
+  </PropertyGroup>
+  <PropertyGroup>
+    <OptionExplicit>On</OptionExplicit>
+  </PropertyGroup>
+  <PropertyGroup>
+    <OptionCompare>Binary</OptionCompare>
+  </PropertyGroup>
+  <PropertyGroup>
+    <OptionStrict>On</OptionStrict>
+  </PropertyGroup>
+  <PropertyGroup>
+    <OptionInfer>On</OptionInfer>
+  </PropertyGroup>
+  <ItemGroup>
+    <Reference Include="BulkEditGridView">
+      <HintPath>Resources\BulkEditGridView.dll</HintPath>
+    </Reference>
+    <Reference Include="Excel">
+      <HintPath>..\packages\ExcelDataReader.2.1.2.3\lib\net20\Excel.dll</HintPath>
+    </Reference>
+    <Reference Include="ICSharpCode.SharpZipLib">
+      <HintPath>..\packages\SharpZipLib.0.86.0\lib\20\ICSharpCode.SharpZipLib.dll</HintPath>
+    </Reference>
+    <Reference Include="Microsoft.ReportViewer.WebForms, Version=10.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL" />
+    <Reference Include="System" />
+    <Reference Include="System.configuration" />
+    <Reference Include="System.Data" />
+    <Reference Include="System.Data.DataSetExtensions" />
+    <Reference Include="System.Drawing" />
+    <Reference Include="System.Runtime.Serialization" />
+    <Reference Include="System.ServiceModel" />
+    <Reference Include="System.ServiceModel.Web" />
+    <Reference Include="System.Web.ApplicationServices" />
+    <Reference Include="System.Web.DynamicData" />
+    <Reference Include="System.Web.Entity" />
+    <Reference Include="System.Web.Extensions" />
+    <Reference Include="System.Web" />
+    <Reference Include="System.Xml" />
+    <Reference Include="System.Xml.Linq" />
+    <Reference Include="Telerik.Web.UI">
+      <HintPath>..\lib\RCAJAX\2016.3.1027.40\Telerik.Web.UI.dll</HintPath>
+    </Reference>
+    <Reference Include="Telerik.Web.UI.Skins">
+      <HintPath>..\lib\RCAJAX\2016.3.1027.40\Telerik.Web.UI.Skins.dll</HintPath>
+    </Reference>
+    <Reference Include="WebCheckBox, Version=4.0.4443.22890, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>Resources\WebCheckBox.dll</HintPath>
+      <EmbedInteropTypes>False</EmbedInteropTypes>
+    </Reference>
+    <Reference Include="WebDropDownList, Version=4.0.0.1, Culture=neutral, processorArchitecture=MSIL" />
+    <Reference Include="WebInputBox, Version=4.0.4443.22959, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>Resources\WebInputBox.dll</HintPath>
+    </Reference>
+  </ItemGroup>
+  <ItemGroup>
+    <Import Include="Microsoft.VisualBasic" />
+    <Import Include="System" />
+    <Import Include="System.Collections" />
+    <Import Include="System.Collections.Generic" />
+    <Import Include="System.Data" />
+    <Import Include="System.Diagnostics" />
+    <Import Include="System.Collections.Specialized" />
+    <Import Include="System.Configuration" />
+    <Import Include="System.Linq" />
+    <Import Include="System.Text" />
+    <Import Include="System.Text.RegularExpressions" />
+    <Import Include="System.Web" />
+    <Import Include="System.Web.Caching" />
+    <Import Include="System.Web.SessionState" />
+    <Import Include="System.Web.Security" />
+    <Import Include="System.Web.Profile" />
+    <Import Include="System.Web.UI" />
+    <Import Include="System.Web.UI.WebControls" />
+    <Import Include="System.Web.UI.WebControls.WebParts" />
+    <Import Include="System.Web.UI.HtmlControls" />
+    <Import Include="System.Xml.Linq" />
+  </ItemGroup>
+  <ItemGroup>
+    <Content Include="1Operations\0ProductionSchedule\ProductionSchedule30.aspx" />
+    <Content Include="1Operations\0ProductionSchedule\ProductionSchedule30.js" />
+    <Content Include="1Operations\0ProductionSchedule\ProductionScheduleExport30.aspx" />
+    <Content Include="1Operations\1ProductionSchedule\ProductionSchedule.aspx" />
+    <Content Include="1Operations\1ProductionSchedule\ProductionSchedule.js" />
+    <Content Include="1Operations\1ProductionSchedule\ProductionScheduleExport.aspx" />
+    <Content Include="1Operations\2ShippingSchedule\ShippingSchedule.aspx" />
+    <Content Include="1Operations\3DailyBuildQuantities\DailyBuildQuantities.aspx" />
+    <Content Include="1Operations\4LabelPrinting\1PrintNewSSNLabel\PrintNewSSNLabel.aspx" />
+    <Content Include="1Operations\4LabelPrinting\2ReprintSSNLabel\ReprintSSNLabel.aspx" />
+    <Content Include="1Operations\4LabelPrinting\3ShippingLabel\ShippingLabel.aspx" />
+    <Content Include="1Operations\4LabelPrinting\5BatchPrint\BatchPrint.aspx" />
+    <Content Include="1Operations\5LotTrace\1LotTraceData\LotTraceData.aspx" />
+    <Content Include="1Operations\5LotTrace\2LotTraceDataTransfer\LotTraceDataTransfer.aspx" />
+    <Content Include="1Operations\5LotTrace\4ArchiveLotTraceDataTransfer\ArchiveLotTraceDataTransfer.aspx" />
+    <Content Include="1Operations\6ReworkMaterialDisposition\ReworkMaterialDisposition.aspx" />
+    <Content Include="1Operations\7Teardown and Release\TeardownAndRelease.aspx" />
+    <Content Include="2Reporting\1TruckMapReport\TruckMapReport.aspx" />
+    <Content Include="2Reporting\6ReworkMaterialReports\ReworkMaterialDispositionReports.aspx" />
+    <Content Include="2Reporting\Reports.aspx" />
+    <Content Include="3SystemConfiguration\10ParameterListConfiguration\ParameterListConfiguration.aspx" />
+    <Content Include="3SystemConfiguration\1ProductProfiles\1ProductConfiguration\ProductConfiguration.aspx" />
+    <Content Include="3SystemConfiguration\1ProductProfiles\2ParameterConfiguration\ParameterConfiguration.aspx" />
+    <Content Include="3SystemConfiguration\1StationConfiguration\1StationConfiguration\StationConfiguration.aspx" />
+    <Content Include="3SystemConfiguration\1StationConfiguration\3StationSequenceConfiguration\StationSequenceConfiguration.aspx" />
+    <Content Include="3SystemConfiguration\1StationConfiguration\4StationComponentScanAssignment\StationComponentScanAssignment.aspx" />
+    <Content Include="3SystemConfiguration\1StationConfiguration\5StationTaskConfiguration\StationTaskConfiguration.aspx" />
+    <Content Include="3SystemConfiguration\1StationConfiguration\7StationODSConfiguration\odsPreview.css" />
+    <Content Include="3SystemConfiguration\1StationConfiguration\7StationODSConfiguration\ods.css" />
+    <Content Include="3SystemConfiguration\1StationConfiguration\7StationODSConfiguration\odsRevisionLog.css" />
+    <Content Include="3SystemConfiguration\1StationConfiguration\7StationODSConfiguration\StationODSRevisionLog.aspx" />
+    <Content Include="3SystemConfiguration\1StationConfiguration\7StationODSConfiguration\StationODSConfiguration.aspx" />
+    <Content Include="3SystemConfiguration\1StationConfiguration\6StationToolConfiguration\StationToolConfiguration.aspx" />
+    <Content Include="3SystemConfiguration\1StationConfiguration\7StationODSConfiguration\StationODSPreview.aspx" />
+    <Content Include="3SystemConfiguration\1StationConfiguration\7StationODSConfiguration\WorkInstructionExport.aspx" />
+    <Content Include="3SystemConfiguration\1StationConfiguration\8OperatorDisplayConfiguration\OperatorDisplayConfiguration.aspx" />
+    <Content Include="3SystemConfiguration\2LineConfiguration\LineConfiguration.aspx" />
+    <Content Include="3SystemConfiguration\97ReworkMaterialConfiguration\2ReworkMaterialListConfiguration\ReworkMaterialDispositionListConfiguration.aspx" />
+    <Content Include="4SystemAdministration\1ErrorHistory\ErrorHistory.aspx" />
+    <Content Include="4SystemAdministration\3ApplicationConfiguration\ApplicationConfiguration.aspx" />
+    <Content Include="4SystemAdministration\4DebugHistory\DebugHistoryExport.aspx" />
+    <Content Include="4SystemAdministration\7ReworkMaterialHistory\2ReworkHistory\ReworkHistory.aspx" />
+    <Content Include="Images\Header\ggsAspire.png" />
+    <Content Include="Images\Header\ggsJITM.png" />
+    <Content Include="Images\Header\HeaderBG-Left.jpg" />
+    <Content Include="Images\Header\HeaderBG-Mid.jpg" />
+    <Content Include="Images\Header\HeaderBG-Right.jpg" />
+    <Content Include="Images\index2013.PNG" />
+    <Content Include="Images\index2015.PNG" />
+    <Content Include="Images\minus.png" />
+    <Content Include="Images\ODS\checkmark-green.png" />
+    <Content Include="Images\ODS\ControlCharacteristic.png" />
+    <Content Include="Images\ODS\GGSLargeNoShadow.png" />
+    <Content Include="Images\ODS\print.png" />
+    <Content Include="Images\ODS\SeeEDS.png" />
+    <Content Include="Images\ODS\SeqControl.png" />
+    <Content Include="Images\ODS\SeqControlWhiteBG.png" />
+    <Content Include="Images\ODS\setex.png" />
+    <Content Include="Images\ODS\SpecificQuality.png" />
+    <Content Include="Images\ODS\x-mark-24.png" />
+    <Content Include="Images\plus.png" />
+    <Content Include="Logout.aspx" />
+    <Content Include="Resources\BulkEditGridView.dll" />
+    <Content Include="Resources\WebCheckBox.dll" />
+    <Content Include="Resources\WebDropDownList.dll" />
+    <Content Include="Resources\WebInputBox.dll" />
+    <Content Include="Scripts\contextMenu.js" />
+    <Content Include="3SystemConfiguration\31LabelConfiguration\LabelConfiguration.aspx" />
+    <Content Include="3SystemConfiguration\7ShippingTemplateConfiguration\ShippingTemplateConfiguration.aspx" />
+    <Content Include="3SystemConfiguration\80StyleGroupConfiguration\StyleGroupConfiguration.aspx" />
+    <Content Include="3SystemConfiguration\81ComponentNameConfiguration\ComponentNameConfiguration.aspx" />
+    <Content Include="3SystemConfiguration\82ConfigurationUploadDownload\ConfigurationUploadDownload.aspx" />
+    <Content Include="3SystemConfiguration\89ProductCodeConfiguration\ProductCodeConfiguration.aspx" />
+    <Content Include="3SystemConfiguration\91ComponentConfiguration\ComponentConfiguration.aspx" />
+    <Content Include="3SystemConfiguration\92ComponentCodeConfiguration\ComponentCodeConfiguration.aspx" />
+    <Content Include="3SystemConfiguration\93PlantParametersConfiguration\PlantParametersConfiguration.aspx" />
+    <Content Include="3SystemConfiguration\95ArchivePurge\1DatabaseConfiguration\DatabaseArchivePurgeConfiguration.aspx" />
+    <Content Include="3SystemConfiguration\95ArchivePurge\2FileSystemConfiguration\FileSystemPurgeConfiguration.aspx" />
+    <Content Include="3SystemConfiguration\96ShiftConfiguration\ShiftConfiguration.aspx" />
+    <Content Include="3SystemConfiguration\97ReworkMaterialConfiguration\1BillOfMaterialMaintenance\BillOfMaterialMaintenance.aspx" />
+    <Content Include="3SystemConfiguration\98PrinterConfiguration\PrinterConfiguration.aspx" />
+    <Content Include="4SystemAdministration\0CustomerOrders\3KDPlanProcessing\KDPlanProcessing.aspx" />
+    <Content Include="4SystemAdministration\2SecurityManagement\1UserAccounts\UserAccounts.aspx" />
+    <Content Include="4SystemAdministration\2SecurityManagement\2SiteSecurity\SiteSecurity.aspx" />
+    <Content Include="4SystemAdministration\2SecurityManagement\3UserTypes\UserTypes.aspx" />
+    <Content Include="4SystemAdministration\4DebugHistory\DebugCSV.xsl" />
+    <Content Include="4SystemAdministration\4DebugHistory\DebugHistory.aspx" />
+    <Content Include="4SystemAdministration\6SystemDiagnosticInformation\SystemDiagnosticInformation.aspx" />
+    <Content Include="4SystemAdministration\7ReworkMaterialHistory\1MaterialDispositionHistory\MaterialDispositionHistory.aspx" />
+    <Content Include="Home.aspx" />
+    <Content Include="Images\Arrows\arrow.gif" />
+    <Content Include="Images\Arrows\arrow1.gif" />
+    <Content Include="Images\Arrows\arrowdn.gif" />
+    <Content Include="Images\Arrows\arrowdn1.gif" />
+    <Content Include="Images\Arrows\arrowPH.gif" />
+    <Content Include="Images\Arrows\bbFirst.gif" />
+    <Content Include="Images\Arrows\bbGotopage.gif" />
+    <Content Include="Images\Arrows\bbLast.gif" />
+    <Content Include="Images\Arrows\bbNextpage.gif" />
+    <Content Include="Images\Arrows\bbPrevpage.gif" />
+    <Content Include="Images\Arrows\mgotopage.gif" />
+    <Content Include="Images\check.gif" />
+    <Content Include="Images\home.gif" />
+    <Content Include="Images\locked.gif" />
+    <Content Include="Images\Misc\calendar.gif" />
+    <Content Include="Images\Misc\trans.gif" />
+    <Content Include="Images\question_mark.gif" />
+    <Content Include="Images\TreeView\aspxdoc.gif" />
+    <Content Include="Images\TreeView\dir.gif" />
+    <Content Include="Images\TreeView\dir_open.gif" />
+    <Content Include="Images\UnLocking.gif" />
+    <Content Include="Scripts\aesthetics.js" />
+    <Content Include="Scripts\contextmenu\contextmenu.css" />
+    <Content Include="Scripts\contextmenu\contextmenu_packed.js" />
+    <Content Include="Scripts\date.js" />
+    <Content Include="Scripts\jquery-1.10.2.min.js" />
+    <Content Include="Scripts\jquery-idleTimeout.js" />
+    <Content Include="Scripts\jquery-migrate-1.2.1.js" />
+    <Content Include="Scripts\jquery-ui-1.10.3.custom.min.js" />
+    <Content Include="Scripts\jquery.alphanum.js" />
+    <Content Include="Scripts\jquery.inputlimiter.1.3.1.min.js" />
+    <Content Include="Scripts\jquery.maskedinput-1.3.1.min.js" />
+    <Content Include="Scripts\rgbcolor.js" />
+    <Content Include="Scripts\systemAdministration.js" />
+    <Content Include="Scripts\systemConfiguration.js" />
+    <Content Include="Scripts\systemOperations.js" />
+    <Content Include="Scripts\utility.js" />
+    <Content Include="Styles\checkboxes\elegant - Copy.png" />
+    <Content Include="Styles\checkboxes\elegant.png" />
+    <Content Include="Styles\checkboxes\lite-gray-check.png" />
+    <Content Include="Styles\checkboxes\setex2.png" />
+    <Content Include="Styles\checkboxes\setex_checkbox.png" />
+    <Content Include="Styles\jitm\images\ui-bg_diagonals-thick_60_6495ed_40x40.png" />
+    <Content Include="Styles\jitm\images\ui-bg_flat_0_aaaaaa_40x100.png" />
+    <Content Include="Styles\jitm\images\ui-bg_flat_55_fbec88_40x100.png" />
+    <Content Include="Styles\jitm\images\ui-bg_glass_75_d0e5f5_1x400.png" />
+    <Content Include="Styles\jitm\images\ui-bg_glass_85_dfeffc_1x400.png" />
+    <Content Include="Styles\jitm\images\ui-bg_glass_95_fef1ec_1x400.png" />
+    <Content Include="Styles\jitm\images\ui-bg_gloss-wave_55_5c9ccc_500x100.png" />
+    <Content Include="Styles\jitm\images\ui-bg_inset-hard_100_f5f8f9_1x100.png" />
+    <Content Include="Styles\jitm\images\ui-bg_inset-hard_100_fcfdfd_1x100.png" />
+    <Content Include="Styles\jitm\images\ui-icons_217bc0_256x240.png" />
+    <Content Include="Styles\jitm\images\ui-icons_2e83ff_256x240.png" />
+    <Content Include="Styles\jitm\images\ui-icons_469bdd_256x240.png" />
+    <Content Include="Styles\jitm\images\ui-icons_6da8d5_256x240.png" />
+    <Content Include="Styles\jitm\images\ui-icons_cd0a0a_256x240.png" />
+    <Content Include="Styles\jitm\images\ui-icons_d8e7f3_256x240.png" />
+    <Content Include="Styles\jitm\images\ui-icons_f9bd01_256x240.png" />
+    <Content Include="Styles\Site.css" />
+    <Content Include="Login.aspx" />
+    <Content Include="Global.asax" />
+    <Content Include="WCF\ConfigurationServices.svc" />
+    <Content Include="WCF\OperationServices.svc" />
+    <Content Include="WCF\SecurityService.svc" />
+    <Content Include="WCF\AdministrationServices.svc" />
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="1Operations\0ProductionSchedule\ProductionSchedule30.aspx.designer.vb">
+      <DependentUpon>ProductionSchedule30.aspx</DependentUpon>
+    </Compile>
+    <Compile Include="1Operations\0ProductionSchedule\ProductionSchedule30.aspx.vb">
+      <DependentUpon>ProductionSchedule30.aspx</DependentUpon>
+      <SubType>ASPXCodeBehind</SubType>
+    </Compile>
+    <Compile Include="1Operations\0ProductionSchedule\ProductionScheduleExport30.aspx.vb">
+      <DependentUpon>ProductionScheduleExport30.aspx</DependentUpon>
+      <SubType>ASPXCodeBehind</SubType>
+    </Compile>
+    <Compile Include="1Operations\1ProductionSchedule\ProductionSchedule.aspx.designer.vb">
+      <DependentUpon>ProductionSchedule.aspx</DependentUpon>
+    </Compile>
+    <Compile Include="1Operations\1ProductionSchedule\ProductionSchedule.aspx.vb">
+      <DependentUpon>ProductionSchedule.aspx</DependentUpon>
+      <SubType>ASPXCodebehind</SubType>
+    </Compile>
+    <Compile Include="1Operations\1ProductionSchedule\ProductionScheduleExport.aspx.vb">
+      <DependentUpon>ProductionScheduleExport.aspx</DependentUpon>
+      <SubType>ASPXCodeBehind</SubType>
+    </Compile>
+    <Compile Include="1Operations\2ShippingSchedule\ShippingSchedule.aspx.designer.vb">
+      <DependentUpon>ShippingSchedule.aspx</DependentUpon>
+    </Compile>
+    <Compile Include="1Operations\2ShippingSchedule\ShippingSchedule.aspx.vb">
+      <DependentUpon>ShippingSchedule.aspx</DependentUpon>
+      <SubType>ASPXCodebehind</SubType>
+    </Compile>
+    <Compile Include="1Operations\3DailyBuildQuantities\DailyBuildQuantities.aspx.designer.vb">
+      <DependentUpon>DailyBuildQuantities.aspx</DependentUpon>
+    </Compile>
+    <Compile Include="1Operations\3DailyBuildQuantities\DailyBuildQuantities.aspx.vb">
+      <DependentUpon>DailyBuildQuantities.aspx</DependentUpon>
+      <SubType>ASPXCodebehind</SubType>
+    </Compile>
+    <Compile Include="1Operations\3DailyBuildQuantities\DTO_DailyBuildQuantity.vb" />
+    <Compile Include="1Operations\4LabelPrinting\1PrintNewSSNLabel\PrintNewSSNLabel.aspx.designer.vb">
+      <DependentUpon>PrintNewSSNLabel.aspx</DependentUpon>
+    </Compile>
+    <Compile Include="1Operations\4LabelPrinting\1PrintNewSSNLabel\PrintNewSSNLabel.aspx.vb">
+      <DependentUpon>PrintNewSSNLabel.aspx</DependentUpon>
+      <SubType>ASPXCodebehind</SubType>
+    </Compile>
+    <Compile Include="1Operations\4LabelPrinting\2ReprintSSNLabel\ReprintSSNLabel.aspx.designer.vb">
+      <DependentUpon>ReprintSSNLabel.aspx</DependentUpon>
+    </Compile>
+    <Compile Include="1Operations\4LabelPrinting\2ReprintSSNLabel\ReprintSSNLabel.aspx.vb">
+      <DependentUpon>ReprintSSNLabel.aspx</DependentUpon>
+      <SubType>ASPXCodebehind</SubType>
+    </Compile>
+    <Compile Include="1Operations\4LabelPrinting\3ShippingLabel\ShippingLabel.aspx.designer.vb">
+      <DependentUpon>ShippingLabel.aspx</DependentUpon>
+    </Compile>
+    <Compile Include="1Operations\4LabelPrinting\3ShippingLabel\ShippingLabel.aspx.vb">
+      <DependentUpon>ShippingLabel.aspx</DependentUpon>
+      <SubType>ASPXCodebehind</SubType>
+    </Compile>
+    <Compile Include="1Operations\4LabelPrinting\5BatchPrint\BatchPrint.aspx.designer.vb">
+      <DependentUpon>BatchPrint.aspx</DependentUpon>
+    </Compile>
+    <Compile Include="1Operations\4LabelPrinting\5BatchPrint\BatchPrint.aspx.vb">
+      <DependentUpon>BatchPrint.aspx</DependentUpon>
+      <SubType>ASPXCodebehind</SubType>
+    </Compile>
+    <Compile Include="1Operations\5LotTrace\1LotTraceData\LotTraceData.aspx.designer.vb">
+      <DependentUpon>LotTraceData.aspx</DependentUpon>
+    </Compile>
+    <Compile Include="1Operations\5LotTrace\1LotTraceData\LotTraceData.aspx.vb">
+      <DependentUpon>LotTraceData.aspx</DependentUpon>
+      <SubType>ASPXCodebehind</SubType>
+    </Compile>
+    <Compile Include="1Operations\5LotTrace\2LotTraceDataTransfer\LotTraceDataTransfer.aspx.designer.vb">
+      <DependentUpon>LotTraceDataTransfer.aspx</DependentUpon>
+    </Compile>
+    <Compile Include="1Operations\5LotTrace\2LotTraceDataTransfer\LotTraceDataTransfer.aspx.vb">
+      <DependentUpon>LotTraceDataTransfer.aspx</DependentUpon>
+      <SubType>ASPXCodebehind</SubType>
+    </Compile>
+    <Compile Include="1Operations\5LotTrace\4ArchiveLotTraceDataTransfer\ArchiveLotTraceDataTransfer.aspx.designer.vb">
+      <DependentUpon>ArchiveLotTraceDataTransfer.aspx</DependentUpon>
+    </Compile>
+    <Compile Include="1Operations\5LotTrace\4ArchiveLotTraceDataTransfer\ArchiveLotTraceDataTransfer.aspx.vb">
+      <DependentUpon>ArchiveLotTraceDataTransfer.aspx</DependentUpon>
+      <SubType>ASPXCodeBehind</SubType>
+    </Compile>
+    <Compile Include="1Operations\6ReworkMaterialDisposition\ReworkMaterialDisposition.aspx.designer.vb">
+      <DependentUpon>ReworkMaterialDisposition.aspx</DependentUpon>
+    </Compile>
+    <Compile Include="1Operations\6ReworkMaterialDisposition\ReworkMaterialDisposition.aspx.vb">
+      <DependentUpon>ReworkMaterialDisposition.aspx</DependentUpon>
+      <SubType>ASPXCodebehind</SubType>
+    </Compile>
+    <Compile Include="1Operations\7Teardown and Release\TeardownAndRelease.aspx.designer.vb">
+      <DependentUpon>TeardownAndRelease.aspx</DependentUpon>
+    </Compile>
+    <Compile Include="1Operations\7Teardown and Release\TeardownAndRelease.aspx.vb">
+      <DependentUpon>TeardownAndRelease.aspx</DependentUpon>
+      <SubType>ASPXCodebehind</SubType>
+    </Compile>
+    <Compile Include="2Reporting\1TruckMapReport\TruckMapReport.aspx.designer.vb">
+      <DependentUpon>TruckMapReport.aspx</DependentUpon>
+    </Compile>
+    <Compile Include="2Reporting\1TruckMapReport\TruckMapReport.aspx.vb">
+      <DependentUpon>TruckMapReport.aspx</DependentUpon>
+      <SubType>ASPXCodebehind</SubType>
+    </Compile>
+    <Compile Include="2Reporting\6ReworkMaterialReports\ReworkMaterialDispositionReports.aspx.designer.vb">
+      <DependentUpon>ReworkMaterialDispositionReports.aspx</DependentUpon>
+    </Compile>
+    <Compile Include="2Reporting\6ReworkMaterialReports\ReworkMaterialDispositionReports.aspx.vb">
+      <DependentUpon>ReworkMaterialDispositionReports.aspx</DependentUpon>
+      <SubType>ASPXCodeBehind</SubType>
+    </Compile>
+    <Compile Include="2Reporting\Reports.aspx.designer.vb">
+      <DependentUpon>Reports.aspx</DependentUpon>
+    </Compile>
+    <Compile Include="2Reporting\Reports.aspx.vb">
+      <DependentUpon>Reports.aspx</DependentUpon>
+      <SubType>ASPXCodebehind</SubType>
+    </Compile>
+    <Compile Include="3SystemConfiguration\10ParameterListConfiguration\ParameterListConfiguration.aspx.designer.vb">
+      <DependentUpon>ParameterListConfiguration.aspx</DependentUpon>
+    </Compile>
+    <Compile Include="3SystemConfiguration\10ParameterListConfiguration\ParameterListConfiguration.aspx.vb">
+      <DependentUpon>ParameterListConfiguration.aspx</DependentUpon>
+      <SubType>ASPXCodebehind</SubType>
+    </Compile>
+    <Compile Include="3SystemConfiguration\1ProductProfiles\1ProductConfiguration\ProductConfiguration.aspx.designer.vb">
+      <DependentUpon>ProductConfiguration.aspx</DependentUpon>
+    </Compile>
+    <Compile Include="3SystemConfiguration\1ProductProfiles\1ProductConfiguration\ProductConfiguration.aspx.vb">
+      <DependentUpon>ProductConfiguration.aspx</DependentUpon>
+      <SubType>ASPXCodeBehind</SubType>
+    </Compile>
+    <Compile Include="3SystemConfiguration\1ProductProfiles\2ParameterConfiguration\ParameterConfiguration.aspx.designer.vb">
+      <DependentUpon>ParameterConfiguration.aspx</DependentUpon>
+    </Compile>
+    <Compile Include="3SystemConfiguration\1ProductProfiles\2ParameterConfiguration\ParameterConfiguration.aspx.vb">
+      <DependentUpon>ParameterConfiguration.aspx</DependentUpon>
+      <SubType>ASPXCodeBehind</SubType>
+    </Compile>
+    <Compile Include="3SystemConfiguration\1StationConfiguration\1StationConfiguration\StationConfiguration.aspx.designer.vb">
+      <DependentUpon>StationConfiguration.aspx</DependentUpon>
+    </Compile>
+    <Compile Include="3SystemConfiguration\1StationConfiguration\1StationConfiguration\StationConfiguration.aspx.vb">
+      <DependentUpon>StationConfiguration.aspx</DependentUpon>
+      <SubType>ASPXCodeBehind</SubType>
+    </Compile>
+    <Compile Include="3SystemConfiguration\1StationConfiguration\3StationSequenceConfiguration\StationSequenceConfiguration.aspx.designer.vb">
+      <DependentUpon>StationSequenceConfiguration.aspx</DependentUpon>
+    </Compile>
+    <Compile Include="3SystemConfiguration\1StationConfiguration\3StationSequenceConfiguration\StationSequenceConfiguration.aspx.vb">
+      <DependentUpon>StationSequenceConfiguration.aspx</DependentUpon>
+      <SubType>ASPXCodebehind</SubType>
+    </Compile>
+    <Compile Include="3SystemConfiguration\1StationConfiguration\4StationComponentScanAssignment\StationComponentScanAssignment.aspx.designer.vb">
+      <DependentUpon>StationComponentScanAssignment.aspx</DependentUpon>
+    </Compile>
+    <Compile Include="3SystemConfiguration\1StationConfiguration\4StationComponentScanAssignment\StationComponentScanAssignment.aspx.vb">
+      <DependentUpon>StationComponentScanAssignment.aspx</DependentUpon>
+      <SubType>ASPXCodebehind</SubType>
+    </Compile>
+    <Compile Include="3SystemConfiguration\1StationConfiguration\5StationTaskConfiguration\StationTaskConfiguration.aspx.designer.vb">
+      <DependentUpon>StationTaskConfiguration.aspx</DependentUpon>
+    </Compile>
+    <Compile Include="3SystemConfiguration\1StationConfiguration\5StationTaskConfiguration\StationTaskConfiguration.aspx.vb">
+      <DependentUpon>StationTaskConfiguration.aspx</DependentUpon>
+      <SubType>ASPXCodebehind</SubType>
+    </Compile>
+    <Compile Include="3SystemConfiguration\1StationConfiguration\7StationODSConfiguration\imageFetch.ashx.vb">
+      <DependentUpon>imageFetch.ashx</DependentUpon>
+    </Compile>
+    <Compile Include="3SystemConfiguration\1StationConfiguration\7StationODSConfiguration\StationODSRevisionLog.aspx.designer.vb">
+      <DependentUpon>StationODSRevisionLog.aspx</DependentUpon>
+    </Compile>
+    <Compile Include="3SystemConfiguration\1StationConfiguration\7StationODSConfiguration\StationODSRevisionLog.aspx.vb">
+      <DependentUpon>StationODSRevisionLog.aspx</DependentUpon>
+      <SubType>ASPXCodebehind</SubType>
+    </Compile>
+    <Compile Include="3SystemConfiguration\1StationConfiguration\7StationODSConfiguration\StationODSConfiguration.aspx.designer.vb">
+      <DependentUpon>StationODSConfiguration.aspx</DependentUpon>
+    </Compile>
+    <Compile Include="3SystemConfiguration\1StationConfiguration\7StationODSConfiguration\StationODSConfiguration.aspx.vb">
+      <DependentUpon>StationODSConfiguration.aspx</DependentUpon>
+      <SubType>ASPXCodeBehind</SubType>
+    </Compile>
+    <Compile Include="3SystemConfiguration\1StationConfiguration\6StationToolConfiguration\StationToolConfiguration.aspx.designer.vb">
+      <DependentUpon>StationToolConfiguration.aspx</DependentUpon>
+    </Compile>
+    <Compile Include="3SystemConfiguration\1StationConfiguration\6StationToolConfiguration\StationToolConfiguration.aspx.vb">
+      <DependentUpon>StationToolConfiguration.aspx</DependentUpon>
+      <SubType>ASPXCodeBehind</SubType>
+    </Compile>
+    <Compile Include="3SystemConfiguration\1StationConfiguration\7StationODSConfiguration\StationODSPreview.aspx.designer.vb">
+      <DependentUpon>StationODSPreview.aspx</DependentUpon>
+    </Compile>
+    <Compile Include="3SystemConfiguration\1StationConfiguration\7StationODSConfiguration\StationODSPreview.aspx.vb">
+      <DependentUpon>StationODSPreview.aspx</DependentUpon>
+      <SubType>ASPXCodeBehind</SubType>
+    </Compile>
+    <Compile Include="3SystemConfiguration\1StationConfiguration\7StationODSConfiguration\WorkInstructionExport.aspx.designer.vb">
+      <DependentUpon>WorkInstructionExport.aspx</DependentUpon>
+    </Compile>
+    <Compile Include="3SystemConfiguration\1StationConfiguration\7StationODSConfiguration\WorkInstructionExport.aspx.vb">
+      <DependentUpon>WorkInstructionExport.aspx</DependentUpon>
+      <SubType>ASPXCodebehind</SubType>
+    </Compile>
+    <Compile Include="3SystemConfiguration\1StationConfiguration\8OperatorDisplayConfiguration\OperatorDisplayConfiguration.aspx.designer.vb">
+      <DependentUpon>OperatorDisplayConfiguration.aspx</DependentUpon>
+    </Compile>
+    <Compile Include="3SystemConfiguration\1StationConfiguration\8OperatorDisplayConfiguration\OperatorDisplayConfiguration.aspx.vb">
+      <DependentUpon>OperatorDisplayConfiguration.aspx</DependentUpon>
+      <SubType>ASPXCodeBehind</SubType>
+    </Compile>
+    <Compile Include="3SystemConfiguration\2LineConfiguration\LineConfiguration.aspx.designer.vb">
+      <DependentUpon>LineConfiguration.aspx</DependentUpon>
+    </Compile>
+    <Compile Include="3SystemConfiguration\2LineConfiguration\LineConfiguration.aspx.vb">
+      <DependentUpon>LineConfiguration.aspx</DependentUpon>
+      <SubType>ASPXCodeBehind</SubType>
+    </Compile>
+    <Compile Include="3SystemConfiguration\31LabelConfiguration\LabelConfiguration.aspx.designer.vb">
+      <DependentUpon>LabelConfiguration.aspx</DependentUpon>
+    </Compile>
+    <Compile Include="3SystemConfiguration\31LabelConfiguration\LabelConfiguration.aspx.vb">
+      <DependentUpon>LabelConfiguration.aspx</DependentUpon>
+      <SubType>ASPXCodeBehind</SubType>
+    </Compile>
+    <Compile Include="3SystemConfiguration\7ShippingTemplateConfiguration\ShippingTemplateConfiguration.aspx.designer.vb">
+      <DependentUpon>ShippingTemplateConfiguration.aspx</DependentUpon>
+    </Compile>
+    <Compile Include="3SystemConfiguration\7ShippingTemplateConfiguration\ShippingTemplateConfiguration.aspx.vb">
+      <DependentUpon>ShippingTemplateConfiguration.aspx</DependentUpon>
+      <SubType>ASPXCodeBehind</SubType>
+    </Compile>
+    <Compile Include="3SystemConfiguration\80StyleGroupConfiguration\StyleGroupConfiguration.aspx.designer.vb">
+      <DependentUpon>StyleGroupConfiguration.aspx</DependentUpon>
+    </Compile>
+    <Compile Include="3SystemConfiguration\80StyleGroupConfiguration\StyleGroupConfiguration.aspx.vb">
+      <DependentUpon>StyleGroupConfiguration.aspx</DependentUpon>
+      <SubType>ASPXCodeBehind</SubType>
+    </Compile>
+    <Compile Include="3SystemConfiguration\81ComponentNameConfiguration\ComponentNameConfiguration.aspx.designer.vb">
+      <DependentUpon>ComponentNameConfiguration.aspx</DependentUpon>
+    </Compile>
+    <Compile Include="3SystemConfiguration\81ComponentNameConfiguration\ComponentNameConfiguration.aspx.vb">
+      <DependentUpon>ComponentNameConfiguration.aspx</DependentUpon>
+      <SubType>ASPXCodebehind</SubType>
+    </Compile>
+    <Compile Include="3SystemConfiguration\82ConfigurationUploadDownload\ConfigurationUploadDownload.aspx.designer.vb">
+      <DependentUpon>ConfigurationUploadDownload.aspx</DependentUpon>
+    </Compile>
+    <Compile Include="3SystemConfiguration\82ConfigurationUploadDownload\ConfigurationUploadDownload.aspx.vb">
+      <DependentUpon>ConfigurationUploadDownload.aspx</DependentUpon>
+      <SubType>ASPXCodebehind</SubType>
+    </Compile>
+    <Compile Include="3SystemConfiguration\89ProductCodeConfiguration\ProductCodeConfiguration.aspx.designer.vb">
+      <DependentUpon>ProductCodeConfiguration.aspx</DependentUpon>
+    </Compile>
+    <Compile Include="3SystemConfiguration\89ProductCodeConfiguration\ProductCodeConfiguration.aspx.vb">
+      <DependentUpon>ProductCodeConfiguration.aspx</DependentUpon>
+      <SubType>ASPXCodebehind</SubType>
+    </Compile>
+    <Compile Include="3SystemConfiguration\91ComponentConfiguration\ComponentConfiguration.aspx.designer.vb">
+      <DependentUpon>ComponentConfiguration.aspx</DependentUpon>
+    </Compile>
+    <Compile Include="3SystemConfiguration\91ComponentConfiguration\ComponentConfiguration.aspx.vb">
+      <DependentUpon>ComponentConfiguration.aspx</DependentUpon>
+      <SubType>ASPXCodebehind</SubType>
+    </Compile>
+    <Compile Include="3SystemConfiguration\92ComponentCodeConfiguration\ComponentCodeConfiguration.aspx.designer.vb">
+      <DependentUpon>ComponentCodeConfiguration.aspx</DependentUpon>
+    </Compile>
+    <Compile Include="3SystemConfiguration\92ComponentCodeConfiguration\ComponentCodeConfiguration.aspx.vb">
+      <DependentUpon>ComponentCodeConfiguration.aspx</DependentUpon>
+      <SubType>ASPXCodebehind</SubType>
+    </Compile>
+    <Compile Include="3SystemConfiguration\93PlantParametersConfiguration\PlantParametersConfiguration.aspx.designer.vb">
+      <DependentUpon>PlantParametersConfiguration.aspx</DependentUpon>
+    </Compile>
+    <Compile Include="3SystemConfiguration\93PlantParametersConfiguration\PlantParametersConfiguration.aspx.vb">
+      <DependentUpon>PlantParametersConfiguration.aspx</DependentUpon>
+      <SubType>ASPXCodebehind</SubType>
+    </Compile>
+    <Compile Include="3SystemConfiguration\95ArchivePurge\1DatabaseConfiguration\DatabaseArchivePurgeConfiguration.aspx.designer.vb">
+      <DependentUpon>DatabaseArchivePurgeConfiguration.aspx</DependentUpon>
+    </Compile>
+    <Compile Include="3SystemConfiguration\95ArchivePurge\1DatabaseConfiguration\DatabaseArchivePurgeConfiguration.aspx.vb">
+      <DependentUpon>DatabaseArchivePurgeConfiguration.aspx</DependentUpon>
+      <SubType>ASPXCodebehind</SubType>
+    </Compile>
+    <Compile Include="3SystemConfiguration\95ArchivePurge\2FileSystemConfiguration\FileSystemPurgeConfiguration.aspx.designer.vb">
+      <DependentUpon>FileSystemPurgeConfiguration.aspx</DependentUpon>
+    </Compile>
+    <Compile Include="3SystemConfiguration\95ArchivePurge\2FileSystemConfiguration\FileSystemPurgeConfiguration.aspx.vb">
+      <DependentUpon>FileSystemPurgeConfiguration.aspx</DependentUpon>
+      <SubType>ASPXCodebehind</SubType>
+    </Compile>
+    <Compile Include="3SystemConfiguration\96ShiftConfiguration\ShiftConfiguration.aspx.designer.vb">
+      <DependentUpon>ShiftConfiguration.aspx</DependentUpon>
+    </Compile>
+    <Compile Include="3SystemConfiguration\96ShiftConfiguration\ShiftConfiguration.aspx.vb">
+      <DependentUpon>ShiftConfiguration.aspx</DependentUpon>
+      <SubType>ASPXCodebehind</SubType>
+    </Compile>
+    <Compile Include="3SystemConfiguration\97ReworkMaterialConfiguration\1BillOfMaterialMaintenance\BillOfMaterialMaintenance.aspx.designer.vb">
+      <DependentUpon>BillOfMaterialMaintenance.aspx</DependentUpon>
+    </Compile>
+    <Compile Include="3SystemConfiguration\97ReworkMaterialConfiguration\1BillOfMaterialMaintenance\BillOfMaterialMaintenance.aspx.vb">
+      <DependentUpon>BillOfMaterialMaintenance.aspx</DependentUpon>
+      <SubType>ASPXCodeBehind</SubType>
+    </Compile>
+    <Compile Include="3SystemConfiguration\97ReworkMaterialConfiguration\2ReworkMaterialListConfiguration\ReworkMaterialDispositionListConfiguration.aspx.designer.vb">
+      <DependentUpon>ReworkMaterialDispositionListConfiguration.aspx</DependentUpon>
+    </Compile>
+    <Compile Include="3SystemConfiguration\97ReworkMaterialConfiguration\2ReworkMaterialListConfiguration\ReworkMaterialDispositionListConfiguration.aspx.vb">
+      <DependentUpon>ReworkMaterialDispositionListConfiguration.aspx</DependentUpon>
+      <SubType>ASPXCodeBehind</SubType>
+    </Compile>
+    <Compile Include="3SystemConfiguration\98PrinterConfiguration\PrinterConfiguration.aspx.designer.vb">
+      <DependentUpon>PrinterConfiguration.aspx</DependentUpon>
+    </Compile>
+    <Compile Include="3SystemConfiguration\98PrinterConfiguration\PrinterConfiguration.aspx.vb">
+      <DependentUpon>PrinterConfiguration.aspx</DependentUpon>
+      <SubType>ASPXCodeBehind</SubType>
+    </Compile>
+    <Compile Include="4SystemAdministration\0CustomerOrders\3KDPlanProcessing\KDPlanProcessing.aspx.designer.vb">
+      <DependentUpon>KDPlanProcessing.aspx</DependentUpon>
+    </Compile>
+    <Compile Include="4SystemAdministration\0CustomerOrders\3KDPlanProcessing\KDPlanProcessing.aspx.vb">
+      <DependentUpon>KDPlanProcessing.aspx</DependentUpon>
+    </Compile>
+    <Compile Include="4SystemAdministration\1ErrorHistory\ErrorHistory.aspx.designer.vb">
+      <DependentUpon>ErrorHistory.aspx</DependentUpon>
+    </Compile>
+    <Compile Include="4SystemAdministration\1ErrorHistory\ErrorHistory.aspx.vb">
+      <DependentUpon>ErrorHistory.aspx</DependentUpon>
+      <SubType>ASPXCodebehind</SubType>
+    </Compile>
+    <Compile Include="4SystemAdministration\2SecurityManagement\1UserAccounts\UserAccounts.aspx.designer.vb">
+      <DependentUpon>UserAccounts.aspx</DependentUpon>
+    </Compile>
+    <Compile Include="4SystemAdministration\2SecurityManagement\1UserAccounts\UserAccounts.aspx.vb">
+      <DependentUpon>UserAccounts.aspx</DependentUpon>
+      <SubType>ASPXCodeBehind</SubType>
+    </Compile>
+    <Compile Include="4SystemAdministration\2SecurityManagement\2SiteSecurity\SiteSecurity.aspx.designer.vb">
+      <DependentUpon>SiteSecurity.aspx</DependentUpon>
+    </Compile>
+    <Compile Include="4SystemAdministration\2SecurityManagement\2SiteSecurity\SiteSecurity.aspx.vb">
+      <DependentUpon>SiteSecurity.aspx</DependentUpon>
+      <SubType>ASPXCodebehind</SubType>
+    </Compile>
+    <Compile Include="4SystemAdministration\2SecurityManagement\3UserTypes\UserTypes.aspx.designer.vb">
+      <DependentUpon>UserTypes.aspx</DependentUpon>
+    </Compile>
+    <Compile Include="4SystemAdministration\2SecurityManagement\3UserTypes\UserTypes.aspx.vb">
+      <DependentUpon>UserTypes.aspx</DependentUpon>
+      <SubType>ASPXCodeBehind</SubType>
+    </Compile>
+    <Compile Include="4SystemAdministration\3ApplicationConfiguration\ApplicationConfiguration.aspx.designer.vb">
+      <DependentUpon>ApplicationConfiguration.aspx</DependentUpon>
+    </Compile>
+    <Compile Include="4SystemAdministration\3ApplicationConfiguration\ApplicationConfiguration.aspx.vb">
+      <DependentUpon>ApplicationConfiguration.aspx</DependentUpon>
+      <SubType>ASPXCodebehind</SubType>
+    </Compile>
+    <Compile Include="4SystemAdministration\4DebugHistory\DebugHistory.aspx.designer.vb">
+      <DependentUpon>DebugHistory.aspx</DependentUpon>
+    </Compile>
+    <Compile Include="4SystemAdministration\4DebugHistory\DebugHistory.aspx.vb">
+      <DependentUpon>DebugHistory.aspx</DependentUpon>
+      <SubType>ASPXCodebehind</SubType>
+    </Compile>
+    <Compile Include="4SystemAdministration\4DebugHistory\DebugHistoryExport.aspx.designer.vb">
+      <DependentUpon>DebugHistoryExport.aspx</DependentUpon>
+    </Compile>
+    <Compile Include="4SystemAdministration\4DebugHistory\DebugHistoryExport.aspx.vb">
+      <DependentUpon>DebugHistoryExport.aspx</DependentUpon>
+      <SubType>ASPXCodebehind</SubType>
+    </Compile>
+    <Compile Include="4SystemAdministration\6SystemDiagnosticInformation\SystemDiagnosticInformation.aspx.designer.vb">
+      <DependentUpon>SystemDiagnosticInformation.aspx</DependentUpon>
+    </Compile>
+    <Compile Include="4SystemAdministration\6SystemDiagnosticInformation\SystemDiagnosticInformation.aspx.vb">
+      <DependentUpon>SystemDiagnosticInformation.aspx</DependentUpon>
+      <SubType>ASPXCodebehind</SubType>
+    </Compile>
+    <Compile Include="4SystemAdministration\7ReworkMaterialHistory\1MaterialDispositionHistory\MaterialDispositionHistory.aspx.designer.vb">
+      <DependentUpon>MaterialDispositionHistory.aspx</DependentUpon>
+    </Compile>
+    <Compile Include="4SystemAdministration\7ReworkMaterialHistory\1MaterialDispositionHistory\MaterialDispositionHistory.aspx.vb">
+      <DependentUpon>MaterialDispositionHistory.aspx</DependentUpon>
+      <SubType>ASPXCodebehind</SubType>
+    </Compile>
+    <Compile Include="4SystemAdministration\7ReworkMaterialHistory\2ReworkHistory\ReworkHistory.aspx.designer.vb">
+      <DependentUpon>ReworkHistory.aspx</DependentUpon>
+    </Compile>
+    <Compile Include="4SystemAdministration\7ReworkMaterialHistory\2ReworkHistory\ReworkHistory.aspx.vb">
+      <DependentUpon>ReworkHistory.aspx</DependentUpon>
+      <SubType>ASPXCodeBehind</SubType>
+    </Compile>
+    <Compile Include="Logout.aspx.designer.vb">
+      <DependentUpon>Logout.aspx</DependentUpon>
+    </Compile>
+    <Compile Include="Logout.aspx.vb">
+      <DependentUpon>Logout.aspx</DependentUpon>
+      <SubType>ASPXCodeBehind</SubType>
+    </Compile>
+    <Compile Include="Settings.vb" />
+    <Compile Include="Shared\BizLayer.vb" />
+    <Compile Include="Login.aspx.vb">
+      <DependentUpon>Login.aspx</DependentUpon>
+      <SubType>ASPXCodeBehind</SubType>
+    </Compile>
+    <Compile Include="Login.aspx.designer.vb">
+      <DependentUpon>Login.aspx</DependentUpon>
+    </Compile>
+    <Compile Include="Global.asax.vb">
+      <DependentUpon>Global.asax</DependentUpon>
+    </Compile>
+    <Compile Include="Home.aspx.designer.vb">
+      <DependentUpon>Home.aspx</DependentUpon>
+    </Compile>
+    <Compile Include="Home.aspx.vb">
+      <DependentUpon>Home.aspx</DependentUpon>
+      <SubType>ASPXCodebehind</SubType>
+    </Compile>
+    <Compile Include="My Project\AssemblyInfo.vb" />
+    <Compile Include="My Project\Application.Designer.vb">
+      <AutoGen>True</AutoGen>
+      <DependentUpon>Application.myapp</DependentUpon>
+      <DesignTime>True</DesignTime>
+    </Compile>
+    <Compile Include="My Project\MyExtensions\MyWebExtension.vb">
+      <VBMyExtensionTemplateID>Microsoft.VisualBasic.Web.MyExtension</VBMyExtensionTemplateID>
+      <VBMyExtensionTemplateVersion>1.0.0.0</VBMyExtensionTemplateVersion>
+    </Compile>
+    <Compile Include="My Project\Resources.Designer.vb">
+      <AutoGen>True</AutoGen>
+      <DesignTime>True</DesignTime>
+      <DependentUpon>Resources.resx</DependentUpon>
+    </Compile>
+    <Compile Include="My Project\Settings.Designer.vb">
+      <AutoGen>True</AutoGen>
+      <DependentUpon>Settings.settings</DependentUpon>
+      <DesignTimeSharedInput>True</DesignTimeSharedInput>
+    </Compile>
+    <Compile Include="Shared\DataAccess.vb" />
+    <Compile Include="Shared\Impersonation.vb" />
+    <Compile Include="Shared\ErrorDebug.vb" />
+    <Compile Include="Shared\ldiDataAccess.vb" />
+    <Compile Include="Shared\modEnum.vb" />
+    <Compile Include="Shared\NameValuePair.vb" />
+    <Compile Include="Shared\ProductionScheduleDTO.vb" />
+    <Compile Include="Shared\ReportServerCredentials.vb" />
+    <Compile Include="Shared\Security.vb" />
+    <Compile Include="Shared\Utility.vb" />
+    <Compile Include="Site.Master.designer.vb">
+      <DependentUpon>Site.Master</DependentUpon>
+    </Compile>
+    <Compile Include="Site.Master.vb">
+      <DependentUpon>Site.Master</DependentUpon>
+      <SubType>ASPXCodeBehind</SubType>
+    </Compile>
+    <Compile Include="WCF\ConfigurationServices.svc.vb">
+      <DependentUpon>ConfigurationServices.svc</DependentUpon>
+    </Compile>
+    <Compile Include="WCF\OperationServices.svc.vb">
+      <DependentUpon>OperationServices.svc</DependentUpon>
+    </Compile>
+    <Compile Include="WCF\SecurityService.svc.vb">
+      <DependentUpon>SecurityService.svc</DependentUpon>
+    </Compile>
+    <Compile Include="WCF\AdministrationServices.svc.vb">
+      <DependentUpon>AdministrationServices.svc</DependentUpon>
+    </Compile>
+    <Compile Include="WCF\VerifyComponentScan.vb" />
+  </ItemGroup>
+  <ItemGroup>
+    <EmbeddedResource Include="1Operations\0ProductionSchedule\ProductionScheduleExport30.aspx.resx">
+      <DependentUpon>ProductionScheduleExport30.aspx.vb</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="1Operations\1ProductionSchedule\ProductionScheduleExport.aspx.resx">
+      <DependentUpon>ProductionScheduleExport.aspx.vb</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="1Operations\5LotTrace\1LotTraceData\LotTraceData.aspx.resx">
+      <DependentUpon>LotTraceData.aspx.vb</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="2Reporting\6ReworkMaterialReports\ReworkMaterialDispositionReports.aspx.resx">
+      <DependentUpon>ReworkMaterialDispositionReports.aspx.vb</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="My Project\licenses.licx" />
+    <EmbeddedResource Include="My Project\Resources.resx">
+      <Generator>VbMyResourcesResXFileCodeGenerator</Generator>
+      <LastGenOutput>Resources.Designer.vb</LastGenOutput>
+      <CustomToolNamespace>My.Resources</CustomToolNamespace>
+      <SubType>Designer</SubType>
+    </EmbeddedResource>
+  </ItemGroup>
+  <ItemGroup>
+    <Content Include="3SystemConfiguration\1StationConfiguration\7StationODSConfiguration\imageFetch.ashx" />
+    <Content Include="App_Browsers\Telerik_IE11_fix.browser" />
+    <Content Include="1Operations\0ProductionSchedule\ProductionSchedule30.jsfd" />
+    <None Include="Images\Arrows\Thumbs.db" />
+    <None Include="My Project\Application.myapp">
+      <Generator>MyApplicationCodeGenerator</Generator>
+      <LastGenOutput>Application.Designer.vb</LastGenOutput>
+    </None>
+    <None Include="My Project\Settings.settings">
+      <Generator>SettingsSingleFileGenerator</Generator>
+      <CustomToolNamespace>My</CustomToolNamespace>
+      <LastGenOutput>Settings.Designer.vb</LastGenOutput>
+    </None>
+    <Content Include="Site.Master" />
+    <Content Include="Web.config">
+      <SubType>Designer</SubType>
+    </Content>
+    <Content Include="Web.sitemap">
+      <SubType>Designer</SubType>
+    </Content>
+    <Content Include="packages.config" />
+  </ItemGroup>
+  <ItemGroup />
+  <PropertyGroup>
+    <VisualStudioVersion Condition="'$(VisualStudioVersion)' == ''">10.0</VisualStudioVersion>
+    <VSToolsPath Condition="'$(VSToolsPath)' == ''">$(MSBuildExtensionsPath32)\Microsoft\VisualStudio\v$(VisualStudioVersion)</VSToolsPath>
+  </PropertyGroup>
+  <Import Project="$(MSBuildBinPath)\Microsoft.VisualBasic.targets" />
+  <Import Project="$(VSToolsPath)\WebApplications\Microsoft.WebApplication.targets" Condition="'$(VSToolsPath)' != ''" />
+  <Import Project="$(MSBuildExtensionsPath32)\Microsoft\VisualStudio\v10.0\WebApplications\Microsoft.WebApplication.targets" Condition="false" />
+  <ProjectExtensions>
+    <VisualStudio>
+      <FlavorProperties GUID="{349c5851-65df-11da-9384-00065b846f21}">
+        <WebProjectProperties>
+          <SaveServerSettingsInUserFile>True</SaveServerSettingsInUserFile>
+        </WebProjectProperties>
+      </FlavorProperties>
+    </VisualStudio>
+  </ProjectExtensions>
+  <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
+       Other similar extension points exist, see Microsoft.Common.targets.
+  <Target Name="BeforeBuild">
+  </Target>
+  <Target Name="AfterBuild">
+  </Target>
+  -->
+</Project>

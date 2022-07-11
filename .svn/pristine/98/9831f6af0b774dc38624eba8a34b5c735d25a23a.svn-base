@@ -1,0 +1,443 @@
+﻿/* General
+----------------------------------------------------------*/
+
+#stickyFooter
+{
+    padding-top: 8px;
+}
+
+.block
+{
+    display: block;
+}
+span.ui-icon-triangle-1-e
+{
+    float: left;
+    padding-right: 5px;
+}
+.sortButton
+{
+    margin: 0px;
+}
+#divODSContent
+{
+    position: relative; /*required so that the filter panel positions correctly*/
+}
+
+/* DROP DOWN LIST PANEL  (overlayed on top of the grids)
+----------------------------------------------------------*/
+#divFilterPanel
+{
+    width: 700px;
+    top: 15px;
+    margin-left: 50px; /*slide right to line up with grid.*/
+    position: absolute;
+}
+#divFilterPanel p
+{
+    margin: 0px 8px 5px 0px;
+    float: left;
+}
+#divFilterPanel .spanLabel
+{
+    display: block;
+    text-align: Left;
+}
+#divFilterPanel .selectDropDown
+{
+    width: 220px;
+}
+#divFilterPanel .spanReadOnly
+{
+    width: 213px;
+    display: inline-block;
+    margin-top: 5px;
+}
+
+#MainContent_cmdRefresh
+{
+    margin-top:20px;
+}
+
+/* VERTICAL UP/DOWN BUTTONS FOR THE GRID
+----------------------------------------------------------*/
+#divVertButton
+{
+    width: 46px;
+    margin-top: 348px;
+    margin-right: 4px;
+    float: left;
+}
+#divVertButton span
+{
+    display: block;
+    padding: 8px 0px;
+    text-align: center; /*width: 50px;*/
+}
+#divVertButton .sortButton
+{
+    width: 20px;
+}
+
+
+/* BOTTOM PANEL WITH AUX LISTS AND CMD BUTTONS
+----------------------------------------------------------*/
+#bottomPanel
+{
+    clear: left;
+    padding-top: 10px;
+    margin-left: 50px; /*slide right to line up with grid.*/
+}
+#cmdPanel
+{
+    width: auto;
+    float: left;
+    padding-top: 0px;
+}
+#cmdPanel input
+{
+    width: 120px;
+    margin-right: 0px;
+    margin-left: 0px;
+}
+.divAuxList
+{
+    border: 1px solid gray;
+    margin-left: 9px;
+    color: #00008B;
+    float: left;
+}
+.divAuxList .spanLabel
+{
+    display: block;
+    text-align: center;
+    color: White;
+    line-height: normal;
+    font-weight: bold;
+    padding: 2px;
+}
+.checkBoxList
+{
+    padding: 5px;
+    display: block;
+    background-color: #EEEEEE;
+    border-bottom-left-radius: 5px;
+    border-bottom-right-radius: 5px;
+}
+.checkBoxList label
+{
+    /*center label on checkbox*/
+    vertical-align: middle;
+    width: 184px;
+    display: inline-block;
+}
+.checkBoxList input
+{
+    /*center checkbox on label*/
+    vertical-align: middle;
+}
+
+
+
+/* GRIDVIEWS
+----------------------------------------------------------*/
+#divOdsSteps
+{
+    padding-top: 120px; /*push the grid down so that the headings have room to rotate*/
+    float: left;
+}
+#divOdsChecks
+{
+    padding-top: 120px; /*push the grid down so that the headings have room to rotate*/
+    /*position: relative; /*requried so that the column headings position correctly.*/
+    float: left;
+    margin-left: -1px; /*overlap the left grid just a hair so that the border thickness is correct*/
+    /*width: 295px;
+    overflow-x: scroll;
+    overflow-y: visible;*/
+    position:absolute;
+    z-index:12;
+}
+
+div.odsGrid
+{
+    display: inline-block;
+    border-collapse: collapse;
+    margin: 0px;
+    padding: 0px;
+}
+.odsGrid table
+{
+    background: #EEE;
+    color: #00008B;
+}
+
+.odsGrid table, .odsGrid tr, .odsGrid td
+{
+    border: 1px solid #6495ED;
+}
+.odsGrid tr
+{
+    /*required so that both grids line up together*/
+    height: 25px;
+}
+.odsGrid td
+{
+    /*required so that both grids line up together*/
+    height: 20px;
+}
+tr.odsGrid_HeaderStyle
+{
+    color: White;
+    background-color: #6495ED;
+    font-weight: bold;
+    line-height: normal;
+}
+tr.odsGrid_HeaderStyle th
+{
+    /*required so that both grids line up together*/
+    height: 20px;
+}
+.odsHeaderSpecial
+{
+    background-color: #919cb0;
+    text-align:left;
+}
+span.odsHeader
+{
+    background-color: #FFFFFF;
+    text-align:left;
+}
+span.odsHeaderAlt
+{
+    background-color: #8aaff1;
+    text-align:left;
+}
+.odsColumn
+{
+    background-color: #FFFFFF;
+    border: 1px solid #6495ED;
+}
+th.odsColumn div
+{
+    border-color: white white #FFFFFF #6495ED;
+}
+.odsColumnAlt
+{
+    background-color: #8aaff1;  /*91C9F4*/
+    border: 1px solid #6495ED;
+}
+th.odsColumnAlt div
+{
+    border-color: white white #8aaff1 #6495ED;
+}
+.odsColumnSpecial
+{
+    background-color: #919cb0;
+    border: 1px solid #6495ED;
+}
+th.odsColumnSpecial div
+{
+    border-color: white white #919cb0 #6495ED;
+}
+.coverClip
+{
+    /*  Provides a small triangle between grid 1 and the first grid 2 angled header 
+        Color is provided by the .odsColumnSpecial div, .odsColumnAlt div, .odsColumn div 
+        styles above.
+    */
+    position: absolute;
+    z-index: 0;
+    top: 120px;
+    margin-left: -2px;
+    width: 0px;
+    border-style: solid;
+    border-width: 0 0 2.3em 1.5em;
+}
+.coverClipBorder
+{
+    position: absolute;
+    top: 144px;
+    left: 724px;
+    width: 23px;
+    height: 1px;
+    border-bottom: 1px solid #6495ED;
+    z-index: 13;
+}
+
+.rotateHeader45
+{
+    /*positioning*/
+    position: absolute;
+    top: 75px;
+    margin-left: -19px; 
+    /*transformation*/
+    transform: rotate(-60deg);
+    -ms-transform: rotate(-60deg); /* IE 9 */
+    -webkit-transform: rotate(-60deg); /* Safari and Chrome */
+    -o-transform: rotate(-60deg); /* Opera */
+    -moz-transform: rotate(-60deg); /* Firefox */
+    display: block;
+    width: 125px; /*styling*/
+    border-color: #6495ED;
+    border-style: solid;
+    border-width: 1px 1px 1px 0px;
+    border-top-right-radius: 5px;
+    border-top-left-radius: 0px;
+    border-bottom-right-radius: 5px;
+    border-bottom-left-radius: 0px;
+    padding: 1px 0px;
+    color: black;
+    font-weight: normal;
+    font-variant: small-caps;
+    z-index: 5;
+    height: 15.8px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.stepID
+{
+    color: #aaa;
+}
+
+#imgSeeEDS
+{
+    background-color: transparent;
+    position: absolute;
+    height:20px;
+    width:20px;
+    z-index: 10;
+    top: -40px;
+    margin-top: 60px;
+    margin-left: 61px;
+}
+#imgSpecificQuality
+{
+    background-color: transparent;
+    position: absolute;
+    height:20px;
+    width:20px;
+    z-index: 10;
+    top: -40px;
+    margin-top: 60px;
+    margin-left: 62px;
+}
+#imgSeqControl
+{
+    background-color:transparent ;
+    position: absolute;
+    height:28px;
+    width:28px;
+    z-index: 10;
+    top: -40px;
+    margin-top: 57px;
+    margin-left: 58px;
+}
+#MainContent_gvSteps select[disabled]
+{
+    background-color: #f7f7f7;
+}
+.odsGrid_ItemStyle input
+{
+    font-family:"Arial";
+    /*font-size:26px;  */
+}
+.odsGrid_ItemStyle input[disabled]
+{
+    background-color: #f7f7f7;
+}
+.odsHover, .odsHoverColumn
+{
+    background-color: LightGray;
+}
+.odsSelected
+{
+    background-color: Silver;
+}
+
+
+
+/* COPY DIALOG
+----------------------------------------------------------*/
+#divDialogCopy .h1
+{
+    margin-bottom: 8px;
+}
+#divDialogCopy .h2
+{
+    padding: 8px 0px 0px 0px;
+}
+#divDialogCopy p
+{
+    margin: 5px;
+}
+#divDialogCopy .selectDropDown
+{
+    width: 200px;
+}
+#divDialogCopy .divBorder
+{
+    margin: 0px;
+    display: inline-block;
+    background-color: #EEEEEE;
+    width: 740px;
+}
+#copyMiddle
+{
+    padding-top: 2px;
+    padding-bottom: 2px;
+}
+p.leftPanel, p.rightPanel
+{
+    float: left;
+}
+p.leftPanel
+{
+    width: 200px;
+}
+p.middleLeftPanel
+{
+    float: left;
+    width: 220px;
+    margin-top:-4px !important;
+}
+p.middleRightPanel
+{
+    float: left;
+    margin-left: 182px !important;
+}
+#copyBody
+{
+    position: absolute;
+    top: 48px;
+}
+.copyMode
+{
+    margin: 8px 0px 0px 0px;
+}
+.copyButton
+{
+    margin: 4px 8px 4px 8px;
+    height:24px;
+    width:24px;
+}
+#MainContent_rblCopyMode input
+{
+    vertical-align: middle;
+    margin: -2px 0px 0px 0px;
+}
+
+#MainContent_rblCopyMode label
+{
+    vertical-align: middle;
+    margin: 0px 6px 0px 0px;
+}
+
+/* NEW DIALOG
+----------------------------------------------------------*/
+#helpMCRDate, #helpMCRNumber
+{
+    margin-left:10px;
+}

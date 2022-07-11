@@ -1,0 +1,699 @@
+﻿<%@ Page Title="" Language="vb" AutoEventWireup="false" MasterPageFile="~/Site.Master" CodeBehind="StationODSConfiguration.aspx.vb" Inherits="LTMS_Master.ODSStationConfiguration" %>
+
+<%@ MasterType VirtualPath="~/Site.master" %>
+<asp:Content ID="Content1" ContentPlaceHolderID="HeadContent" runat="server">
+    <link type="text/css" href="ods.css?ver=1.6" rel="stylesheet" />
+	<script type="text/javascript" src="<%# ResolveUrl("~/Scripts/date.js") %>"></script>
+	<script type="text/javascript" src="<%# ResolveUrl("~/Scripts/jquery.maskedinput-1.3.1.min.js") %>"></script>
+	<script type="text/javascript" src="<%# ResolveUrl("~/Scripts/jquery.inputlimiter.1.3.1.min.js") %>"></script>
+    <script type="text/javascript" src="<%# ResolveUrl("~/Scripts/rgbcolor.js") %>"></script>
+    <script type="text/javascript">
+        var gridsDisabled = false;
+
+        //main controls
+        var $cmdSave;
+        var $cmdCopy;
+        var $cmdPrint;
+        var $cmdNewMCR;
+
+        var $ddlMCRNumber;
+
+        //copy dialog
+        var $ddlLineNumbersCopySrc;
+        var $ddlStationsCopySrc;
+        var $ddlInstructionSetsCopySrc;
+        var $ddlMCRNumberCopySrc;
+
+        var $ddlLineNumbersCopyDst;
+        var $ddlStationsCopyDst;
+        var $ddlInstructionSetsCopyDst;
+        var $ddlMCRNumberCopyDst;
+
+        var $copyStepCount;
+        var $lbxInstructionsCopySrc;
+        var $lbxInstructionsCopyDst;
+
+        //MCR Edit Dialog
+        var $txtMCRNumberEdit;
+        var $txtMCRDateEdit;
+        var $txtMCRStatusEditValue;
+        var $txtMCRDescriptionEditValue;
+        var $txtStationMCR;
+        var $txtStationChangeDescriptionEdit;
+
+        var $txtMCRNumberEditValue;
+        var $txtMCRDateEditValue;
+
+        //MCR New Dialog
+        var $txtMCRNumberNew;
+        var $txtMCRDateNew;
+        var $txtMCRDescriptionNew;
+
+        function contentPageLoad(sender, args) {
+            AddDirtyClassOnChangeLimited();
+            
+            CacheControls();
+
+            CreateDialog_MCREdit();
+            CreateDialog_MCRNew();
+            CreateDialog_MCRCopy();
+            CreatePrintDialog();
+
+            $('.copyButton').click(function () { ShowCursor_Wait(); $(this).addClass('waitCursor'); }).button();
+            $('.selectListBox').change(function () { ShowCursor_Wait(); $(this).addClass('waitCursor'); }).removeClass('waitCursor');
+
+            MakeMCRDialogDateTimePickers();
+            AddChangeEvents();
+            AddSortButtonEvent();
+            SetupGridEvents();
+            AddColorToColorDropDownOptions();
+            DisableEnterKeyOnPage();
+            SetMaxLengthForInputboxes();
+
+            if (args.get_isPartialLoad()) {
+                //Specific code for partial postbacks can go in here.   code in here will only execute after a post back
+                var t = $('#MainContent_copyMsg').text();
+
+                if (t.length > 0 && $("#divDialogCopy").dialog( "isOpen" )) {
+                    setValidationHint(t);
+                }
+
+                if ($rowSelectorDelta.val() != "0") {
+                    MoveRow($rowSelectorDelta.val());
+                    $rowSelectorDelta.val("0");
+                }
+
+                HighlightSelectedRow();
+            }        
+        }
+
+        function CacheControls() {
+            gridsDisabled = $("#MainContent_gvSteps").hasClass('aspNetDisabled');
+
+            //main controls
+            $cmdSave = $('#MainContent_cmdSave');
+            $cmdCopy = $('#MainContent_cmdCopy');
+            $cmdPrint = $('#MainContent_cmdPrint');
+            $cmdNewMCR = $('#MainContent_cmdCreateNew');
+
+            $rowSelectorDelta = $('#MainContent_rowSelectorDelta');
+            $ddlMCRNumber = $('#MainContent_ddlMCRNumber');
+
+            //copy dialog
+            $ddlLineNumbersCopySrc = $('#MainContent_ddlLineNumbersCopySrc');
+            $ddlStationsCopySrc = $('#MainContent_ddlStationsCopySrc');
+            $ddlInstructionSetsCopySrc = $('#MainContent_ddlInstructionSetsCopySrc');
+            $ddlMCRNumberCopySrc = $('#MainContent_ddlMCRNumberCopySrc');
+
+            $ddlLineNumbersCopyDst = $('#MainContent_ddlLineNumbersCopyDst');
+            $ddlStationsCopyDst = $('#MainContent_ddlStationsCopyDst');
+            $ddlInstructionSetsCopyDst = $('#MainContent_ddlInstructionSetsCopyDst');
+            $ddlMCRNumberCopyDst = $('#MainContent_ddlMCRNumberCopyDst');
+
+            $copyStepCount = $("#MainContent_copyStepCount");
+            
+            $lbxInstructionsCopySrc = $("#MainContent_lbxInstructionsCopySrc");
+            $lbxInstructionsCopyDst = $("#MainContent_lbxInstructionsCopyDst");
+
+            //MCR Edit Dialog
+            $txtMCRNumberEdit = $('#MainContent_txtMCRNumberEdit');
+            $txtMCRDateEdit = $('#MainContent_txtMCRDateEdit');
+            $ddlMCRStatusEdit = $('#MainContent_ddlMCRStatusEdit');
+            $txtMCRDescriptionEdit = $('#MainContent_txtMCRDescriptionEdit');
+            $txtStationMCR = $('#MainContent_txtStationMCR');
+            $txtStationChangeDescriptionEdit = $('#MainContent_txtStationChangeDescriptionEdit');
+
+            $txtMCRNumberEditValue = $txtMCRNumberEdit.val();
+            $txtMCRDateEditValue = $txtMCRDateEdit.val();
+            $txtMCRStatusEditValue = $ddlMCRStatusEdit.val();
+            $txtMCRDescriptionEditValue = $txtMCRDescriptionEdit.val();
+
+            //MCR New Dialog
+            $txtMCRNumberNew = $('#MainContent_txtMCRNumberNew');
+            $txtMCRDateNew = $('#MainContent_txtMCRDateNew');
+            $txtMCRDescriptionNew = $('#MainContent_txtMCRDescriptionNew');
+        }
+
+        function AddDirtyClassOnChangeLimited() {
+            $(":text, :checkbox, select[id*='ddlColor']").not(".NoColorOnChange").change(function () { $(this).addClass('dirty'); });
+            $('#divDialogMCREdit :text').unbind('change');
+        }
+
+        function MakeMCRDialogDateTimePickers() {
+            $txtMCRDateNew.mask("99/99/9999").addDatePicker().datepicker("option", "firstDay", 1);
+            PositionCalendarPickerIcon();
+        }
+
+        function CreateDialog_MCREdit() {
+            var $dlgDiv = $('#divDialogMCREdit');
+
+            $cmdSave.click(function () {
+                $dlgDiv.dialog('open');
+                $txtMCRNumberEdit.val($txtMCRNumberEditValue);
+                $txtMCRDateEdit.val($txtMCRDateEditValue);
+                $ddlMCRStatusEdit.val($txtMCRStatusEditValue);
+                $txtMCRDescriptionEdit.val($txtMCRDescriptionEditValue);
+                $txtStationChangeDescriptionEdit.val('');
+                return false;
+            });
+
+            $dlgDiv.modalDialog({
+                control: $cmdSave,
+                width: 440,
+                clearInputOnOpen: false,
+                validationFunction: function () { return ValidateDialog_MCREdit(); }
+            });
+        }
+
+        function ValidateDialog_MCREdit() {
+            var bValid = true;
+            bValid = checkText($txtStationChangeDescriptionEdit, "Please Enter a Station Change Description. This is a required field.") && bValid;
+            bValid = checkText($txtStationMCR, "Please Enter a Station MCR Number. This is a required field.") && bValid;
+            bValid = checkDate($txtMCRDateEdit, "Invalid MCR Date. Valid format is MM/DD/YYYY", $("#helpMCRDate")) && bValid;
+            bValid = checkText($txtMCRNumberEdit, "Invalid MCR Number. This is a required field.", $("#helpMCRNumber")) && bValid;
+            return bValid;
+        }
+
+        function CreateDialog_MCRNew() {
+            var $dlgDiv = $('#divDialogMCRNew');
+
+            $cmdNewMCR.click(function () {
+                $dlgDiv.dialog('open');
+                $('#MainContent_ddlLineNumbersNew').val($('#MainContent_ddlLineNumbers').val());
+                $('#MainContent_ddlInstructionSetsNew').val($('#MainContent_ddlInstructionSets').val());
+                $txtMCRNumberNew.val('');
+                $txtMCRDescriptionNew.text('');
+                if ($txtMCRDateNew.val().length == 0) {
+                    $txtMCRDateNew.datepicker('setDate', new Date())
+                }
+                return false;
+            });
+
+            $dlgDiv.modalDialog({
+                control: $cmdNewMCR,
+                width: 440,
+                clearInputOnOpen: false,
+                validationFunction: function () { return ValidateDialog_MCRNew(); }
+            });
+        }
+
+        function ValidateDialog_MCRNew() {
+            var bValid = true;
+            bValid = checkText($txtMCRDescriptionNew, "Invalid MCR Description. This is a required field.") && bValid;
+            bValid = checkDropDownList($("#MainContent_ddlMCRStatusNew"), "Please Select a Status") && bValid;
+            bValid = checkDate($txtMCRDateNew, "Invalid MCR Date. Valid format is MM/DD/YYYY") && bValid;
+            bValid = checkText($txtMCRNumberNew, "Invalid MCR Number. This is a required field.") && bValid;
+            bValid = checkDropDownListByIndex($("#MainContent_ddlInstructionSetsNew"), 1, "Please Select a Model Number") && bValid;
+            bValid = checkDropDownListByIndex($("#MainContent_ddlLineNumbersNew"), 1, "Please Select a Line Number") && bValid;
+            return bValid;
+        }
+
+        function CreateDialog_MCRCopy() {
+            var $dlgDiv = $('#divDialogCopy');
+
+            $cmdCopy.click(function () {
+                $('input[name$="rblCopyMode"]').prop('checked', false);
+
+                // check if there was a validation hint, if so redisplay after opening dialog.  (modalDialog clears the message on open event)
+                var t = $('#MainContent_copyMsg').text();
+
+                $dlgDiv.dialog('open');
+
+                if (t.length > 0) {
+                    $('#MainContent_copyMsg').text(t);
+                    setValidationHint(t);
+                }
+
+                return false;
+            });
+
+            $dlgDiv.modalDialog({
+                control: $cmdCopy,
+                width: 780,
+                height: 735,
+                clearInputOnOpen: false,
+                validationFunction: function () { return ValidateDialog_MCRCopy(); }
+            });
+        }
+
+        function ValidateDialog_MCRCopy() {
+            var bValid = true;
+
+            if ($("#MainContent_rblCopyMode :checked").val() === undefined) {
+                bValid = false;
+                setValidationHint('Select a Copy Method');
+            } else if (($ddlLineNumbersCopySrc.val() == $ddlLineNumbersCopyDst.val())
+                        && ($ddlStationsCopySrc.val() == $ddlStationsCopyDst.val())
+                        && ($ddlInstructionSetsCopySrc.val() == $ddlInstructionSetsCopyDst.val())
+                        && ($ddlMCRNumberCopySrc.val() == $ddlMCRNumberCopyDst.val())) {
+                bValid = false;
+                setValidationHint('Stations, Vehicle Models and MCR Numbers are the same, please change the selections.');
+            } else if ($copyStepCount.val() == "0") {
+                bValid = false;
+                setValidationHint('No Steps have been added to the "Copy To".');
+            }
+
+            bValid = checkText($lbxInstructionsCopyDst, 'No Steps have been added to the "Copy To".') && bValid;
+            bValid = checkText($lbxInstructionsCopySrc, 'The "Copy From" does not have any Steps to Copy.') && bValid;
+
+            return bValid;
+        }
+
+        function CreatePrintDialog() {
+            var $dlgDiv = $('#divDialogPrint');
+            // add dialog open event
+            $cmdPrint.click(function () {
+                $dlgDiv.dialog('open');
+                $('#MainContent_chkIncludeWatermark').prop('checked', true).removeClass('dirty');
+                return false; 
+            });
+
+            // Add Copy Dialog
+            $dlgDiv.modalDialog({
+                control: $cmdPrint
+                , width: 300
+                , acceptFunction: function () { return OpenPDFReport(); }
+            });
+        }
+
+        function AddSortButtonEvent() {
+
+            $('.sortButton').click(function () {
+                var result = false;
+                var idx = parseInt($('input[name=rbgSelectorGroup]:checked').val());
+                if (isNaN(idx) == false) {
+                    ShowWaitOverlay();
+                    result = true;
+                }
+                else {
+                    showMessage('Please Select a Row.');
+                    result = false;
+                }
+                return result;
+            });
+        }
+
+        function AddChangeEvents() {
+            $('input[name="rbgSelectorGroup"]').change(function () { HighlightSelectedRow(); });
+            $('.waitCursorOnChange').change(function () { ShowCursor_Wait(); });
+            $('#MainContent_cmdClearRow, #MainContent_cmdRefresh').one('click', function () { ShowWaitOverlay(); });
+        }
+
+        function SetupGridEvents() {
+            if (gridsDisabled == false) {
+                $('.stepID').removeClass('stepID'); // this class makes the stepID appear greyed out.
+                AddChangeSelectedRowOnClick();
+                AddChangeRowColorOnHover();
+                // 2012.09.19 removed - AddChangeColumnColorOnHover();
+            } else {
+                var idx = parseInt($('input[name=rbgSelectorGroup]:checked').val());
+                if (isNaN(idx) == false) {
+                    $('input[name=rbgSelectorGroup]')[idx].checked = false;
+                }
+            }
+        }
+
+        function MoveRow(delta) {
+            var idx = parseInt($('input[name=rbgSelectorGroup]:checked').val()) + parseInt(delta);
+            $('input[name=rbgSelectorGroup]')[idx].checked = true;
+        }
+
+        function AddChangeSelectedRowOnClick() {
+
+            $('#MainContent_gvSteps tr:has(td), #MainContent_gvChecks tr:has(td)').click(function () {
+                var idx = parseInt($(this).index()) - 1;
+                $('input[name=rbgSelectorGroup]')[idx].checked = true;
+                HighlightSelectedRow();
+            });
+        }
+
+        function HighlightSelectedRow() {
+            $('#MainContent_gvSteps tr:has(td)').removeClass("odsSelected");
+            $('#MainContent_gvChecks tr:has(td)').find("td").each(function () {
+                $(this).removeClass("odsSelected");
+            });
+
+            var idx = parseInt($('input[name=rbgSelectorGroup]:checked').val());
+            $('#MainContent_gvSteps tr:has(td)').eq(idx).addClass("odsSelected");
+            $('#MainContent_gvChecks tr:has(td)').eq(idx).find("td").each(function () {
+                $(this).addClass("odsSelected");
+            });
+
+        }
+
+        function AddChangeRowColorOnHover() {
+            // add hover to change the background of the row
+            $('#MainContent_gvSteps tr:has(td), #MainContent_gvChecks tr:has(td)').hover(
+                function () {   // handlerIn
+                    var idx = parseInt($(this).index()) - 1;
+                    $('#MainContent_gvSteps tr:has(td)').eq(idx).addClass("odsHover");
+                    $('#MainContent_gvChecks tr:has(td)').eq(idx).find("td").each(function () {
+                        $(this).addClass("odsHover");
+                    });
+                },
+                function () {   // handlerOut
+                    var idx = parseInt($(this).index()) - 1;
+                    $('#MainContent_gvSteps tr:has(td)').eq(idx).removeClass("odsHover");
+                    $('#MainContent_gvChecks tr:has(td)').eq(idx).find("td").each(function () {
+                        $(this).removeClass("odsHover");
+                    });
+                }
+            );
+        }
+        function AddChangeColumnColorOnHover() {
+            // adds or removes a css style to all cells within hovering column.
+            $("#MainContent_gvChecks td").hover(
+                function () {
+                    var count = $(this).closest("td").prevAll("td").length;
+                    $(this).parents("#MainContent_gvChecks").find("tr:has(td)").each(function () {
+                        $(this).find("td:eq(" + count + ")").addClass("odsHoverColumn");
+                    });
+                },
+                function () {
+                    var count = $(this).closest("td").prevAll("td").length;
+                    $(this).parents("#MainContent_gvChecks").find("tr:has(td)").each(function () {
+                        $(this).find("td:eq(" + count + ")").removeClass("odsHoverColumn");
+                    });
+                }
+            );
+        }
+
+        function AddColorToColorDropDownOptions() {
+            $('#divInstructionPanel option').each(function () {
+                var opt = $(this);
+                var backColor = opt.val();
+                var foreColor = ConvertForeColor(backColor);
+
+                var color = new RGBColor(backColor);
+                if (color.ok) {
+                    opt.css("background-color", color.toRGB())
+                   .css("color", foreColor);
+                }
+            });
+        }
+
+        function SetMaxLengthForInputboxes() {
+            $(".odsGrid_ItemStyle input").inputlimiter({ limit: 100 });
+            $txtMCRDescriptionNew.inputlimiter({ limit: 50 });
+            $txtStationChangeDescriptionEdit.inputlimiter({ limit: 400 });
+        }
+
+        function OpenPDFReport() {
+            var url = baseUrl + '/3SystemConfiguration/1StationConfiguration/7StationODSConfiguration/WorkInstructionExport.aspx?';
+            url += "reportType=1";
+            url += "&StationID=" + $('#MainContent_ddlStations').val();
+            url += "&MasterChangeRequestID=" + $('#MainContent_ddlMCRNumber').val();
+            url += "&MCRNumber=" + $('option:selected', $('#MainContent_ddlMCRNumber')).attr('MCRNumber');
+            url += "&IncludeWatermark=" + $('#MainContent_chkIncludeWatermark').is(':checked');
+            window.open(url);
+            return false;
+        }
+
+    </script>
+</asp:Content>
+<asp:Content ID="Content2" ContentPlaceHolderID="MainContent" runat="server">
+    <asp:UpdatePanel ID="UpdatePanel1" runat="server">
+        <ContentTemplate>
+            <div id="divODSContent">
+                <input id="copyStepCount" type="hidden" name="copyStepCount" runat="server" value="0" />
+                <input id="rowSelectorDelta" type="hidden" name="rowSelectorDelta" runat="server" value="0" />
+                <input id="hidModfiedBy" type="hidden" runat="server" value="" />
+                <div id="divFilterPanel">
+                    <p>
+                        <asp:Label ID="Label1" runat="server" CssClass="h2 spanLabel">Line:</asp:Label>
+                        <asp:DropDownList ID="ddlLineNumbers" runat="server" AutoPostBack="True" CssClass="selectDropDown waitCursorOnChange" />
+                    </p>
+                    <p>
+                        <asp:Label ID="Label2" runat="server" CssClass="h2 spanLabel">Station:</asp:Label>
+                        <asp:DropDownList ID="ddlStations" runat="server" AutoPostBack="True" CssClass="selectDropDown waitCursorOnChange" />
+                    </p>
+                    <p>
+                        <asp:Label ID="lblInstructionSet" runat="server" CssClass="h2 spanLabel">Instruction Set:</asp:Label>
+                        <asp:DropDownList ID="ddlInstructionSets" runat="server" AutoPostBack="True" CssClass="selectDropDown waitCursorOnChange" />
+                    </p>
+                    <p>
+                        <span class="h2 spanLabel">MCR #:</span>
+                        <GGS:WebDropDownList ID="ddlMCRNumber" runat="server" AutoPostBack="True" CssClass="selectDropDown waitCursorOnChange">
+                        </GGS:WebDropDownList>
+                    </p>
+                    <p>
+                        <span class="h2 spanLabel">Station MCR #:</span>
+                        <asp:Label ID="lblStationMCRNumber" runat="server" CssClass="spanReadOnly StationMCRNumber"></asp:Label>
+                    </p>            
+                    <p>
+                        <span class="h2 spanLabel spanMCRDate">MCR Date:</span>
+                        <asp:Label ID="lblMCRDate" runat="server" CssClass="spanReadOnly MCRDate"></asp:Label>
+                    </p>            
+                    <p>
+                        <asp:Button ID="cmdRefresh" runat="server" Text="Refresh" CssClass="inputButton filterButtons" />
+                    </p>            
+                    <p>
+                        <asp:Button ID="cmdCreateNew" runat="server" Text="Create New MCR" CssClass="inputButton filterButtons" />
+                    </p>            
+                            
+                </div>
+                <div id="divInstructionPanel">
+                    <div id="divVertButton">
+                        <asp:ImageButton ID="cmdMoveUp" runat="server" ImageUrl="~/Images/Arrows/ArrowUpLeft.png" CssClass="sortButton" />
+                        <asp:Label ID="Label5" runat="server" CssClass="spanLabel">Move</asp:Label>
+                        <asp:ImageButton ID="cmdMoveDown" runat="server" ImageUrl="~/Images/Arrows/ArrowDownLeft.png" CssClass="sortButton" />
+                    </div>
+                    <div id="divOdsSteps" class="odsGrid">
+                        <GGS:BulkEditGridView ID="gvSteps" runat="server" AutoGenerateColumns="False" DataSourceID="sqlDataSource_InstructionSteps" DataKeyNames="DisplayID" 
+                            GridLines="None" CssClass="odsGrid" HeaderStyle-CssClass="odsGrid_HeaderStyle">
+                            <Columns>
+                                <asp:TemplateField>
+                                    <HeaderStyle Width="30px" />
+                                    <ItemStyle HorizontalAlign="Center" />
+                                    <ItemTemplate>
+                                        <asp:Literal ID="rbSelector" runat="server" />
+                                    </ItemTemplate>
+                                </asp:TemplateField>
+                                <GGS:BulkEditBoundField DataField="InstructionID" AllowedToClear="false" HeaderText="InstructionID"/>
+                                <GGS:BulkEditBoundField DataField="StepID" AllowedToClear="false" HeaderText="StepID"  />
+                                <GGS:BulkEditBoundField DataField="DisplayID" HeaderText="Step" Frozen="true" ReadOnly="true" ItemStyle-HorizontalAlign="Center" ItemStyle-CssClass="stepID"/>
+                                <asp:TemplateField HeaderText="Color" HeaderStyle-Width="80px">
+                                    <EditItemTemplate>
+                                        <asp:DropDownList ID="ddlColor" runat="server" DataSourceID="sqlDataSource_Colors" DataTextField="ColorName" DataValueField="ColorName" Width="100px" />
+                                    </EditItemTemplate>
+                                </asp:TemplateField>
+                                <asp:BoundField DataField="Description" HeaderText="Description">
+                                    <ControlStyle Width="540" />
+                                    <ItemStyle CssClass="odsGrid_ItemStyle" Width="540px" />
+                                </asp:BoundField>
+                            </Columns>
+                        </GGS:BulkEditGridView>
+                    </div>
+                    <div id="divOdsChecks" class="odsGrid">
+                        <GGS:BulkEditGridView ID="gvChecks" runat="server" AutoGenerateColumns="False" DataKeyNames="DisplayID" 
+                            GridLines="None" CssClass="odsGrid" HeaderStyle-CssClass="odsGrid_HeaderStyle">
+                            <Columns>
+                                <GGS:BulkEditBoundField DataField="InstructionID" AllowedToClear="false" HeaderText="InstructionID" />
+                                <GGS:BulkEditBoundField DataField="StepID" AllowedToClear="false" HeaderText="StepID" />
+                                <GGS:BulkEditBoundField DataField="DisplayID" HeaderText="DisplayID" Frozen="true" ReadOnly="true" ItemStyle-HorizontalAlign="Center" />
+                                <asp:CheckBoxField DataField="See EDS" HeaderText="See EDS" HeaderStyle-CssClass="odsColumnSpecial" />
+                                <asp:CheckBoxField DataField="Specific Quality" HeaderText="Critical Feature" HeaderStyle-CssClass="odsColumnSpecial"/>
+                                <asp:CheckBoxField DataField="Seq Control" HeaderText="Sequence Control" HeaderStyle-CssClass="odsColumnSpecial"/>
+                            </Columns>
+                        </GGS:BulkEditGridView>
+                    </div>
+                    <div id="div1" class="coverClipBorder">
+                    </div>
+                </div>
+                <div id="bottomPanel">
+                    <div id="cmdPanel">
+                        <asp:Button ID="cmdSave" runat="server" Text="Save" CssClass="inputButton" />
+                        <asp:Button ID="cmdCopy" runat="server" Text="Copy" CssClass="inputButton" />
+                        <asp:Button ID="cmdPrint" runat="server" Text="Print" CssClass="inputButton" />
+                        <asp:Button ID="cmdClearRow" runat="server" Text="Clear Row" CssClass="inputButton" />
+                    </div>
+                    <div class="divAuxList datagrid">
+                        <asp:Label ID="lblAuxListB" runat="server" CssClass="spanLabel">Auxiliary List B</asp:Label>
+                        <asp:CheckBoxList ID="cblAuxListB" runat="server" RepeatColumns="1" RepeatLayout="Flow" CssClass="checkBoxList">
+                        </asp:CheckBoxList>
+                    </div>
+                    <div class="divAuxList datagrid">
+                        <asp:Label ID="lblAuxListA" runat="server" CssClass="spanLabel">Auxiliary List A</asp:Label>
+                        <asp:CheckBoxList ID="cblAuxListA" runat="server" RepeatColumns="3" RepeatLayout="Flow" CssClass="checkBoxList">
+                        </asp:CheckBoxList>
+                    </div>
+                </div>
+            </div>
+        </ContentTemplate>
+    </asp:UpdatePanel>
+    <div id="divDialogMCREdit" title="Enter MCR Number">
+        <asp:UpdatePanel ID="UpdatePanel3" runat="server">
+            <ContentTemplate>
+            <p class="validationHints">
+            </p>
+            <fieldset class="groupBox">
+            <legend class="groupBoxLegend">MCR</legend>
+                    <p>
+                        <span class="spanLabel icon-empty">MCR Number:</span>
+                        <asp:TextBox ID="txtMCRNumberEdit" runat="server" Width="90px" CssClass="textEntry" MaxLength="10" ReadOnly="True" Enabled="False" ></asp:TextBox>
+                    </p>
+                    <p>
+                        <span class="spanLabel icon-empty">MCR Date:</span>
+                        <asp:TextBox ID="txtMCRDateEdit" runat="server" Width="90px" CssClass="textEntry" ReadOnly="True" Enabled="False" />
+                    </p>
+                    <p>
+                        <span class="spanLabel icon-empty">MCR Status:</span>
+                        <asp:DropDownList ID="ddlMCRStatusEdit" runat="server" Width="120px" CssClass="selectDropDown" Enabled="False" />
+                    </p>
+                    <p>
+                        <span class="spanLabel icon-empty">MCR Description:</span>
+                        <asp:TextBox ID="txtMCRDescriptionEdit" CssClass="textEntry" runat="server" Width="240px" Height="60px" TextMode="MultiLine" Enabled="False" ReadOnly="True" ></asp:TextBox>
+                    </p>
+            </fieldset>
+            <fieldset class="groupBox" style="margin-top: 8px">
+            <legend class="groupBoxLegend">Station Instructions</legend>
+                    <p>
+                        <span class="ui-icon ui-icon-triangle-1-e"></span><span class="spanLabel">Station MCR Number:</span>
+                        <asp:TextBox ID="txtStationMCR" runat="server" Width="90px" CssClass="textEntry" MaxLength="10"></asp:TextBox>
+                    </p>
+                    <p>
+                        <span class="ui-icon ui-icon-triangle-1-e"></span><span class="spanLabel">Description of Change:</span>
+                        <asp:TextBox ID="txtStationChangeDescriptionEdit" CssClass="textEntry" runat="server" Width="240px" Height="60px" TextMode="MultiLine"></asp:TextBox>
+                    </p>
+            </fieldset>
+            </ContentTemplate>
+        </asp:UpdatePanel>
+    </div>
+    <div id="divDialogMCRNew" title="Create New MCR">
+        <asp:UpdatePanel ID="UpdatePanel4" runat="server">
+            <ContentTemplate>
+            <p class="validationHints">
+            </p>
+            <p class="pFilterHeader">
+                <span class="spanLabel spanFilterHeader filterLeft">Line:</span>
+                <span class="spanLabel spanFilterHeader">Vehicle Model:</span>
+            </p>
+            <p class="pFilterDDL">
+                <asp:DropDownList ID="ddlLineNumbersNew" runat="server" Width="180px" CssClass="selectDropDown waitCursorOnChange filterLeft" AutoPostBack="True" />
+                <asp:DropDownList ID="ddlInstructionSetsNew" runat="server" Width="180px" CssClass="selectDropDown waitCursorOnChange" AutoPostBack="True" />
+            </p>
+            <fieldset class="groupBox">
+            <legend class="groupBoxLegend">New MCR</legend>
+                <p>
+                    <span class="ui-icon ui-icon-triangle-1-e"></span><span class="spanLabel">MCR Number:</span>
+                    <asp:TextBox ID="txtMCRNumberNew" runat="server" Width="90px" CssClass="textEntry" MaxLength="10" />
+                </p>
+                <p>
+                    <span class="ui-icon ui-icon-triangle-1-e"></span><span class="spanLabel">MCR Date:</span>
+                    <asp:TextBox ID="txtMCRDateNew" runat="server" Width="90px" CssClass="textEntry" MaxLength="10" />
+                </p>
+                <p>
+                    <span class="ui-icon ui-icon-triangle-1-e"></span><span class="spanLabel">MCR Status:</span>
+                    <asp:DropDownList ID="ddlMCRStatusNew" runat="server" Width="122px" CssClass="selectDropDown" />
+                </p>
+                <p>
+                    <span class="ui-icon ui-icon-triangle-1-e"></span><span class="spanLabel">MCR Description:</span>
+                    <asp:TextBox ID="txtMCRDescriptionNew" CssClass="textEntry" runat="server" Width="240px" Height="30px" TextMode="MultiLine"></asp:TextBox>
+                </p>
+            </fieldset>
+            <fieldset class="groupBox" style="margin-top: 8px">
+            <legend class="groupBoxLegend">Copy From</legend>
+                <p>
+                    <span class="ui-icon ui-icon-triangle-1-e"></span><span class="spanLabel">MCR Number:</span>
+                    <GGS:WebDropDownList ID="ddlMCRNumberNewCopyFrom" runat="server" Width="246px" CssClass="selectDropDown">
+                        <asp:ListItem Text="- Do Not Copy -" Value="-1" Selected="True" />
+                    </GGS:WebDropDownList>
+                </p>
+            </fieldset>
+            </ContentTemplate>
+        </asp:UpdatePanel>
+    </div>
+    <div id="divDialogCopy" title="Copy Station Configuration">
+        <asp:UpdatePanel ID="UpdatePanel2" runat="server">
+            <ContentTemplate>
+                <p id="copyMsg" class="validationHints" runat="server"></p>
+                <div id="copyBody">
+                    <div id="copyTop" class="divBorder">
+                        <p class="leftPanel">
+                            <span class="spanLabel h1 block">Copy From:</span> <span class="spanLabel h2 block">Line:</span>
+                            <asp:DropDownList ID="ddlLineNumbersCopySrc" runat="server" AutoPostBack="True" CssClass="selectDropDown waitCursorOnChange" />
+                            <span class="spanLabel h2 block">Station:</span>
+                            <asp:DropDownList ID="ddlStationsCopySrc" runat="server" AutoPostBack="True" CssClass="selectDropDown waitCursorOnChange" />
+                            <asp:Label ID="lblInstructionSetCopySrc" CssClass="spanLabel h2 block" runat="server">Instruction Set:</asp:Label>
+                            <asp:DropDownList ID="ddlInstructionSetsCopySrc" runat="server" AutoPostBack="True" CssClass="selectDropDown waitCursorOnChange" />
+                            <asp:Label ID="lblMCRNumberCopySrc" CssClass="spanLabel h2 block" runat="server">MCR Number:</asp:Label>
+                            <GGS:WebDropDownList ID="ddlMCRNumberCopySrc" runat="server" AutoPostBack="True" CssClass="selectDropDown waitCursorOnChange" />
+                        </p>
+                        <p class="rightPanel">
+                            <asp:ListBox ID="lbxInstructionsCopySrc" runat="server" AutoPostBack="True" CssClass="selectListBox" Width="520" Height="240"/>
+                        </p>
+                    </div>
+                    <p class="middleLeftPanel">
+                        <span class="spanLabel h2 block copyMode">Copy Method:</span> 
+                        <span style="margin-top: 2px; display: inline-block;">
+                            <asp:RadioButtonList ID="rblCopyMode" runat="server" RepeatDirection="Horizontal" RepeatLayout="Flow" AutoPostBack="True">
+                                <asp:ListItem Value="0">Copy All</asp:ListItem>
+                                <asp:ListItem Value="1" Selected="False">Copy Selected</asp:ListItem>
+                            </asp:RadioButtonList>
+                        </span>
+                    </p>
+                    <p class="middleRightPanel">
+                        <span class="copyBtnSpan">
+                            <asp:ImageButton ID="cmdMoveDownCopy" runat="server" ImageUrl="~/Images/Arrows/ArrowDownFlat.png" CssClass="copyButton" />
+                            <asp:Label ID="Label3" CssClass="spanLabel block" runat="server">Add to "Copy To" List</asp:Label>
+                        </span>
+                        <span class="copyBtnSpan">
+                            <asp:ImageButton ID="cmdMoveUpCopy" runat="server" ImageUrl="~/Images/Arrows/ArrowUpFlat.png" CssClass="copyButton" />
+                            <asp:Label ID="Label4" CssClass="spanLabel block" runat="server">Remove from "Copy To" List</asp:Label>
+                        </span>
+                    </p>
+                    <div id="copyBottom" class="divBorder">
+                        <p class="leftPanel">
+                            <span class="spanLabel h1 block">Copy To:</span> <span class="spanLabel h2 block">Line:</span>
+                            <asp:DropDownList ID="ddlLineNumbersCopyDst" runat="server" AutoPostBack="True" CssClass="selectDropDown waitCursorOnChange" />
+                            <span class="spanLabel h2 block">Station:</span>
+                            <asp:DropDownList ID="ddlStationsCopyDst" runat="server" AutoPostBack="True" CssClass="selectDropDown waitCursorOnChange" />
+                            <asp:Label ID="lblInstructionSetCopyDst" CssClass="spanLabel h2 block" runat="server">Vehicle Model:</asp:Label>
+                            <asp:DropDownList ID="ddlInstructionSetsCopyDst" runat="server" AutoPostBack="True" CssClass="selectDropDown waitCursorOnChange" />
+                            <asp:Label ID="lblMCRNumberCopyDst" CssClass="spanLabel h2 block" runat="server">MCR Number:</asp:Label>
+                            <GGS:WebDropDownList ID="ddlMCRNumberCopyDst" runat="server" AutoPostBack="True" CssClass="selectDropDown waitCursorOnChange" />
+                        </p>
+                        <p class="rightPanel">
+                            <asp:ListBox ID="lbxInstructionsCopyDst" runat="server" AutoPostBack="True" CssClass="selectListBox" Width="520" Height="240" />
+                        </p>
+                    </div>
+                </div>
+
+            </ContentTemplate>
+        </asp:UpdatePanel>
+    </div>
+    <div id="divDialogPrint" title="Print Watermark Confirmation">
+        <p class="pCenter" >
+            Printing Instructions For Current Station.
+        </p>
+        <p class="pCenter" >
+            <asp:CheckBox ID="chkIncludeWatermark" runat="server" Text="Include Watermark" Checked="True" CssClass="selectCheckBox secureCheckBox NoColorOnChange" />
+        </p>
+    </div>
+
+    <asp:SqlDataSource ID="sqlDataSource_InstructionSteps" runat="server" ConnectionString="<%$ ConnectionStrings:ConnStringSQL %>" 
+        SelectCommandType="StoredProcedure" SelectCommand="[ods].[procSelectInstructionSteps]"
+        UpdateCommandType="StoredProcedure" UpdateCommand="[ods].[procUpdateInstructionSteps]" CancelSelectOnNullParameter="False">
+        <SelectParameters>
+            <asp:ControlParameter ControlID="ddlLineNumbers" PropertyName="SelectedValue" Name="LineID" DefaultValue="" ConvertEmptyStringToNull="True" />
+            <asp:ControlParameter ControlID="ddlStations" PropertyName="SelectedValue" Name="StationID" DefaultValue="" ConvertEmptyStringToNull="True" />
+            <asp:ControlParameter ControlID="ddlInstructionSets" PropertyName="SelectedValue" Name="ConfigurationID" DefaultValue="" ConvertEmptyStringToNull="True" />
+            <asp:ControlParameter ControlID="ddlMCRNumber" PropertyName="SelectedValue" Name="MasterChangeRequestID" DefaultValue="" ConvertEmptyStringToNull="True" />
+        </SelectParameters>
+        <UpdateParameters>
+            <asp:ControlParameter ControlID="ddlLineNumbers" Name="LineID" PropertyName="SelectedValue" Type="Int32" />
+            <asp:ControlParameter ControlID="ddlStations" Name="StationID" PropertyName="SelectedValue" Type="String" />
+            <asp:ControlParameter ControlID="ddlInstructionSets" Name="instruction_ConfigurationID" PropertyName="SelectedValue" Type="Int32" />
+            <asp:Parameter Name="InstructionID" Type="Int32" DefaultValue="" />
+            <asp:ControlParameter ControlID="ddlMCRNumber" Name="MasterChangeRequestID" PropertyName="SelectedValue" Type="Int32" />
+            <asp:Parameter Name="StepID" Type="Int32" DefaultValue="" />
+            <asp:Parameter Name="DisplayID" Type="Int32" DefaultValue="" />
+            <asp:Parameter Name="Color" Type="String" DefaultValue="" />
+            <asp:Parameter Name="Description" Type="String" DefaultValue="" />
+            <asp:ControlParameter ControlID="hidModfiedBy" Name="ModifiedBy" PropertyName="Value" Type="String" />
+            <asp:Parameter Direction="ReturnValue" Name="RETURN_VALUE" Type="Int32" />
+        </UpdateParameters>
+    </asp:SqlDataSource>
+    <asp:SqlDataSource ID="sqlDataSource_Colors" runat="server" ConnectionString="<%$ ConnectionStrings:ConnStringSQL %>" SelectCommandType="StoredProcedure" SelectCommand="[ods].[procSelectColors]"
+        EnableCaching="True"  CacheKeyDependency="CacheDefault"/>
+</asp:Content>

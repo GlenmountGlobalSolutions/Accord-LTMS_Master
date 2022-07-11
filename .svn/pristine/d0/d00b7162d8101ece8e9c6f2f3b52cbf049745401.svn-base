@@ -1,0 +1,758 @@
+﻿Imports System.Data.SqlClient
+
+Public Class ShippingLabel
+    Inherits System.Web.UI.Page
+
+    Dim driverLotTraceMsg As New ArrayList
+    Dim driverCheckShipMsg As New ArrayList
+    Dim passLotTraceMsg As New ArrayList
+    Dim passCheckShipMsg As New ArrayList
+    Dim rearBackLotTraceMsg As New ArrayList
+    Dim rearBackCheckShipMsg As New ArrayList
+    Dim rearCushionLotTraceMsg As New ArrayList
+    Dim rearCushionCheckShipMsg As New ArrayList
+
+    Dim bShipStatus As Boolean = False
+
+    Dim strShipStatus As String = ""
+    Dim strTempShipStatus As String = ""
+
+    Dim bDriverFound As Boolean
+    Dim bPassFound As Boolean
+    Dim bRearBackFound As Boolean
+    Dim bRearCushionFound As Boolean
+
+    Private DupSsnPeriod As String = BizLayer.GetApplicationParameterValue("2233", "0001")
+
+    Enum SerialNumberType
+        Driver
+        Passenger
+        RearBack
+        RearCushion
+    End Enum
+
+#Region "Event Handlers"
+
+
+    Protected Sub Page_Load(ByVal sender As Object, ByVal e As System.EventArgs) Handles Me.Load
+        Try
+
+            If Not IsPostBack() Then
+                ddPrinters_DataBind()
+                HidePrintDupSSNwaring()
+            End If
+
+        Catch ex As Exception
+            Master.eMsg(ex.ToString())
+        End Try
+    End Sub
+
+    Private Sub ShippingLabel_PreRender(sender As Object, e As System.EventArgs) Handles Me.PreRender
+        Try
+            EnableControls()
+        Catch ex As Exception
+            Master.eMsg(ex.ToString())
+        End Try
+    End Sub
+
+
+    Private Sub txtDriverSeatSerialNum_TextChanged(sender As Object, e As System.EventArgs) Handles txtDriverSeatSerialNum.TextChanged
+        Try
+            HidePrintDupSSNwaring()
+            CheckAllSeatSSN()
+
+        Catch ex As Exception
+            Master.eMsg(ex.ToString())
+        End Try
+    End Sub
+
+    Private Sub txtPassSeatSerialNum_TextChanged(sender As Object, e As System.EventArgs) Handles txtPassSeatSerialNum.TextChanged
+        Try
+            HidePrintDupSSNwaring()
+            CheckAllSeatSSN()
+
+        Catch ex As Exception
+            Master.eMsg(ex.ToString())
+        End Try
+    End Sub
+
+    Private Sub txtRearBackSerialNum_TextChanged(sender As Object, e As System.EventArgs) Handles txtRearBackSerialNum.TextChanged
+        Try
+            HidePrintDupSSNwaring()
+            CheckAllSeatSSN()
+
+        Catch ex As Exception
+            Master.eMsg(ex.ToString())
+        End Try
+
+    End Sub
+
+
+    'UNDONE:  Uncomment when we add Rear cushion --- Private Sub txtRearCushionSerialNum_TextChanged(sender As Object, e As System.EventArgs) Handles txtRearCushionSerialNum.TextChanged
+    'Try
+    '    HidePrintDupSSNwaring()
+    '    CheckAllSeatSSN()
+
+    'Catch ex As Exception
+    '    Master.eMsg(ex.ToString())
+    'End Try
+    'End Sub
+
+    Private Sub ddPrinters_SelectedIndexChanged(sender As Object, e As System.EventArgs) Handles ddPrinters.SelectedIndexChanged
+        Try
+            CheckAllSeatSSN()
+
+        Catch ex As Exception
+            Master.eMsg(ex.ToString())
+        End Try
+    End Sub
+
+
+
+    Private Sub cmdPrint_Click(sender As Object, e As System.EventArgs) Handles cmdPrint.Click
+        Try
+            'pb - 06/21/04
+            'added check for duplicate ssn's
+            Dim dupDriverSSNdt As String = ""
+            Dim dupPassSSNdt As String = ""
+            dupDriverSSNdt = CheckForDuplicateSSNs(Me.txtDriverSeatSerialNum.Text)
+            dupPassSSNdt = CheckForDuplicateSSNs(Me.txtPassSeatSerialNum.Text)
+
+            If (dupDriverSSNdt.Length > 0 And dupDriverSSNdt <> " ") Then
+                Me.lblPrintDupSSN.Text = "WARNING: Driver SSN has already been shipped!<br>"
+            End If
+            If (dupPassSSNdt.Length > 0 And dupPassSSNdt <> " ") Then
+                Me.lblPrintDupSSN.Text += "WARNING: Passenger SSN has already been shipped!<br>"
+            End If
+            If (dupDriverSSNdt.Length > 0 Or dupPassSSNdt.Length > 0) Then
+                If (dupDriverSSNdt <> " " Or dupPassSSNdt <> " ") Then
+                    'display label, buttons, and exit (do not print yet)
+                    Me.lblPrintDupSSN.Text += "ARE YOU SURE YOU WANT TO PRINT LABEL WITH DUPLICATE SSN(s)?"
+                    Me.lblPrintDupSSN.Visible = True
+                    Me.cmdPrintYes.Visible = True
+                    Me.cmdPrintNo.Visible = True
+                    Exit Sub
+                End If
+            End If
+
+            'implied else
+            PrintShippingLabel()
+            InsertShippingLabel()
+            HidePrintDupSSNwaring()
+        Catch ex As Exception
+            Master.eMsg(ex.ToString())
+        End Try
+    End Sub
+
+    'print confirmation (in case ssn's are duplicate). pb, 06/21/04
+    Private Sub cmdPrintYes_Click(sender As Object, e As System.EventArgs) Handles cmdPrintYes.Click
+        Try
+            PrintShippingLabel()
+            InsertShippingLabel()
+        Catch ex As Exception
+            Master.eMsg(ex.ToString())
+        End Try
+    End Sub
+
+    'print confirmation (in case ssn's are duplicate). pb, 06/21/04
+    Private Sub cmdPrintNo_Click(sender As Object, e As System.EventArgs) Handles cmdPrintNo.Click
+        Try
+            'clear warning
+            HidePrintDupSSNwaring()
+        Catch ex As Exception
+            Master.eMsg(ex.ToString())
+        End Try
+    End Sub
+
+#End Region
+
+
+#Region "Methods"
+
+    Private Sub EnableControls()
+        Dim bPrintEnabled = cmdPrint.Enabled
+
+        Master.Secure(Me.cmdPrint)
+        Master.Secure(Me.cmdPrintNo)
+        Master.Secure(Me.cmdPrintYes)
+        Master.Secure(Me.ddPrinters)
+
+        If ddPrinters.SelectedItem.Value = "" Then
+            cmdPrint.Enabled = False
+            cmdPrintYes.Enabled = False
+        End If
+
+        'check if btn was previously disabled and keep that state.
+        cmdPrint.Enabled = cmdPrint.Enabled And bPrintEnabled
+
+    End Sub
+
+    Private Sub HidePrintDupSSNwaring()
+        'clear warning
+        Me.lblPrintDupSSN.Text = ""
+        Me.lblPrintDupSSN.Visible = False
+        Me.cmdPrintNo.Visible = False
+        Me.cmdPrintYes.Visible = False
+    End Sub
+
+    Sub ddPrinters_DataBind()
+        Dim ds As New DataSet
+        ds = DA.GetDataSet("Select [Name], [NetworkPath] from tblLabelPrinters Where LabelPrinter = 1")
+        ddPrinters.DataSource = ds
+        ddPrinters.DataTextField = "Name"
+        ddPrinters.DataValueField = "NetworkPath"
+        ddPrinters.DataBind()
+        Dim i As Integer
+        Dim foundindex As Integer
+        Dim strPrinterName As String
+        'retrieve default printer name
+        strPrinterName = BizLayer.GetApplicationParameterValue("2232", "0001").Trim
+        'find printer name by one configured in application parameter
+        If Not ds Is Nothing Then
+            For i = 0 To ds.Tables(0).Rows.Count - 1
+                If ds.Tables(0).Rows(i).Item(0).ToString().Trim() = strPrinterName Then
+                    foundindex = i
+                    Exit For
+                End If
+            Next
+        End If
+        'select the value if it exists.
+        ddPrinters.SelectedIndex = foundindex
+
+        'ddPrinters.Items.Insert(0, New ListItem("Select Printer", ""))
+    End Sub
+
+    Private Sub WriteMsg()
+        Dim i As Integer
+        tMessage.Text = ""
+        lblShipStatus.Text = strShipStatus
+
+        '  First print all Driver Serial number messages
+        '   followed by all Passenger SSN Messages
+        '   followed by all Rear Back SSN Messages
+        '   followed by all REar Cushion SSN Messages
+
+        For i = 0 To driverLotTraceMsg.Count - 1
+            tMessage.Text = tMessage.Text & driverLotTraceMsg(i).ToString() & vbCrLf
+        Next
+
+        For i = 0 To passLotTraceMsg.Count - 1
+            tMessage.Text = tMessage.Text & passLotTraceMsg(i).ToString() & vbCrLf
+        Next
+
+        For i = 0 To rearBackLotTraceMsg.Count - 1
+            tMessage.Text = tMessage.Text & rearBackLotTraceMsg(i).ToString() & vbCrLf
+        Next
+
+        For i = 0 To rearCushionLotTraceMsg.Count - 1
+            tMessage.Text = tMessage.Text & rearCushionLotTraceMsg(i).ToString() & vbCrLf
+        Next
+
+        '-------CheckShipMsg
+        For i = 0 To driverCheckShipMsg.Count - 1
+            tMessage.Text = tMessage.Text & driverCheckShipMsg(i).ToString() & vbCrLf
+        Next
+
+        For i = 0 To passCheckShipMsg.Count - 1
+            tMessage.Text = tMessage.Text & passCheckShipMsg(i).ToString() & vbCrLf
+        Next
+
+        For i = 0 To rearBackCheckShipMsg.Count - 1
+            tMessage.Text = tMessage.Text & rearBackCheckShipMsg(i).ToString() & vbCrLf
+        Next
+
+        For i = 0 To rearCushionCheckShipMsg.Count - 1
+            tMessage.Text = tMessage.Text & rearCushionCheckShipMsg(i).ToString() & vbCrLf
+        Next
+
+        If (driverLotTraceMsg.Count > 0) And _
+            (passLotTraceMsg.Count > 0) And _
+            (rearBackLotTraceMsg.Count > 0) Then
+            '(rearCushionLotTraceMsg.Count > 0) Then
+
+            If (ddPrinters.SelectedIndex < 0) Then
+                cmdPrint.Enabled = False
+
+            ElseIf bShipStatus = False Then
+                cmdPrint.Enabled = False
+            Else
+                cmdPrint.Enabled = True
+            End If
+
+        Else
+            cmdPrint.Enabled = False
+        End If
+
+
+    End Sub
+
+
+    Function ValidateSSN(ByVal SSN As String, ByRef strResult As String) As Boolean
+        'Procedure(procCheckSerialNumber)
+        '@Data varchar(48),
+        '@CheckType VarChar(48),
+        '@Status varchar(48) out, 
+        '@Product_ID VarChar(48) Out, 
+        '@SerialNumber VarChar(48) Out , 
+        '@PLCProductCode  VarChar(8) Out as 
+
+        Dim colParms As New List(Of SqlParameter)
+        Dim prmNext As Data.SqlClient.SqlParameter
+        Dim colOutParms As List(Of SqlParameter)
+
+        Dim bResult As Boolean = False
+
+        'IN--------------------------------------------------------
+        prmNext = New Data.SqlClient.SqlParameter("@Data", SqlDbType.VarChar, 48)
+        prmNext.Direction = ParameterDirection.Input
+        prmNext.Value = SSN
+        colParms.Add(prmNext)
+        'OUT--------------------------------------------------------
+        prmNext = New Data.SqlClient.SqlParameter("@CheckType", SqlDbType.VarChar, 48)
+        prmNext.Direction = ParameterDirection.Input
+        prmNext.Value = 1
+        colParms.Add(prmNext)
+        'OUT--------------------------------------------------------
+        prmNext = New Data.SqlClient.SqlParameter("@Status", SqlDbType.VarChar, 48)
+        prmNext.Direction = ParameterDirection.Output
+        colParms.Add(prmNext)
+        'OUT--------------------------------------------------------
+        prmNext = New Data.SqlClient.SqlParameter("@Product_ID", SqlDbType.VarChar, 48)
+        prmNext.Direction = ParameterDirection.Output
+        colParms.Add(prmNext)
+        'OUT--------------------------------------------------------
+        prmNext = New Data.SqlClient.SqlParameter("@SerialNumber", SqlDbType.VarChar, 48)
+        prmNext.Direction = ParameterDirection.Output
+        colParms.Add(prmNext)
+        'OUT--------------------------------------------------------
+        prmNext = New Data.SqlClient.SqlParameter("@PLCProductCode", SqlDbType.VarChar, 8)
+        prmNext.Direction = ParameterDirection.Output
+        colParms.Add(prmNext)
+        '------------------------------------------------------------
+        colOutParms = DA.ExecSP("procCheckSerialNumber", colParms)
+
+        strResult = "Valid"
+        bResult = True
+
+        For Each oParameter In colOutParms
+            With oParameter
+                If .Direction = ParameterDirection.Output And .ParameterName = "@Status" And .Value.ToString() = "Invalid" Then
+
+                    strResult = "Invalid"
+                    bResult = False
+                    Exit For
+                End If
+            End With
+        Next
+
+        Return bResult
+
+    End Function
+
+    Function CheckLotTraceData(ByVal ssnType As SerialNumberType, ByVal SSN As String, ByRef ProductID As String, ByRef Message As ArrayList) As Boolean
+        Dim colParms As New List(Of SqlParameter)
+        Dim prmNext As Data.SqlClient.SqlParameter
+        Dim colOutParms As List(Of SqlParameter)
+        Dim bResult As Boolean = False
+
+        'Procedure(procVerifyOperationHistory)
+        '@Data varchar(48),
+        '@ComponentID varchar(50) Out,  
+        '@Product_ID varchar(48) Out, 
+        '@ProductIdentifier varchar(48) Out, 
+        '@Verify VarChar(48) Out ,
+        '@ProdIDStatus VarChar(48) Out AS
+
+
+        'IN--------------------------------------------------------
+        prmNext = New Data.SqlClient.SqlParameter("@Data", SqlDbType.VarChar, 48)
+        prmNext.Direction = ParameterDirection.Input
+        prmNext.Value = SSN
+        colParms.Add(prmNext)
+        'OUT--------------------------------------------------------
+        prmNext = New Data.SqlClient.SqlParameter("@ComponentID", SqlDbType.VarChar, 50)
+        prmNext.Direction = ParameterDirection.Output
+        'prmNext.Value = 1
+        colParms.Add(prmNext)
+        'OUT--------------------------------------------------------
+        prmNext = New Data.SqlClient.SqlParameter("@Product_ID", SqlDbType.VarChar, 48)
+        prmNext.Direction = ParameterDirection.Output
+        colParms.Add(prmNext)
+        'OUT--------------------------------------------------------
+        prmNext = New Data.SqlClient.SqlParameter("@ProductIdentifier", SqlDbType.VarChar, 48)
+        prmNext.Direction = ParameterDirection.Output
+        colParms.Add(prmNext)
+        'OUT--------------------------------------------------------
+        prmNext = New Data.SqlClient.SqlParameter("@Verify", SqlDbType.VarChar, 48)
+        prmNext.Direction = ParameterDirection.Output
+        colParms.Add(prmNext)
+        'OUT--------------------------------------------------------
+        prmNext = New Data.SqlClient.SqlParameter("@ProdIDStatus", SqlDbType.VarChar, 48)
+        prmNext.Direction = ParameterDirection.Output
+        colParms.Add(prmNext)
+        '------------------------------------------------------------
+        colOutParms = DA.ExecSP("procVerifyOperationHistory", colParms)
+
+
+        For Each oParameter In colOutParms
+            With oParameter
+                If .Direction = ParameterDirection.Output And .ParameterName = "@Product_ID" Then
+                    ProductID = .Value.ToString()
+                ElseIf .ParameterName = "@Verify" And .Value.ToString().ToUpper() = "TRUE" Then
+                    bResult = True
+                End If
+            End With
+        Next
+
+        If bResult = False Then
+            strShipStatus = "Teardown"
+            Message.Add(SerialNumberTypeName(ssnType) & " Lot Trace Data Missing")
+        Else
+            Message.Add(SerialNumberTypeName(ssnType) & " Lot Trace Data Found")
+        End If
+
+        Return bResult
+
+    End Function
+
+
+    Private Sub CheckAllSeatSSN()
+        Try
+            Dim bLotTraceStatusDriverSSN As Boolean
+            Dim bLotTraceStatusPassSSN As Boolean
+            Dim bLotTraceStatusRearBackSSN As Boolean
+            'Dim bLotTraceStatusRearCushionSSN As Boolean
+
+            Dim Driver_ProductID As String = ""
+            Dim Pass_ProductID As String = ""
+            Dim RearBack_ProductID As String = ""
+            Dim RearCushion_ProductID As String = ""
+
+            Dim driverSSN As String = txtDriverSeatSerialNum.Text
+            Dim passengerSSN As String = txtPassSeatSerialNum.Text
+            Dim rearBackSSN As String = txtRearBackSerialNum.Text
+            'Dim rearCushionSSN As String = txtRearCushionSerialNum.Text
+
+            ' Clear Labels
+            lblDriverSeatSerialNumStatus.Text = ""
+            lblPassSeatSerialNumStatus.Text = ""
+            lblRearBackSerialNumStatus.Text = ""
+            'lblRearCushionSerialNumStatus.Text = ""
+
+            '  Validate All SSN
+            '  Check Lot Trace on all
+            '  if they all pass
+            '       CheckShipping(Parameters)
+
+            If driverSSN.Trim.Length() > 0 Then
+                ValidateSSN(driverSSN, lblDriverSeatSerialNumStatus.Text)
+                bLotTraceStatusDriverSSN = CheckLotTraceData(SerialNumberType.Driver, driverSSN, Driver_ProductID, driverLotTraceMsg)
+            End If
+
+            If passengerSSN.Trim.Length() > 0 Then
+                ValidateSSN(passengerSSN, lblPassSeatSerialNumStatus.Text)
+                bLotTraceStatusPassSSN = CheckLotTraceData(SerialNumberType.Passenger, passengerSSN, Pass_ProductID, passLotTraceMsg)
+            End If
+
+            If rearBackSSN.Trim.Length() > 0 Then
+                ValidateSSN(rearBackSSN, lblRearBackSerialNumStatus.Text)
+                bLotTraceStatusRearBackSSN = CheckLotTraceData(SerialNumberType.RearBack, rearBackSSN, RearBack_ProductID, rearBackLotTraceMsg)
+            End If
+
+            'If rearCushionSSN.Trim.Length() > 0 Then
+            '    ValidateSSN(rearCushionSSN, lblRearCushionSerialNumStatus.Text)
+            '    bLotTraceStatusRearCushionSSN = CheckLotTraceData(SerialNumberType.RearCushion, rearCushionSSN, RearCushion_ProductID, rearCushionLotTraceMsg)
+            'End If
+
+            'if all are valid check shipping
+            '   uncomment and use when rear cushion is used        If (bLotTraceStatusDriverSSN) And (bLotTraceStatusPassSSN) And (bLotTraceStatusRearBackSSN) And (bLotTraceStatusRearCushionSSN) Then
+            If (bLotTraceStatusDriverSSN) And (bLotTraceStatusPassSSN) And (bLotTraceStatusRearBackSSN) Then
+                'Check Shipping
+                bShipStatus = CheckShippingParameters(Driver_ProductID, Pass_ProductID, RearBack_ProductID, RearCushion_ProductID)
+            End If
+
+            WriteMsg()
+
+        Catch ex As Exception
+            Master.eMsg(ex.ToString())
+        End Try
+    End Sub
+
+    Function CheckShippingParameters(ByRef DriverSeatStlyeID As String, _
+                                     ByRef PassSeatStlyeID As String, _
+                                     ByRef RearBackStlyeID As String, _
+                                     ByRef RearCushionStlyeID As String) As Boolean
+        Dim Model_Code As String = ""
+        Dim Label_Seat_Code As String = ""
+        Dim Color_Description As String = ""
+        Dim Shipping_Code As String = ""
+        Dim Product_Id As String = ""
+
+        Dim colParms As New List(Of SqlParameter)
+        Dim prmNext As Data.SqlClient.SqlParameter
+        Dim colOutParms As List(Of SqlParameter)
+
+        Dim bResult As Boolean = False
+
+        bDriverFound = LookupObjectInShippingValidationTable("0211", DriverSeatStlyeID, SerialNumberType.Driver, driverCheckShipMsg)
+        bPassFound = LookupObjectInShippingValidationTable("0212", PassSeatStlyeID, SerialNumberType.Passenger, passCheckShipMsg)
+        bRearBackFound = LookupObjectInShippingValidationTable("0210", RearBackStlyeID, SerialNumberType.RearBack, rearBackCheckShipMsg)
+        '---  Uncomment and Replace next line when we add Rear cushion ---  bRearCushionFound = LookupObjectInShippingValidationTable("NEED TO LOOK THIS UP", DriverSeatStlyeID, SerialNumberType.RearCushion, rearCushionCheckShipMsg)
+
+
+        'IN--------------------------------------------------------
+        prmNext = New Data.SqlClient.SqlParameter("@Data1", SqlDbType.VarChar, 48)
+        prmNext.Direction = ParameterDirection.Input
+        prmNext.Value = DriverSeatStlyeID
+        colParms.Add(prmNext)
+
+        'IN--------------------------------------------------------
+        prmNext = New Data.SqlClient.SqlParameter("@Data2", SqlDbType.VarChar, 48)
+        prmNext.Direction = ParameterDirection.Input
+        prmNext.Value = PassSeatStlyeID
+        colParms.Add(prmNext)
+
+        'IN--------------------------------------------------------
+        prmNext = New Data.SqlClient.SqlParameter("@Data3", SqlDbType.VarChar, 48)
+        prmNext.Direction = ParameterDirection.Input
+        prmNext.Value = RearBackStlyeID
+        colParms.Add(prmNext)
+
+        'IN--------------------------------------------------------
+        '---  Uncomment when we add Rear cushion --- prmNext = New Data.SqlClient.SqlParameter("@Data4", SqlDbType.VarChar, 48)
+        '---  Uncomment when we add Rear cushion --- prmNext.Direction = ParameterDirection.Input
+        '---  Uncomment when we add Rear cushion --- prmNext.Value = RearCushionStlyeID
+        '---  Uncomment when we add Rear cushion --- colParms.Add(prmNext)
+
+        'OUT--------------------------------------------------------
+        prmNext = New Data.SqlClient.SqlParameter("@Model_Code", SqlDbType.VarChar, 50)
+        prmNext.Direction = ParameterDirection.Output
+        'prmNext.Value = 1
+        colParms.Add(prmNext)
+
+        'OUT--------------------------------------------------------
+        prmNext = New Data.SqlClient.SqlParameter("@Label_Seat_Code", SqlDbType.VarChar, 50)
+        prmNext.Direction = ParameterDirection.Output
+        'prmNext.Value = 1
+        colParms.Add(prmNext)
+
+        'OUT--------------------------------------------------------
+        prmNext = New Data.SqlClient.SqlParameter("@Color_Description", SqlDbType.VarChar, 50)
+        prmNext.Direction = ParameterDirection.Output
+        'prmNext.Value = 1
+        colParms.Add(prmNext)
+
+        'OUT--------------------------------------------------------
+        prmNext = New Data.SqlClient.SqlParameter("@Shipping_Code", SqlDbType.VarChar, 50)
+        prmNext.Direction = ParameterDirection.Output
+        'prmNext.Value = 1
+        colParms.Add(prmNext)
+
+        'OUT--------------------------------------------------------
+        prmNext = New Data.SqlClient.SqlParameter("@Product_Id", SqlDbType.VarChar, 50)
+        prmNext.Direction = ParameterDirection.Output
+        'prmNext.Value = 1
+        colParms.Add(prmNext)
+
+
+        colOutParms = DA.ExecSP("procGetMap4PrintValues", colParms)
+
+
+        For Each oParameter In colOutParms
+            With oParameter
+
+                Select Case .ParameterName
+                    Case "@Model_Code"
+                        Model_Code = .Value.ToString()
+                    Case "@Label_Seat_Code"
+                        Label_Seat_Code = .Value.ToString()
+                    Case "@Color_Description"
+                        Color_Description = .Value.ToString()
+                    Case "@Shipping_Code"
+                        Shipping_Code = .Value.ToString()
+                    Case "@Product_Id"
+                        Product_Id = .Value.ToString()
+                End Select
+            End With
+        Next
+
+        If Len(Product_Id) > 0 Then
+            tModelCode.Text = Model_Code
+            tLabelSeatCode.Text = Label_Seat_Code
+            tColorDesc.Text = Color_Description
+            'tShippingCode.Text = Shipping_Code
+            tShippingCode4.Text = Product_Id
+            strShipStatus = "<span class='fontGreen' >OK To Ship</span>"
+            bResult = True
+
+        ElseIf bDriverFound = True Or bPassFound = True Or bRearBackFound = True Or bRearCushionFound = True Then
+            ' Product was not found, but we have valid SSN's so there must be a mismatch
+            strShipStatus = "Mismatch"
+            bResult = False
+        Else
+            ' otherwise... this is the case when Shipping Configuration has no conf entry
+            strShipStatus = "Not Found"
+            bResult = False
+        End If
+
+        Return bResult
+
+    End Function
+
+    Function LookupObjectInShippingValidationTable(ByVal ProductParameterTypeId As String, ByVal ProductParameterValue As String, ssnType As SerialNumberType, ByRef arrayMessage As ArrayList) As Boolean
+        Dim strselect As String = ""
+        Dim ds As DataSet
+        Dim bResult As Boolean = False
+
+        Try
+            strselect = "Select ProductParameterTypeId FROM tblProductParameters Where " & _
+                           "ProductParameterTypeId = '" & ProductParameterTypeId & "' And ProductParameterValue = " & "'" & ProductParameterValue & "'"
+
+
+            ds = DA.GetDataSet(strselect)
+
+            If ds.Tables(0).Rows.Count > 0 Then
+                bResult = True
+                arrayMessage.Add(SerialNumberTypeName(ssnType) & " Found In Shipping Validation Table")
+            Else
+                arrayMessage.Add(SerialNumberTypeName(ssnType) & " Not Found In Shipping Validation Table")
+            End If
+
+        Catch ex As Exception
+            Master.eMsg(ex.ToString())
+        End Try
+
+        Return bResult
+
+    End Function
+
+
+    'pb - 06/21/04, check for duplicate ssn's
+    Private Function CheckForDuplicateSSNs(ByVal ssn As String, Optional ByVal period As String = "") As String
+
+        Dim colParms As New List(Of SqlParameter)
+        Dim prmNext As Data.SqlClient.SqlParameter
+        Dim colOutParms As List(Of SqlParameter)
+        Dim strResult As String = ""
+
+        If period Is Nothing OrElse period = "" Then
+            period = DupSsnPeriod
+        End If
+
+
+        Dim ds As New DataSet
+        Try
+
+            'IN--------------------------------------------------------
+            prmNext = New Data.SqlClient.SqlParameter("@Serial_Number", SqlDbType.VarChar, 48)
+            prmNext.Direction = ParameterDirection.Input
+            prmNext.Value = ssn
+            colParms.Add(prmNext)
+            'OUT--------------------------------------------------------
+            prmNext = New Data.SqlClient.SqlParameter("@Period", SqlDbType.VarChar, 48)
+            prmNext.Direction = ParameterDirection.Input
+            prmNext.Value = period
+            colParms.Add(prmNext)
+            'OUT--------------------------------------------------------
+            prmNext = New Data.SqlClient.SqlParameter("@Status", SqlDbType.VarChar, 48)
+            prmNext.Direction = ParameterDirection.Output
+            colParms.Add(prmNext)
+            'OUT--------------------------------------------------------
+            prmNext = New Data.SqlClient.SqlParameter("@DupDate", SqlDbType.VarChar, 48)
+            prmNext.Direction = ParameterDirection.Output
+            colParms.Add(prmNext)
+            '------------------------------------------------------------
+            colOutParms = DA.ExecSP("procDuplicateShip", colParms)
+
+            For Each oParameter In colOutParms
+                With oParameter
+                    If .ParameterName = "@DupDate" Then
+                        strResult = .Value.ToString()
+                    End If
+                End With
+            Next
+
+
+        Catch ex As Exception
+            Master.eMsg(ex.ToString())
+        End Try
+
+        Return strResult
+
+    End Function
+
+    Sub InsertShippingLabel()
+        Try
+            Dim strInsert As String
+
+            strInsert = "insert into tblShippingLabelPrintHistory " & _
+                        "(SEAT_SERIAL_NUMBER_PASSENGER," & _
+                        "SEAT_SERIAL_NUMBER_DRIVER," & _
+                        "LOT_TRACE_DT," & _
+                        "LABEL_SEAT_CODE," & _
+                        "MODEL_CODE," & _
+                        "SHIPPING_BARCODE," & _
+                        "COLOR_DESCRIPTION," & _
+                        "PRINTED_BY," & _
+                        "PRINT_LOCATION," & _
+                        "RECORDED_BY," & _
+                        "LABEL_STATUS) " & _
+                        "values(" & _
+                        "'" & txtPassSeatSerialNum.Text & _
+                        "','" & txtDriverSeatSerialNum.Text & _
+                        "',getdate()" & _
+                        ",'" & tLabelSeatCode.Text & _
+                        "','" & tModelCode.Text & _
+                        "','" & tShippingCode4.Text & _
+                        "','" & tColorDesc.Text & _
+                        "','" & "Ship. Label Web Page" & _
+                        "','" & ddPrinters.SelectedItem.Value & _
+                        "','" & Me.Page.User.Identity.Name.ToString() & _
+                        "','" & "OK')"
+
+            DA.ExecSQL(strInsert)
+
+        Catch ex As Exception
+            Master.eMsg(ex.ToString())
+        End Try
+    End Sub
+
+    Sub PrintShippingLabel()
+        Try
+            Dim strArg As String
+            Dim strDelim As String
+            Dim strQuantity As String
+            strDelim = "|"
+
+            strQuantity = "1"
+
+            strArg = BizLayer.GetApplicationParameterValue("0113", "0001") & " " & tModelCode.Text & strDelim & tLabelSeatCode.Text & strDelim & tColorDesc.Text & strDelim & "" & strDelim & ddPrinters.SelectedItem.Value & strDelim & tShippingCode4.Text & strDelim & "5" & strDelim & "1" & strDelim & tShippingCode4.Text
+            Process.Start(strArg)
+            Master.Msg = "1 Label was sent to printer"
+
+        Catch ex As Exception
+            Master.eMsg(ex.ToString())
+        End Try
+
+    End Sub
+
+    Private Function SerialNumberTypeName(ssnType As SerialNumberType) As String
+        Dim bResult As String = ""
+
+        Select Case ssnType
+            Case SerialNumberType.Driver
+                bResult = "Driver Seat:    "
+            Case SerialNumberType.Passenger
+                bResult = "Passenger Seat: "
+            Case SerialNumberType.RearBack
+                bResult = "Rear Back:      "
+            Case SerialNumberType.RearCushion
+                bResult = "Rear Cushion:   "
+        End Select
+
+        Return bResult
+    End Function
+
+#End Region
+
+End Class

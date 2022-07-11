@@ -1,0 +1,526 @@
+﻿Imports System.Data.SqlClient
+
+Public Class StationSequenceConfiguration
+    Inherits System.Web.UI.Page
+
+    Enum UpdateType
+        updateSeq
+        prevSeq
+        nextSeq
+    End Enum
+
+#Region "Event Handlers"
+
+    Protected Sub Page_Load(ByVal sender As Object, ByVal e As System.EventArgs) Handles Me.Load
+        Try
+            If (Not IsPostBack) Then
+                Load_ddlTop_ShowTopXrecords()
+                Load_lbStations()
+            End If
+        Catch ex As Exception
+            Master.eMsg(ex.ToString())
+        End Try
+    End Sub
+
+    Private Sub StationSequenceConfiguration_PreRender(sender As Object, e As System.EventArgs) Handles Me.PreRender
+        Try
+            EnableControls()
+        Catch ex As Exception
+            Master.eMsg(ex.ToString())
+        End Try
+    End Sub
+
+
+    Private Sub lbStations_SelectedIndexChanged(sender As Object, e As System.EventArgs) Handles lbStations.SelectedIndexChanged
+        Try
+            LoadStationData()
+            LoadSequenceData()
+        Catch ex As Exception
+            Master.eMsg(ex.ToString())
+        End Try
+    End Sub
+
+    Private Sub cmdPrev_Click(sender As Object, e As System.EventArgs) Handles cmdPrev.Click
+        ' The dialog posts back to the cmdUpdate button.
+        ' The procedure UpdateSequenceData()  determines which event to continue with (Prev, Next or Update)
+    End Sub
+
+    Private Sub cmdNext_Click(sender As Object, e As System.EventArgs) Handles cmdNext.Click
+        ' The dialog posts back to the cmdUpdate button.
+        ' The procedure UpdateSequenceData()  determines which event to continue with (Prev, Next or Update)
+    End Sub
+    Private Sub cmdUpdate_Click(sender As Object, e As System.EventArgs) Handles cmdUpdate.Click
+        ' The dialog posts back to the cmdUpdate button.
+        ' The procedure UpdateSequenceData()  determines which event to continue with (Prev, Next or Update)
+        Try
+            UpdateSequenceData()
+
+        Catch ex As Exception
+            Master.eMsg(ex.ToString())
+        End Try
+
+    End Sub
+
+    Private Sub ddlSeq_SelectedIndexChanged(sender As Object, e As System.EventArgs) Handles ddlSeq.SelectedIndexChanged
+        Try
+            LoadSequenceData()
+
+        Catch ex As Exception
+            Master.eMsg(ex.ToString())
+        End Try
+    End Sub
+
+#End Region
+
+#Region "Methods"
+
+
+    Private Sub EnableControls()
+        Dim toDlg As String = ""
+
+        Master.Secure(cmdNext)
+        Master.Secure(cmdPrev)
+        Master.Secure(cmdUpdate)
+
+        If (Me.lbStations.SelectedIndex < 0) Then
+            Me.cmdUpdate.Enabled = False
+            Me.cmdNext.Enabled = False
+            Me.cmdPrev.Enabled = False
+        End If
+
+    End Sub
+
+    ''' <summary>
+    ''' Loads the ddlTop that displays the 'Show Top Selected'
+    ''' </summary>
+    ''' <remarks></remarks>
+    Private Sub Load_ddlTop_ShowTopXrecords()
+        Try
+            Dim sql As String = "SELECT [ParameterListValue] FROM [tblParameterListValues] WHERE(ParameterListID = 42) ORDER BY DisplayID "
+
+            With ddlTop
+                .DataSource = DA.GetDataSet(sql)
+                .DataTextField = "ParameterListValue"
+                .DataValueField = "ParameterListValue"
+                .DataBind()
+                .Items.Insert(0, "CLOSEST")
+                .SelectedIndex = 0
+            End With
+
+        Catch ex As Exception
+            Master.eMsg(ex.ToString())
+        End Try
+    End Sub
+
+    Private Sub Load_lbStations()
+        Try
+            Dim sql As String = "SELECT S.StationID, S.Description FROM tblStationSequencePointers AS SSP INNER JOIN tblStations AS S ON S.StationID = SSP.StationID ORDER BY S.DisplayID"
+
+            With lbStations
+                .Items.Clear()
+                .DataSource = DA.GetDataSet(sql)
+                .DataTextField = "Description"
+                .DataValueField = "StationID"
+                .DataBind()
+            End With
+
+        Catch ex As Exception
+            Master.eMsg(ex.ToString())
+        End Try
+    End Sub
+
+#End Region
+
+    Private Sub LoadStationData()
+        Try
+            Dim seq As String = ""
+            Dim compl As String = ""
+            Dim total As String = ""
+
+            If (Me.lbStations.SelectedIndex < 0) Then
+                Me.lblStation.Text = ""
+                Me.txtCurrSeq.Text = ""
+                Me.txtCurrJobsCompleted.Text = ""
+                Me.txtCurrTotalJobs.Text = ""
+            Else
+                GetSeqInfoData(compl, total, seq, "")
+
+                Me.lblStation.Text = Me.lbStations.SelectedItem.Text
+                Me.txtCurrSeq.Text = seq
+                Me.txtCurrJobsCompleted.Text = compl
+                Me.txtCurrTotalJobs.Text = total
+
+                LoadSequenceDDL()
+
+                'pb, 1/17/05
+                'note: had to hard code a length of 10 for seq number (13 with dashes)
+                Dim i As Integer
+                For i = 0 To ddlSeq.Items.Count - 1
+                    If ((ddlSeq.Items(i).Text.Length >= 13) And (Me.txtCurrSeq.Text.Length >= 13)) Then
+                        If ddlSeq.Items(i).Text.Substring(0, 13) = txtCurrSeq.Text.Substring(0, 13) Then
+                            ddlSeq.SelectedIndex = i
+                            Exit For
+                        End If
+                    End If
+                Next
+
+                If (ddlSeq.SelectedIndex >= 0) Then
+                    hidOriginalSequence.Value = ddlSeq.SelectedItem.Text
+                End If
+                hidOriginalTotalJobs.Value = total
+                hidOriginalJobsCompleted.Value = compl
+
+            End If
+
+        Catch ex As Exception
+            Master.eMsg(ex.ToString())
+        End Try
+    End Sub
+
+    Private Sub LoadSequenceData()
+        Try
+            'pb, 1/20/05
+            'note: had to hard code a length of 10 for seq number (13 with dashes)
+
+            Dim seqNum As String = ""
+            Dim seq As String = ""
+            Dim compl As String = ""
+            Dim total As String = ""
+
+            Me.txtUpdateJobsCompleted.Text = ""
+            Me.txtUpdateTotalJobs.Text = ""
+
+            If (Me.ddlSeq.SelectedIndex >= 0) Then
+                If Me.ddlSeq.SelectedItem.Text.Length >= 13 Then
+                    seqNum = Me.ddlSeq.SelectedItem.Text.Substring(0, 13).Replace("-", "")
+
+                    GetSeqInfoData(compl, total, seq, seqNum)
+
+                    txtUpdateJobsCompleted.Text = compl
+                    txtUpdateTotalJobs.Text = total
+                End If
+            End If
+
+        Catch ex As Exception
+            Master.eMsg(ex.ToString())
+        End Try
+    End Sub
+
+
+
+    Private Sub LoadSequenceDDL()
+        Try
+            Dim oDataTable As DataTable
+            Dim strMinProdSchedIndex As String = ""
+            Dim strMaxProdSchedIndex As String = ""
+            Dim sqlCmd As String
+
+            Me.ddlSeq.Items.Clear()
+
+
+            Select Case ddlTop.SelectedValue.ToUpper
+                Case "ALL", "CLOSEST"
+                    sqlCmd = "SELECT "
+                Case Else
+                    sqlCmd = "SELECT TOP " & ddlTop.SelectedValue
+            End Select
+
+            oDataTable = DA.GetDataSet("exec procPSGetClosestLotsForProduction '" & Left(Replace(Me.txtCurrSeq.Text, "-", ""), CInt(BizLayer.GetApplicationParameterValue("0021"))) & "'").Tables(0)
+            'MS determine the minimum and maximum production schedule indexes for the lots closest to the current lot 
+            If oDataTable IsNot Nothing Then
+                If oDataTable.Rows.Count > 0 Then
+                    strMinProdSchedIndex = oDataTable.Rows(0).Item(2).ToString()
+                    strMaxProdSchedIndex = oDataTable.Rows(oDataTable.Rows.Count - 1).Item(2).ToString()
+                End If
+            End If
+            'MS generate the sql to return the lots closest to the current lot
+            sqlCmd += " OD.SequenceNumber, "
+            sqlCmd += " CAST(OD.SequenceNumber AS varchar) + ' ' + ISNULL(REPLICATE('0',2-DATALENGTH(OD2.OrderParameterValue))+ OD2.OrderParameterValue,'--') + ' (' + CONVERT(varchar, OD.SequenceDT, 21) + ')' as SeqInfoValue, "
+            sqlCmd += " SUBSTRING(CAST(OD.SequenceNumber AS varchar), 1, 1) + '-' + SUBSTRING(CAST(OD.SequenceNumber AS varchar), 2, 4) + '-' + SUBSTRING(CAST(OD.SequenceNumber AS varchar), 6, 3) + '-' + SUBSTRING(CAST(OD.SequenceNumber AS varchar), 9, 2) + ' ' + ISNULL(REPLICATE('0',2-DATALENGTH(OD2.OrderParameterValue))+ OD2.OrderParameterValue,'--') + ' ' + ISNULL(OD3.OrderParameterValue,'--') + ' ' + (SELECT ProductParameterValue FROM tblProductParameters WHERE ProductParameterTypeID = '0204' AND ProductID = OD3.OrderParameterValue) as SeqInfoText "
+            sqlCmd += " FROM "
+            sqlCmd += " tblOrderData AS OD "
+            sqlCmd += " INNER JOIN tblStationParameters AS SP ON SP.StationParameterValue = OD.BroadcastPointID "
+            sqlCmd += " INNER JOIN tblOrderData OD2 ON OD.SequenceDT = OD2.SequenceDT "
+            sqlCmd += " INNER JOIN tblOrderData OD3 ON OD.SequenceDT = OD3.SequenceDT "
+            sqlCmd += " INNER JOIN tblOrderData OD4 ON OD.SequenceDT = OD4.SequenceDT "
+            'MS 06-06-06 add inner join and where for selecting only Setex Orders
+            sqlCmd += "WHERE "
+            sqlCmd += " OD.OrderParameterID='0053' AND OD.OrderParameterValue <> 'True' "
+            sqlCmd += " and OD2.OrderParameterID='0008' "
+            sqlCmd += " and OD3.OrderParameterID='0004' "
+            sqlCmd += " and OD4.OrderParameterID='0155' AND OD4.OrderParameterValue='1' "
+            sqlCmd += " and SP.StationParameterTypeID='0116' "
+            sqlCmd += " and SP.StationID = '" & lbStations.SelectedValue & "' "
+            If (ddlTop.SelectedValue.ToUpper() = "CLOSEST" And Len(strMinProdSchedIndex) > 0) Then
+                sqlCmd += "and OD.ProdSchedIndex >= " & strMinProdSchedIndex
+            End If
+            If (ddlTop.SelectedValue.ToUpper() = "CLOSEST" And Len(strMaxProdSchedIndex) > 0) Then
+                sqlCmd += "and OD.ProdSchedIndex <= " & strMaxProdSchedIndex
+            End If
+            sqlCmd += " ORDER BY OD.ProdSchedIndex"
+
+            ddlSeq.DataSource = DA.GetDataSet(sqlCmd)
+            ddlSeq.DataTextField = "SeqInfoText"    '"SeqInfo"
+            ddlSeq.DataValueField = "SeqInfoValue"    '"SequenceNumber"
+            ddlSeq.DataBind()
+
+        Catch ex As Exception
+            Master.eMsg(ex.ToString())
+        End Try
+    End Sub
+
+    Private Sub GetSeqInfoData(ByRef CompletedQuantity As String, ByRef TotalQuantity As String, ByRef SequenceNumber As String, ByVal seqNum As String)
+        Try
+            Dim oSqlParameter As SqlParameter
+            Dim colParameters As New List(Of SqlParameter)
+            Dim colOutput As List(Of SqlParameter)
+
+
+            'CREATE PROCEDURE procGetCurrentSequenceInfo @StationID varchar(4), @InputSequenceNumber varchar(50) = '', @CompletedQuantity varchar(4) Out,@TotalQuantity varchar(4) Out,
+            '			@SequenceNumber varchar(50) Out, @Status varchar(80) OUT, @ErrorMsg varchar(80) OUT 
+
+            oSqlParameter = New SqlParameter("@StationID", SqlDbType.VarChar, 8)
+            oSqlParameter.Value = Me.lbStations.SelectedValue
+            colParameters.Add(oSqlParameter)
+
+            oSqlParameter = New SqlParameter("@InputSequenceNumber", SqlDbType.VarChar, 50)
+            oSqlParameter.Value = seqNum
+            colParameters.Add(oSqlParameter)
+
+            oSqlParameter = New SqlParameter("@CompletedQuantity", SqlDbType.VarChar, 4)
+            oSqlParameter.Direction = ParameterDirection.Output
+            colParameters.Add(oSqlParameter)
+
+            oSqlParameter = New SqlParameter("@TotalQuantity", SqlDbType.VarChar, 4)
+            oSqlParameter.Direction = ParameterDirection.Output
+            colParameters.Add(oSqlParameter)
+
+            oSqlParameter = New SqlParameter("@SequenceNumber", SqlDbType.VarChar, 50)
+            oSqlParameter.Direction = ParameterDirection.Output
+            colParameters.Add(oSqlParameter)
+
+            oSqlParameter = New SqlParameter("@Status", SqlDbType.VarChar, 80)
+            oSqlParameter.Direction = ParameterDirection.Output
+            colParameters.Add(oSqlParameter)
+
+            oSqlParameter = New SqlParameter("@ErrorMsg", SqlDbType.VarChar, 80)
+            oSqlParameter.Direction = ParameterDirection.Output
+            colParameters.Add(oSqlParameter)
+
+            colOutput = DA.ExecSP("procGetCurrentSequenceInfo", colParameters)
+
+            For Each oParameter In colOutput
+                With oParameter
+                    Select Case (.ParameterName)
+                        Case "@SequenceNumber"
+                            SequenceNumber = oParameter.Value.ToString()
+                        Case "@CompletedQuantity"
+                            CompletedQuantity = oParameter.Value.ToString()
+                        Case "@TotalQuantity"
+                            TotalQuantity = oParameter.Value.ToString()
+                    End Select
+                End With
+            Next
+        Catch ex As Exception
+            Master.eMsg(ex.ToString())
+        End Try
+
+    End Sub
+
+    Private Sub UpdateSequenceData()
+        Try
+            Dim str As String = ""
+            Dim bResult As Boolean = False
+
+            Select Case (hidUpdateType.Value())
+                Case "update"
+                    bResult = UpdateStationSequence()
+
+                Case "prev"
+                    str = "previous "
+                    bResult = UpdateStationSequence_NextOrPrev(UpdateType.prevSeq)
+
+                Case "next"
+                    str = "next "
+                    bResult = UpdateStationSequence_NextOrPrev(UpdateType.nextSeq)
+
+                Case Else
+                    Master.Msg = "Error performing action."
+
+            End Select
+
+            LoadStationData()
+            LoadSequenceData()
+
+            If (bResult) Then
+                DisplayUpdateMessage(str)
+            Else
+                Master.tMsg("Update", "Station Sequence Configuration Failed.")
+            End If
+
+        Catch ex As Exception
+            Master.eMsg(ex.ToString())
+        End Try
+    End Sub
+
+    Private Function UpdateStationSequence() As Boolean
+        Dim bResult As Boolean = False
+        Try
+            Dim oSqlParameter As SqlParameter
+            Dim colParameters As New List(Of SqlParameter)
+            Dim colOutput As List(Of SqlParameter)
+
+            Dim status As String = ""
+            Dim message As String = ""
+
+            'CREATE PROCEDURE procUpdateSequence @StationID varchar(4),@Quantity varchar(4),
+            '@SequenceNumber varchar(50) , @Status varchar(80) OUT, @ErrorMsg varchar(80) OUT 
+
+            oSqlParameter = New SqlParameter("@StationID", SqlDbType.VarChar, 4)
+            oSqlParameter.Value = Me.lbStations.SelectedValue
+            colParameters.Add(oSqlParameter)
+
+            oSqlParameter = New SqlParameter("@Quantity", SqlDbType.VarChar, 4)
+            oSqlParameter.Value = Me.txtUpdateJobsCompleted.Text
+            colParameters.Add(oSqlParameter)
+
+            oSqlParameter = New SqlParameter("@SequenceNumber", SqlDbType.VarChar, 50)
+            oSqlParameter.Value = Me.ddlSeq.SelectedValue.Substring(0, 10)
+            colParameters.Add(oSqlParameter)
+
+            oSqlParameter = New SqlParameter("@Status", SqlDbType.VarChar, 80)
+            oSqlParameter.Direction = ParameterDirection.Output
+            colParameters.Add(oSqlParameter)
+
+            oSqlParameter = New SqlParameter("@ErrorMsg", SqlDbType.VarChar, 80)
+            oSqlParameter.Direction = ParameterDirection.Output
+            colParameters.Add(oSqlParameter)
+
+            colOutput = DA.ExecSP("procUpdateSequence", colParameters)
+
+            For Each oParameter In colOutput
+                With oParameter
+                    If .Direction = ParameterDirection.Output And .ParameterName = "@Status" Then
+                        status = oParameter.Value.ToString()
+                    ElseIf .Direction = ParameterDirection.Output And .ParameterName = "@ErrorMsg" Then
+                        message = oParameter.Value.ToString()
+                    End If
+                End With
+            Next
+
+            If (status <> "True") Then
+                Master.Msg = "Error: Unable to update Station Sequence Configuration.<br>S.P. Status: " + status + ".<br>S.P. Error Message: " + message
+            Else
+                bResult = True
+            End If
+
+
+        Catch ex As Exception
+            Master.eMsg(ex.ToString())
+        End Try
+        Return bResult
+    End Function
+
+    Private Function UpdateStationSequence_NextOrPrev(type As UpdateType) As Boolean
+
+        Dim bResult As Boolean = False
+        Try
+            Dim oSqlParameter As SqlParameter
+            Dim colParameters As New List(Of SqlParameter)
+            Dim colOutput As List(Of SqlParameter) = Nothing
+
+            Dim status As String = ""
+            Dim message As String = ""
+            Dim bContinue As Boolean = False
+
+            'procDecrementSequence @StationID varchar(4),
+            '			@SequenceNumber varchar(50) OUT, @ProductID varchar(80) OUT,
+            '           @Status varchar(80) OUT, @ErrorMsg varchar(80) OUT 
+
+
+            oSqlParameter = New SqlParameter("@StationID", SqlDbType.VarChar, 4)
+            oSqlParameter.Value = Me.lbStations.SelectedValue
+            colParameters.Add(oSqlParameter)
+
+            oSqlParameter = New SqlParameter("@SequenceNumber", SqlDbType.VarChar, 50)
+            oSqlParameter.Direction = ParameterDirection.Output
+            colParameters.Add(oSqlParameter)
+
+            oSqlParameter = New SqlParameter("@ProductID", SqlDbType.VarChar, 80)
+            oSqlParameter.Direction = ParameterDirection.Output
+            colParameters.Add(oSqlParameter)
+
+            oSqlParameter = New SqlParameter("@Status", SqlDbType.VarChar, 80)
+            oSqlParameter.Direction = ParameterDirection.Output
+            colParameters.Add(oSqlParameter)
+
+            oSqlParameter = New SqlParameter("@ErrorMsg", SqlDbType.VarChar, 80)
+            oSqlParameter.Direction = ParameterDirection.Output
+            colParameters.Add(oSqlParameter)
+
+            If (type = UpdateType.prevSeq) Then
+                colOutput = DA.ExecSP("procDecrementSequence", colParameters)
+                bContinue = True
+            ElseIf (type = UpdateType.nextSeq) Then
+                colOutput = DA.ExecSP("procIncrementSequence", colParameters)
+                bContinue = True
+            End If
+
+            If (bContinue) Then
+                For Each oParameter In colOutput
+                    With oParameter
+                        If .Direction = ParameterDirection.Output And .ParameterName = "@Status" Then
+                            status = oParameter.Value.ToString()
+                        ElseIf .Direction = ParameterDirection.Output And .ParameterName = "@ErrorMsg" Then
+                            message = oParameter.Value.ToString()
+                        End If
+                    End With
+                Next
+            End If
+
+            If (status <> "True") Then
+                Master.Msg = "Error: Unable to update Station Sequence Configuration.<br>S.P. Status: " + status + ".<br>S.P. Error Message: " + message
+            Else
+                bResult = True
+            End If
+
+
+        Catch ex As Exception
+            Master.eMsg(ex.ToString())
+        End Try
+
+        Return bResult
+
+    End Function
+
+    Private Sub DisplayUpdateMessage(ByVal strUpdateType As String)
+        Try
+            Dim strStation = ""
+            Dim strSequence = ""
+
+            If (lbStations.SelectedIndex >= 0) Then
+                strStation = lbStations.SelectedItem.Text
+            End If
+            If (ddlSeq.SelectedIndex >= 0) Then
+                strSequence = ddlSeq.SelectedItem.Text
+            End If
+
+            Dim strMessage As String = "Station Sequence Configuration updated "
+            strMessage += strUpdateType
+            strMessage += "sequence for station: " + strStation + _
+                        ", Original Sequence: " + hidOriginalSequence.Value.Replace("-", "") + _
+                        ", Total Jobs: " + hidOriginalTotalJobs.Value + _
+                        ", Jobs Completed: " + hidOriginalJobsCompleted.Value + _
+                        ", New Sequence: " + strSequence + _
+                        ", Total Jobs: " + txtUpdateTotalJobs.Text + _
+                        ", Jobs Completed: " + txtUpdateJobsCompleted.Text
+
+            Master.tMsg("Update", strMessage)
+
+        Catch ex As Exception
+            Master.eMsg(ex.ToString())
+        End Try
+    End Sub
+
+
+End Class

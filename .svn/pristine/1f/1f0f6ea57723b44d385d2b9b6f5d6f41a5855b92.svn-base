@@ -1,0 +1,1242 @@
+﻿/* DEFAULTS
+----------------------------------------------------------*/
+
+html
+{
+	height: 99%;
+}
+
+body
+{
+	background-color: #EEE;
+	font-family: Verdana, Helvetica, sans-serif;
+	font-size: 11px;
+	font-weight: normal;
+	letter-spacing: normal;
+	text-transform: none;
+	word-spacing: normal;
+	margin-top: 0em;
+	margin-bottom: 0em;
+	height: 100%;
+}
+
+/*Opera Fix for the sticky footer*/
+body:before
+{
+	content: "";
+	height: 100%;
+	float: left;
+	width: 0;
+	margin-top: -32767px;
+}
+.waitCursor
+{
+	cursor:wait;
+}
+
+.header
+{
+	margin: 0px;
+	padding: 4px 4px 0px 4px;
+}
+.headerLabel
+{
+	font-weight: bold;
+	color: orange;
+}
+.headerLabelCurrentUser
+{
+	font-weight: bold;
+	color: black;
+}
+
+.siteHeader
+{
+	padding: 0px;
+	border-collapse: collapse;
+	margin: 0px;
+	width: 100%;
+}
+
+.siteHeaderLeft
+{
+	background-color: White;
+	background-image: url('../Images/Header/HeaderBG-Left.jpg');
+	height: 50px;
+	width: 509px; 
+	border-top-left-radius: 12px;
+	padding: 0px;
+}
+
+.siteHeaderMiddle
+{
+	background-color: White;
+	padding: 0px;
+}
+
+.siteHeaderRight
+{
+	background-image: url('../Images/Header/HeaderBG-Right.jpg');
+	height: 50px;
+	width: 509px; 
+	border-top-right-radius: 12px;
+	padding: 0px;
+}
+
+.JITMHeader
+{
+	position: absolute;
+	top:56px;
+	left:50%;
+	margin-left: -90px;
+}
+.JITMHeaderImg
+{
+	position: absolute;
+	top:12px;
+	left:50%;
+	width:320px;
+	margin-left: -200px;
+}
+
+.headerMessage
+{
+	background-color: white;
+	height: 33px;
+	width: 100%;
+}
+
+#mnMainMenu ul li ul
+{
+	display: none;
+}
+#mnMainMenu ul li
+{
+	list-style: none;
+}
+
+.pageRefresh
+{
+	text-decoration: none;
+}
+
+.main
+{
+	margin-top: 6px;
+	margin-bottom: 38px;
+	margin-left: 6px;
+	
+	min-height: 100%;
+	height: 100%;
+	width: 99%;
+
+	text-align:center;
+}
+
+.mainInner
+{
+	/*  remove comment to align content in center
+	display: inline-block;
+	/**/
+	text-align:left;
+	visibility: hidden;
+	
+}
+.validationHints
+{
+	padding-left:4px;
+	padding-right:4px;
+}
+
+.footer
+{
+	padding: 0px 20px 0px 20px;
+	margin: 0px auto;
+	text-align: center;
+	line-height: normal;
+}
+
+#divOverlay {
+   position: fixed;
+   width: 100%;
+   height: 100%;
+   z-index: 1000;
+}
+
+.internalOverlay
+{
+	z-index:1001; 
+	position:absolute; 
+	top:0; 
+	left:0; 
+	height: 100%;
+	width:100%; 
+	background: #6495ed url(jitm/images/ui-bg_diagonals-thick_60_6495ed_40x40.png) 50% 50% repeat;
+	opacity: .3;
+	filter: Alpha(Opacity=30);
+	display: none;	
+}
+
+form
+{
+	margin-top: 0;
+	margin-bottom: 0;
+	height: 100%;
+}
+
+a
+{
+	color: blue;
+}
+
+a.footer, a.footer:active
+{
+	font-family: verdana;
+	font-size: 10px;
+	color: white;
+	font-weight: bold;
+	text-decoration: none;
+}
+
+a.footer:hover
+{
+	color: #ffd800;
+}
+
+p
+{
+	color: #00008B;
+	margin-bottom: 10px;
+	line-height: 1.6em;
+}
+
+p.pCenter
+{
+	text-align: center;
+}
+
+.dirty
+{
+	background-color: Yellow;
+	color: Black;
+}
+
+.groupBox
+{
+}
+.groupBoxLegend
+{
+	color: #00008B;
+}
+
+.uiHelp
+{
+	width:16px;
+}
+
+/* TABS
+----------------------------------------------------------*/
+
+div.tabs 
+{ 
+	padding: 0px; 
+	background: none; 
+	border-width: 0px; 
+} 
+div.tabs .ui-tabs-nav 
+{ 
+	padding-left: 0px; 
+	background: transparent; 
+	border-width: 0px 0px 1px 0px; 
+	-moz-border-radius: 0px; 
+	-webkit-border-radius: 0px; 
+	border-radius: 0px; 
+} 
+div.tabs .ui-tabs-panel 
+{ 
+	background: #FFF;
+	border-width: 0px 1px 1px 1px; 
+}
+
+/* HEADINGS   
+----------------------------------------------------------*/
+
+.h0
+{
+	font-family: verdana;
+	font-size: 18px;
+	font-weight: bold;
+	color: #00008B;
+	vertical-align: middle;
+	overflow: auto;
+	overflow-x: hidden;
+}
+
+.h1
+{
+	font-size: 1.6em;
+	padding-bottom: 0px;
+	margin-bottom: 0px;
+	color: #00008B;
+}
+
+.h2
+{
+	font-size: 1.3em;
+	font-weight: 600;
+	color: #00008B;
+}
+
+.h3
+{
+	font-size: 1.2em;
+	color: #00008B;
+}
+
+.h4
+{
+	color: #00008B;
+	font-size: 1.1em;
+}
+
+.h5
+{
+	color: #00008B;
+}
+.h6
+{
+	color: #00008B;
+	font-size: .9em;
+}
+/*----------------------------------------------------------*/
+
+img.imageCenter
+{
+	display: block;
+	margin-left: auto;
+	margin-right: auto;
+}
+
+
+table.tableCenter
+{
+	margin-left: auto;
+	margin-right: auto;
+}
+
+table.borderRadius
+{
+	border-radius: 2em;
+}
+
+
+/* FORM ELEMENTS   
+----------------------------------------------------------*/
+
+div.divCenter
+{
+	margin-left: auto;
+	margin-right: auto;
+}
+
+div.divBorder
+{
+	background-color: White;
+	border: 1px solid #6495ED;
+	border-radius: 4px;
+	padding: 1px 1px 1px 4px;
+	display: inline-block;
+	border-collapse: collapse;
+}
+
+div.displayNone
+{
+	display: none;
+}
+
+input.textEntry
+{
+	border: 1px solid #6495ED;
+	color: #00008B;
+	padding: 1px 1px 1px 4px;
+	border-radius: 4px;
+}
+
+input.textEntry[disabled]
+{
+	border: 1px solid #9cf;
+	background-color: #f7f7f7;
+	padding: 1px 1px 1px 4px;
+	border-radius: 4px;
+}
+
+input.textEntry[readOnly=readOnly], textArea.textEntry[readOnly=readOnly]
+{
+	border: 1px solid #9cf;
+	background-color: #eee;
+	padding: 1px 1px 1px 4px;
+	border-radius: 4px;
+}
+
+input.textCenter
+{
+	text-align:center;
+}
+
+
+textArea.textEntry
+{
+	border: 1px solid #6495ED;
+	border-radius: 4px;
+	color: #00008B;
+	padding: 1px 1px 1px 4px;
+}
+
+input.passwordEntry
+{
+	border: 1px solid #6495ED;
+	color: #00008B;
+	padding: 1px 1px 1px 4px;
+	border-radius: 4px;
+}
+
+input[type=radio]:focus 
+{
+	outline: 0;   
+}
+
+
+input.sortButton
+{
+	width: 24px;
+}
+
+input.inputButton
+{
+	margin-top: 4px;
+}
+
+input.inputButton:focus 
+{
+	outline: 0;   
+}
+
+
+/* Section for Checkboxes  
+----------------------------------------------------------*/
+.selectCheckBox
+{
+	color: #00008B;
+}
+.selectCheckBox input[type="checkbox"]
+{
+	margin-right: 5px; 
+	vertical-align: middle;
+}
+/*--------------------------------------------------------*/
+
+select.selectListBox
+{
+	background-color: #ffffff;
+	border: 1px solid #6495ED;
+	border-radius: 5px;
+	color: #00008B;
+	overflow: hidden;
+	padding: 1px 1px 1px 4px;
+}
+
+
+select.aspNetDisabled /*[disabled] */
+{
+	border: 1px solid #9cf;
+	background-color: #f7f7f7;
+	border-radius: 5px;
+	color: #00008B;
+	padding: 1px 1px 1px 4px;
+}
+
+select.selectDropDown
+{
+	border: 1px solid #6495ED;
+	border-radius: 5px;
+	color: #00008B;
+	padding: 1px 1px 1px 2px;
+}
+
+select.selectDropDown[disabled]
+{
+	border: 1px solid #9cf;
+	background-color: #f7f7f7;
+	border-radius: 5px;
+	padding: 1px 1px 1px 2px;
+}
+
+span.spanCenterBlock
+{
+	display: block;
+	text-align:center;
+}
+
+span.spanLabel
+{
+	color: #00008B;
+}
+span.spanProgressbarLabel
+{
+	color:#00008B;
+	position: absolute;
+	text-align:center;
+	margin-top:-1px;
+	width: 110px;
+}
+
+span.spanReadOnly
+{
+	background-color: #EEE;
+	color: #00008B;
+	line-height: 16px;
+	height: 16px;
+	vertical-align: middle;
+	border: 1px solid #6495ED;
+	padding: 1px 1px 1px 4px;
+	border-radius: 4px;
+}
+
+span.fontGreen
+{
+	color: #00FF00;
+}
+
+span.fontRed
+{
+	color: #FF0000;
+}
+
+/* MISC  
+----------------------------------------------------------*/
+
+.clear
+{
+	clear: both;
+}
+
+.title
+{
+	display: block;
+	float: left;
+	text-align: left;
+	width: auto;
+}
+
+.loginDisplay
+{
+	font-size: 1.1em;
+	display: block;
+	text-align: right;
+	padding: 10px;
+	color: White;
+}
+
+.loginDisplay a:link
+{
+	color: white;
+}
+
+.loginDisplay a:visited
+{
+	color: white;
+}
+
+.loginDisplay a:hover
+{
+	color: white;
+}
+
+.failureNotification
+{
+	font-size: 1.2em;
+	color: Red;
+}
+
+.bold
+{
+	font-weight: bold;
+}
+
+.boldShipTime
+{
+	font-weight: bold;
+	margin-left: 6px;
+}
+
+/* Called from aesthetics.js for use on the calendar    */
+.fontWeightNormal
+{
+	font-weight: normal;
+}
+
+/* Called from aesthetics.js for use on the calendar    */
+.fontDecorationNone
+{
+    text-decoration: none;
+}
+
+.statusMsg
+{
+	color: #FF6600;
+}
+
+.smallText
+{
+	font-size: 9px;
+}
+
+panel.borderRadius
+{
+	background-color: #6495ed;
+	border-radius: 5px;
+	border: 1px solid;
+	padding: 1px;
+}
+
+div.treeViewNode
+{
+	font-size: .9em;
+	color: #00008B;
+	
+}
+
+div.treeViewNodeSelected
+{
+	border-radius: 3px;
+	padding-left: 2px;
+	padding-right: 2px;
+	outline:none;
+}
+div.RadTreeView .rtLI
+{
+    padding-left:10px;
+}
+div.RadTreeView .rtPlus
+,div .RadTreeView .rtMinus
+{
+    left:-5px;
+    /*
+    width:16px;
+    height:16px;
+    line-height:16px;
+    position:absolute;
+    top:.71428571em;
+    left:3px;
+    margin-top:-3px;
+    cursor:pointer;
+    */
+}
+
+
+
+/* datarid & RadGrid
+----------------------------------------------------------*/
+div.datagrid, .RadGrid
+{
+	background-color: #6495ed;
+	border-radius: 5px;
+	border: 0px none;
+	padding: 1px;
+	display: inline-block;
+	border-collapse: collapse;
+}
+
+.datagrid table
+{
+	border: 0px none;
+	background: #EEE;
+}
+
+.datagrid tr td
+{
+	border: 1px solid #6495ED;
+}
+
+
+tr.DataGrid_ItemStyle
+, .DataGrid_ItemStyle
+, .datagrid tr.rgRow
+, div.datagrid tr.rgRow .t-button
+, div.datagrid tr.rgRow .rgDragIcon
+{
+	color: #00008B;
+	background-color: #ffffff;
+}
+
+tr.DataGrid_AlternatingItemStyle
+,.DataGrid_AlternatingItemStyle
+,.datagrid tr.rgAltRow
+, div.datagrid tr.rgAltRow .t-button
+, div.datagrid tr.rgAltRow .rgDragIcon
+{
+	color: #00008B;
+	background-color: #EEE;
+}
+
+tr.DataGrid_SelectedItemStyle
+, .DataGrid_SelectedItemStyle
+, .datagrid .rgMasterTable tr.rgSelectedCell
+, .datagrid tr.rgSelectedRow
+, div.datagrid tr.rgSelectedRow .t-button
+, div.datagrid tr.rgSelectedRow .rgDragIcon
+{
+	font-weight: bold;
+	color: #00008B;
+	background-color: #9CF;
+}
+
+tr.DataGrid_EditItemStyle
+, .DataGrid_EditItemStyle
+, .datagrid tr.rgEditRow
+, div.datagrid tr.rgEditRow .t-button
+, div.datagrid tr.rgEditRow .rgDragIcon
+{
+	color: #00008B;
+	background-color: #9CF;
+}
+
+tr.DataGrid_HeaderStyle
+, .DataGrid_HeaderStyle
+{
+	color: White;
+	background-color: #6495ED;
+	font-weight: bold;
+	line-height: normal;
+	height: 20;
+	border-top-left-radius: 5px;
+	border-top-right-radius: 5px;
+}
+
+.datagrid td.rgCommandCell
+{
+    color: White;
+	background-color: #6495ED;
+	font-weight: bold;
+	line-height: normal;
+	height: 20;
+}
+
+
+
+div.datagrid tr.rgCommandRow button.t-button:hover
+{
+    border-color:#00008B;
+    color:#FFF;
+    background-color:#4172CA;
+    background-image:linear-gradient(#00008B,#4172CA)
+}
+div.datagrid tr.rgCommandRow button.t-button:active
+{
+    border-color:#00008B;
+    color:#FFF;
+    background-color:#7192cc;
+    background-image:linear-gradient(#00008B,#4172CA)
+}
+
+
+div.datagrid .rgHeader
+{
+	color: #00008B;
+}
+
+tr.DataGrid_HeaderStyle A
+.DataGrid_HeaderStyle A
+{
+	text-decoration: underline;
+	color: White;
+}
+
+tr.DataGrid_HeaderStyle A:visited,
+.DataGrid_HeaderStyle A:visited
+{
+	color: White;
+}
+
+tr.DataGrid_HeaderStyle A:hover,
+.DataGrid_HeaderStyle A:hover
+{
+	text-decoration: none;
+	color: #9CF;
+}
+
+tr.DataGrid_FooterStyle
+, .DataGrid_FooterStyle
+,div.datagrid tr.rgFooter tr
+{
+	color: White;
+	background-color: #6495ED;
+	font-weight: bold;
+	line-height: normal;
+	height: 20;
+	border-bottom-left-radius: 5px;
+	border-bottom-right-radius: 5px;
+}
+
+div.datagrid tr.rgFooter td
+{
+	color: White;
+	background-color: #6495ED;
+	font-weight: bold;
+	line-height: normal;
+	height: 20;
+}
+
+tr.DataGrid_PagerStyle,
+.DataGrid_PagerStyle
+{
+	color: White;
+	background-color: #CCC;
+	font-weight: bold;
+	text-align: left;
+}
+
+
+div.NoPadding .rgRow td
+, div.NoPadding .rgAltRow td
+, div.NoPadding .rgEditRow td
+, div.NoPadding .rgHeader
+, div.NoPadding .rgFooter
+{
+    padding: 1px 1px 1px 3px;
+}
+
+/*div.RadGrid_Windows7 .rgRow>td
+, div.RadGrid_Windows7 .rgAltRow>td
+, div.RadGrid_Windows7 .rgFooter>td
+*/
+div.RadGrid_Windows7 .rgEditRow > td
+{
+    /*border:0px;*/
+    border-color: #99CCFF;
+    border-style: solid;
+    border-width: 0 1px 1px 0px;
+}
+
+
+ .comboBoxPrePopImage .rcbImage
+ {
+	height: 16px;
+	width: 16px;
+/*    margin: 0px 6px 0px 2px;*/
+	display: inline;
+	vertical-align: middle;
+} 
+
+div.selectDropDown .rcbInput
+{
+	color: #00008B;
+    padding-left: 22px;
+}
+
+div.selectDropDown span.rcbInput.rcbHovered
+{
+	color: #FFF;
+}
+
+div.selectDropDown span.rcbReadOnly.rcbExpanded,
+div.selectDropDown span.rcbReadOnly.rcbFocused
+{
+	color: #FFF;
+	background-color: #6f94d5;
+}
+
+
+.GridItemDropIndicator_Default
+, .GridItemDropIndicator_Windows7
+{  
+    border-top:2px solid blue !important;
+    z-index: 3005 !important;  
+}
+
+div.RadGrid .t-button-icontext .t-text
+{
+    padding-top:3px;
+}
+
+.displayNone
+{
+    display:none;
+}
+
+/* Sticky Footer
+----------------------------------------------------------*/
+#stickyWrapper
+{
+	min-height: 100%;
+	min-width: 1040px;
+	background-color: #EEE;
+	margin: 2px auto 2px auto;
+	border: 1px solid #EEE;
+}
+
+#stickyFooter
+{
+	position: relative;
+	margin-top: -38px;
+	height: 38px;
+	clear: both;
+}
+
+/*  Left Panel
+------------------------------------------------------------*/
+#divMainLeftPanel
+{
+	width: 150px;
+	float: left;
+}
+#divMainLeftPanel span
+{
+	display: block;
+}
+#divMainLeftPanel select
+{
+	width: 140px;
+	margin: 5px 0px;
+}
+#divMainLeftPanel select.selectListBox
+{
+	height: 264px;
+}
+#cmdPanel
+{
+	width: 140px;
+	text-align: center;
+	padding-top: 5px;
+}
+#cmdPanel input
+{
+	height: 28px;
+	width: 75px;
+	display: block;
+	margin-left: auto;
+	margin-right: auto;
+	margin-bottom: 6px;
+}
+
+#divMainCenterPanel
+{
+	width: 700px;
+	float: left;
+}
+#divMainRightPanel
+{
+	width: 420px;
+	float: left;
+}
+
+#divMessageLabel
+{
+	overflow: auto; /* overflow-x: hidden; 	   height: 26px;    */ /*  comment out to allow the content to grow - long messages will have scroll bar   */
+	color: #FF6600;
+	display: inline-block;
+	vertical-align: middle;
+	text-align: left;
+	max-width: 750px;
+}
+
+#divDlgIdleTimeOut p
+{
+	font-size: 1.2em;
+	color: #00008B;
+	text-align: center;
+}
+
+span.allOrders
+{
+	background-color: #EEE;
+	border-radius: 2px;
+	padding: 2px;
+	outline:none;
+}
+
+/*  Div Select Broadcast Point
+----------------------------------------------------------
+*/
+#divSelectBroadcastPointID
+{
+/*
+	background-color: #999999;
+	border-bottom-left-radius: 12px;    
+	border-bottom-right-radius: 12px;    
+
+	border-bottom: 1px solid #6495ED;
+
+	border-bottom-left-radius: 1em 1em;    
+	border-bottom-right-radius: 1em 1em;    
+
+*/
+
+	margin: -5px -2px 5px -2px;
+	padding: 0px 2px;
+}
+
+#divSelectBroadcastPointID select
+{
+	width: 207px;
+	margin: 5px 0px 5px 19px;
+} 
+
+
+/* Report Viewer
+----------------------------------------------------------
+*/
+div.reportViewer
+{
+	background-color: #ffffff;
+	border: 1px solid #006699;
+	border-radius: 8px;
+	margin: 0px auto 0px auto;
+	padding: 4px;
+	min-height: 100%;
+	height: 100%;
+	width: 99%;
+}
+reportViewer_radiobuttons
+{
+	vertical-align: middle;
+}
+div.reportViewer_parameterList
+{
+	border-top-left-radius: 8px;
+	border-top-right-radius: 8px; /*	 	background-image: url("/LTMSwM/Reserved.ReportViewerWebControl.axd?OpType=BackImage&Version=10.0.40219.329&Color=%23DDDDDD&Name=Microsoft.Reporting.WebForms.Icons.toolbar_bk.png"); */
+}
+div.reportViewer_navigationBar
+{
+	border-bottom-left-radius: 8px;
+	border-bottom-right-radius: 8px;
+}
+div.reportViewer_navigationBar_noParameters
+{
+	border-radius: 8px;
+}
+div.ReportViewer1_radioButton input
+{
+	vertical-align: middle;
+	margin: -2px 0px 0px 0px;
+}
+
+div.ReportViewer1_radioButton label
+{
+	vertical-align: middle;
+	margin: 0px 6px 0px 0px;
+}
+
+/* Calendar - Large format 
+----------------------------------------------------------
+*  On the page the calendar is used, make a call in the JavaScript pagLoad to call the javascript function 'AddjQueryUIFormatToCalendar' 
+*   located in the aesthetics.js file to add the jQuery UI styles to the calendar
+*   note: sopme of the styling has to be done in the asp:calendar control, and is not affected by the css-styles below.
+*/
+.calendarStyle
+{
+	width: 100%;
+}
+
+.calendarTitleStyle
+{
+	height: 24px;
+}
+
+
+.calendarDayHeaderStyle
+{
+}
+
+.calendarDayStyle
+{
+	height: 90px;
+	text-align: right;
+	vertical-align: top;
+}
+.calendarTodayDayStyle
+{
+	text-align: right;
+	vertical-align: top;
+}
+.calendarOtherMonthDayStyle
+{
+	height: 90px;
+	text-align: right;
+	vertical-align: top;
+}
+.calendarSelectedDayStyle
+{
+	text-align: right;
+	vertical-align: top;
+}
+
+.calendarWeekendDayStyle
+{
+	text-align: right;
+	vertical-align: top;
+}
+
+.calendarBorder
+{
+	border: 2px solid #496077 !important;
+}
+
+.calendarRadius
+{
+	border-radius: 6px;
+}
+
+.calendarHeaderRadius
+{
+	/*border-radius: 4px;*/
+}
+.calendarBorderAndRadius
+{
+	padding: 2px; /* 	border: 1px solid #496077; 	border-radius: 8px; 	*/
+}
+.calendarCellDiv
+{
+	overflow: hidden;
+}
+.calenderCellTable
+{
+	/*background-color: #dfeffc; 	border-radius: 4px; */
+	
+	border-collapse: collapse;
+	text-align: left;
+	vertical-align: middle;
+	margin-left: 4px;
+	color: #00008B;
+	font-size: .8em;
+}
+.calendarCellLabel
+{
+	padding-left: 4px;
+	padding-right: 4px;
+	width: 50px;
+}
+
+.calendarCellHeader
+{
+	text-align:center;
+}
+
+.calendarCellQty
+{
+}
+
+.calendarCellSpan
+{
+	height: 11px;
+	min-height: 11px;
+	width: 28px;
+	min-width: 28px;    
+
+	text-align: center;
+	vertical-align:middle;
+}
+
+.calendarImgBP1,
+.calendarImgBP2,
+.calendarImgBP3,
+.calendarImgBP4
+{
+	height: 14px;
+	width: 14px;
+	margin-left:0px;
+	/*border: 1px solid red;*/
+}
+
+.calendarFilterImgBP1,
+.calendarFilterImgBP2,
+.calendarFilterImgBP3,
+.calendarFilterImgBP4
+{
+	height: 14px;
+	width: 14px;
+	margin: 8px 6px -4px 0px;
+}
+
+.prePopImgBP1,
+.prePopImgBP1 > *
+{
+	height: 16px;
+	width: 16px;
+	margin: 0px 6px 0px 2px;
+	display: inline;
+	vertical-align: middle;
+}
+
+.tblBP
+{
+	margin-left:10px;
+}
+.divBP
+{
+	height: 26px;
+	width:200px;
+	margin-top: -6px;
+}
+.divBPSpan
+{
+	vertical-align:middle;
+	display:inline;
+}
+.prepopSpanShift
+{
+	margin-top:20px;
+}
+
+.tableBorderCollapse,
+.tableBorderCollapse td
+{
+	border-collapse:collapse ;
+	/*border: 1px solid green;*/
+}
+
+
+/* ------------------------------------
+Text box length limit box
+-----------------------------------------*/
+.limiterBox {
+	border: 1px solid #6495ED;
+	border-top: none;
+	border-bottom-left-radius: 6px;
+	border-bottom-right-radius: 6px;
+	background-color: #ffc;
+	padding: 3px 6px;
+	font-size: 10px;
+}
+/*-----------------------------------------*/
+
+/*-----------------------------------------
+	color for ODS "Active on Client" MCR
+-----------------------------------------*/
+.IsActiveOnClient
+{
+	background-color: #A1E0A1;  /* Report color: #e1f5e1; */
+}
+
+.tabsDisplayNone
+{
+    border: 0px;
+    padding: 0px !important;
+}
+
+ul.dbqTab
+{
+    border: 0px;
+}
+
+
+.margin-top-05 { margin-top: 5px; }
+.margin-top-10 { margin-top: 10px; }
+.margin-top-15 { margin-top: 15px; }
+.margin-top-20 { margin-top: 20px; }
+
+.padding-top-05 { padding-top: 5px; }
+.padding-top-10 { padding-top: 10px; }
+.padding-top-15 { padding-top: 15px; }
+.padding-top-20 { padding-top: 20px; }
+

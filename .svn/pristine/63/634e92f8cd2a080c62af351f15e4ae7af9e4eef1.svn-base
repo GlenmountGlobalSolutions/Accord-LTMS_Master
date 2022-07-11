@@ -1,0 +1,546 @@
+﻿Public Class DailyBuildQuantities
+    Inherits System.Web.UI.Page
+
+    Dim dsMonthData As DataSet
+    Dim qtyDefault As String = BizLayer.GetApplicationParameterValue("0024", "0001")
+
+    Enum BuildQtyType
+        ProductionDate
+        ShiftQuantity1
+        ShiftQuantity2
+        ShiftQuantity3
+        LOT_PROD
+        lOT_SHIP
+        PlannedShipQuantity
+        EndLotProducedJobQuantity
+    End Enum
+
+#Region "Event Handlers"
+
+    Protected Sub Page_Load(ByVal sender As Object, ByVal e As System.EventArgs) Handles Me.Load
+        Try
+            If (Not IsPostBack) Then
+                BuildMonthsList()
+            End If
+
+        Catch ex As Exception
+            Master.eMsg(ex.ToString())
+        End Try
+    End Sub
+
+    Private Sub DailyBuildQuantities_PreRender(sender As Object, e As System.EventArgs) Handles Me.PreRender
+        Dim startDate As Date
+        Try
+
+            EnableControls()
+
+            'set calendar visible month to selected date
+            If (Date.TryParse(ddlMonth.SelectedValue, startDate)) Then
+                calDailyBuild.VisibleDate = startDate
+            End If
+
+            GetCalendarData()
+
+        Catch ex As Exception
+            Master.eMsg(ex.ToString())
+        End Try
+
+    End Sub
+
+    Private Sub calDailyBuild_DayRender(sender As Object, e As System.Web.UI.WebControls.DayRenderEventArgs) Handles calDailyBuild.DayRender
+        Dim view As DataView = New DataView
+        Dim dtoBuildQty As New DTO_DailyBuildQuantity
+        Dim strCell As String = ""
+        Dim startDate As Date
+        Dim intSelectedMonth As Integer = 0
+
+        Try
+            If (Date.TryParse(ddlMonth.SelectedValue, startDate)) Then
+                intSelectedMonth = startDate.Month
+            End If
+
+            If e.Day.Date.Month = intSelectedMonth Then        ' Only fill days that are within the selected month.
+                If (dsMonthData.Tables(0).Rows.Count > 0) Then      ' If there is data from database, use that to fill structure.
+                    view.Table = dsMonthData.Tables(0)
+                    view.RowFilter = String.Format("ProductionDate = #{0}#", e.Day.Date.ToString())
+
+                    dtoBuildQty.ProductionDate = e.Day.Date.ToShortDateString()
+
+                    If (view.Count > 0) Then
+                        dtoBuildQty.ShiftQuantity1 = view(0).Row(BuildQtyType.ShiftQuantity1).ToString()
+                        dtoBuildQty.ShiftQuantity2 = view(0).Row(BuildQtyType.ShiftQuantity2).ToString()
+                        dtoBuildQty.ShiftQuantity3 = view(0).Row(BuildQtyType.ShiftQuantity3).ToString()
+                        dtoBuildQty.Lot_Prod = view(0).Row(BuildQtyType.LOT_PROD).ToString()
+                        dtoBuildQty.Lot_Ship = view(0).Row(BuildQtyType.lOT_SHIP).ToString()
+                        dtoBuildQty.PlannedShipQuantity = view(0).Row(BuildQtyType.PlannedShipQuantity).ToString()
+                        dtoBuildQty.EndLotProducedJobQuantity = view(0).Row(BuildQtyType.EndLotProducedJobQuantity).ToString()
+
+                        If (dtoBuildQty.EndLotProducedJobQuantity = "") Then
+                            dtoBuildQty.EndLotProducedJobQuantity = qtyDefault
+                        End If
+                    End If
+                End If
+
+                If String.IsNullOrEmpty(dtoBuildQty.ShiftQuantity1) Then        ' If no data from database, fill structure with zeros.
+                    dtoBuildQty.ShiftQuantity1 = "0"
+                    dtoBuildQty.ShiftQuantity2 = "0"
+                    dtoBuildQty.ShiftQuantity3 = "0"
+                    dtoBuildQty.Lot_Prod = "0"
+                    dtoBuildQty.Lot_Ship = "0"
+                    dtoBuildQty.PlannedShipQuantity = "0"
+                    dtoBuildQty.EndLotProducedJobQuantity = qtyDefault
+                End If
+
+                strCell = BuildCalendarDay(dtoBuildQty)
+                e.Cell.Controls.Add(New LiteralControl(strCell))
+            End If
+
+        Catch ex As Exception
+            Master.eMsg(ex.ToString())
+        End Try
+
+    End Sub
+
+    Private Sub ibPrevMo_Click(sender As Object, e As System.Web.UI.ImageClickEventArgs) Handles ibPrevMo.Click
+        Try
+            If (Me.ddlMonth.SelectedIndex > 0) Then
+                Me.ddlMonth.SelectedIndex -= 1
+            End If
+        Catch ex As Exception
+            Master.eMsg(ex.ToString())
+        End Try
+    End Sub
+
+    Private Sub ibNextMo_Click(sender As Object, e As System.Web.UI.ImageClickEventArgs) Handles ibNextMo.Click
+        Try
+            If (Me.ddlMonth.SelectedIndex < (Me.ddlMonth.Items.Count - 1)) Then
+                Me.ddlMonth.SelectedIndex += 1
+            End If
+        Catch ex As Exception
+            Master.eMsg(ex.ToString())
+        End Try
+    End Sub
+
+    Private Sub cmdRefresh_Click(sender As Object, e As System.EventArgs) Handles cmdRefresh.Click
+
+    End Sub
+
+    Private Sub cmdEdit_Click(sender As Object, e As System.EventArgs) Handles cmdEdit.Click
+        SaveEdits()
+    End Sub
+
+    Private Sub cmdPrePop_Click(sender As Object, e As System.EventArgs) Handles cmdPrePop.Click
+        BuildQuantityPrePopulate()
+    End Sub
+
+#End Region
+
+#Region "Methods"
+
+    Private Sub EnableControls()
+        Try
+
+            Master.Secure(Me.cmdPrePop)
+            Master.Secure(Me.cmdRefresh)
+            Master.Secure(Me.ibNextMo)
+            Master.Secure(Me.ibPrevMo)
+
+        Catch ex As Exception
+            Master.eMsg(ex.ToString())
+        End Try
+
+    End Sub
+
+
+    Private Sub BuildMonthsList()
+        Dim strText As String
+        Dim strValue As String
+        Dim startDate As Date = Now()
+        Dim endDate As Date = Now()
+        Try
+
+            ''Making a list of 19 months
+            ''past 12 months + current + 6 months
+
+            startDate = startDate.AddYears(-1)  'roll back 1 year for start date
+            endDate = endDate.AddMonths(6)  'add 6 months to current month 1 year for end date
+
+            Me.ddlMonth.Items.Clear()
+
+            Do While startDate.Date <= endDate.Date
+                strText = startDate.ToString("MMMM") & " " & startDate.Year.ToString()
+                strValue = startDate.ToString("MM") & "/01/" & startDate.Year.ToString()
+
+                Dim itm As New ListItem(strText, strValue)
+                Me.ddlMonth.Items.Add(itm)
+
+                startDate = startDate.AddMonths(1)
+            Loop
+
+
+            Me.ddlMonth.SelectedIndex = 12  'sets to current month
+
+        Catch ex As Exception
+            Master.eMsg(ex.ToString())
+        End Try
+    End Sub
+
+#End Region
+
+#Region "calendar functions"
+
+    Private Sub GetCalendarData()
+        Dim sql As String
+
+        Dim startDate As Date
+
+        Try
+            If (Date.TryParse(ddlMonth.SelectedValue, startDate)) Then
+
+
+                sql = "SELECT [ProductionDate], [1stShiftQuantity], [2ndShiftQuantity], [3rdShiftQuantity]"
+                sql += ", RIGHT(EndLotProduced, 3) AS LOT_PROD, RIGHT(EndLotShipped,3) AS LOT_SHIP, [PlannedShipQuantity], [EndLotProducedJobQuantity]"
+                sql += " FROM tblPSDailyBuildQuantities "
+                sql += " WHERE ([ProductionDate] >= CONVERT(DATETIME, '" + startDate.ToString() + "', 102)) AND ([ProductionDate] < CONVERT(DATETIME, '" + _
+                        startDate.AddMonths(1).ToString() + "', 102)) AND [SetexSchedule] = " + rbOrders.SelectedValue
+
+                sql += " ORDER BY [ProductionDate] "
+
+                dsMonthData = DA.GetDataSet(sql)
+
+            End If
+
+        Catch ex As Exception
+            Master.eMsg(ex.ToString())
+        End Try
+    End Sub
+
+    Private Function BuildCalendarDay(ByVal data As DTO_DailyBuildQuantity) As String
+        Dim strDiv_start As String = "<div class='calendarCellDiv'>"
+        Dim strTable_start As String = "<table class='calenderCellTable'>"
+
+        Dim strRow_start As String = "<tr><td class='calendarCellLeft'>"
+
+        Dim strRow_0_middle As String = "</td><td  class='calendarCellRight' id='tdShift1'>"
+        Dim strRow_1_middle As String = "</td><td  class='calendarCellRight' id='tdShift2'>"
+        Dim strRow_2_middle As String = "</td><td  class='calendarCellRight' id='tdShift3'>"
+        Dim strRow_3_middle As String = "</td><td  class='calendarCellRight' id='tdPlannedShipQty'>"
+        Dim strRow_4_middle As String = "</td><td  class='calendarCellRight' id='tdLotProdShip'>"
+
+        Dim strLabel_1 As String = "<label style='display:none' id='lblDate'>"
+        Dim strLabel_2 As String = "<label style='display:none' id='lblJobQty'>"
+
+        Dim strLabel_end As String = "</label>"
+
+        Dim strRow_end As String = "</td></tr>"
+        Dim strTable_end As String = "</table>"
+        Dim strDiv_end As String = "</div>"
+
+        Dim strDesc_Shift1 As String = "1st Shift:"
+        Dim strDesc_Shift2 As String = "2nd Shift:"
+        Dim strDesc_Shift3 As String = "3rd Shift:"
+        Dim strDesc_ShipQt As String = "Ship Qty:"
+        Dim strDesc_EndLot As String = "End Lot:"
+
+        Dim strCell As New StringBuilder()
+
+        Try
+            strCell.Append(strDiv_start + strTable_start)
+
+            strCell.Append(strRow_start)
+            strCell.Append(strDesc_Shift1)
+            strCell.Append(strRow_0_middle)
+            strCell.Append(data.ShiftQuantity1)
+            strCell.Append(strRow_end)
+
+            strCell.Append(strRow_start)
+            strCell.Append(strDesc_Shift2)
+            strCell.Append(strRow_1_middle)
+            strCell.Append(data.ShiftQuantity2)
+            strCell.Append(strRow_end)
+
+            strCell.Append(strRow_start)
+            strCell.Append(strDesc_Shift3)
+            strCell.Append(strRow_2_middle)
+            strCell.Append(data.ShiftQuantity3)
+            strCell.Append(strRow_end)
+
+            strCell.Append(strRow_start)
+            strCell.Append(strDesc_ShipQt)
+            strCell.Append(strRow_3_middle)
+            strCell.Append(data.PlannedShipQuantity)
+            strCell.Append(strRow_end)
+
+            strCell.Append(strRow_start)
+            strCell.Append(strDesc_EndLot)
+            strCell.Append(strRow_4_middle)
+            strCell.Append(data.Lot_Prod + "/" + data.Lot_Ship)
+            strCell.Append(strRow_end)
+
+            strCell.Append(strTable_end)
+
+            strCell.Append(strLabel_1 + data.ProductionDate + strLabel_end)
+            strCell.Append(strLabel_2 + data.EndLotProducedJobQuantity + strLabel_end)
+
+            strCell.Append(strDiv_end)
+
+        Catch ex As Exception
+            Master.eMsg(ex.ToString())
+        End Try
+
+        Return strCell.ToString()
+
+
+    End Function
+
+#End Region
+
+    Private Sub SaveEdits()
+        Try
+            If (CheckEditDialogInput()) Then
+
+                Dim sql As String
+
+                sql = "exec procPSDailyBuildQuantEdit '" + hidDailyBuildDate.Value + "', "
+                sql += Me.txtEditShift1.Text + ", "
+                sql += Me.txtEditShift2.Text + ", "
+                sql += Me.txtEditShift3.Text + ", "
+                sql += Me.txtPSQ.Text + ", '"
+                sql += hidDDLProd.Value.Replace("-1", "") + "', '"
+                sql += hidDDLShip.Value.Replace("-1", "") + "', "
+                'MS 05-26-2006
+                sql += Me.txtJobQty.Text + ", "
+                sql += rbOrders.SelectedValue
+
+                DA.ExecSQL(sql)
+
+                Master.tMsg("Save", "Daily Build Quantity for " + hidDailyBuildDate.Value + " has been updated.")
+
+            End If
+
+        Catch ex As Exception
+            Master.eMsg(ex.ToString())
+        End Try
+    End Sub
+
+    Private Sub BuildQuantityPrePopulate()
+        Try
+            If (CheckPrePopulateDilaogInput()) Then
+
+                Dim sql As String
+
+                'CREATE PROCEDURE procPSDailyBuildQuantPopulate
+                '							@strDateStart varchar(10),
+                '							@strDateEnd varchar(10),
+                '							@Mon bit, 
+                '							@Tue bit, 
+                '							@Wed bit, 
+                '							@Thu bit,
+                '							@Fri bit, 
+                '							@Sat bit, 
+                '							@Sun bit, 
+                '							@Shift1 smallint, 
+                '							@Shift2 smallint, 
+                '							@Shift3 smallint,
+                '							@PSQ smallint,
+                '							@JobQ smallint  --, 
+                '                           SetexSchedule int
+                '							--@Status Varchar(80) OUT, 
+                '							--@ErrorMsg Varchar(80) OUT 
+                '							AS            
+
+                sql = "exec procPSDailyBuildQuantPopulate '" + txtBegin.Text + "', '"
+                sql += txtEnd.Text + "', "
+                sql += Convert.ToInt16(Me.cblDays.Items(0).Selected).ToString() + ", "
+                sql += Convert.ToInt16(Me.cblDays.Items(1).Selected).ToString() + ", "
+                sql += Convert.ToInt16(Me.cblDays.Items(2).Selected).ToString() + ", "
+                sql += Convert.ToInt16(Me.cblDays.Items(3).Selected).ToString() + ", "
+                sql += Convert.ToInt16(Me.cblDays.Items(4).Selected).ToString() + ", "
+                sql += Convert.ToInt16(Me.cblDays.Items(5).Selected).ToString() + ", "
+                sql += Convert.ToInt16(Me.cblDays.Items(6).Selected).ToString() + ", "
+                If (Me.cbShift1.Checked) Then
+                    sql += txtShift1.Text + ", "
+                Else
+                    sql += "-1, "
+                End If
+                If (Me.cbShift2.Checked) Then
+                    sql += txtShift2.Text + ", "
+                Else
+                    sql += "-1, "
+                End If
+                If (Me.cbShift3.Checked) Then
+                    sql += txtShift3.Text + ", "
+                Else
+                    sql += "-1, "
+                End If
+                sql += (txtShipQ.Text + ", ")
+                sql += (txtProdQ.Text + ", ")
+                sql += rbOrders.SelectedValue
+                'MS 05-26-2006
+
+                DA.ExecSQL(sql)
+
+                Master.tMsg("Save", "Daily Build Quantity Pre-Populated for dates: " + txtBegin.Text + " to " + txtEnd.Text)
+
+            End If
+
+        Catch ex As Exception
+            Master.eMsg(ex.ToString())
+        End Try
+
+    End Sub
+
+    Private Function CheckEditDialogInput() As Boolean
+        Dim bResult As Boolean = True
+        Dim intJobQty As Integer
+        Dim intEndLotQty As Integer
+
+        Try
+
+            If (txtEditShift1.Text = "") Then
+                Master.tMsg("Error Check", "Error: Please enter valid Shift1 quantity!")
+                txtEditShift1.Text = "0"
+                bResult = False
+            End If
+
+            If (bResult) And (txtEditShift2.Text = "") Then
+                Master.tMsg("Error Check", "Error: Please enter valid Shift2 quantity!")
+                txtEditShift2.Text = "0"
+                bResult = False
+            End If
+
+            If (bResult) And (txtEditShift3.Text = "") Then
+                Master.tMsg("Error Check", "Error: Please enter valid Shift3 quantity!")
+                txtEditShift3.Text = "0"
+                bResult = False
+            End If
+
+            If (bResult) And (Me.ddlProd.Items.Count <= 0) Then
+                Me.ddlProd.Items.Insert(0, "")
+                Me.ddlProd.Items(0).Value = ""
+                Me.ddlProd.SelectedIndex = 0
+                'Return False
+            End If
+
+            If (bResult) And (Me.ddlShipped.Items.Count <= 0) Then
+                Me.ddlShipped.Items.Insert(0, "")
+                Me.ddlShipped.Items(0).Value = ""
+                Me.ddlShipped.SelectedIndex = 0
+                'Return False
+            End If
+
+            If (bResult) And (Me.txtJobQty.Text = "") Then
+                Master.tMsg("Error Check", "Error: Please enter valid Job quantity!")
+                Me.txtJobQty.Text = "0"
+                bResult = False
+            End If
+
+            If (bResult) And (Me.txtPSQ.Text = "") Then
+                Master.tMsg("Error Check", "Error: Please enter valid Ship quantity!")
+                Me.txtPSQ.Text = "0"
+                bResult = False
+            End If
+
+            'If (Me.lblEndLotQ.Text = "???") Then
+            '    'Master.tMsg("Error: Please enter a valid End Lot Produced Quantity."
+            '    'Return False
+            '    bResult = True
+            'End If
+
+            If (Integer.TryParse(Me.txtJobQty.Text, intJobQty)) And (Integer.TryParse(Me.txtJobQty.Text, intEndLotQty)) Then
+                If intJobQty > intEndLotQty Then
+                    Master.tMsg("Error Check", "Error: End Lot Produced Quantity cannot be > " + Me.lblEndLotQ.Text)
+                    bResult = False
+                End If
+            End If
+
+        Catch ex As Exception
+            Master.eMsg(ex.ToString())
+        End Try
+
+        Return bResult
+
+    End Function
+
+    Private Function CheckPrePopulateDilaogInput() As Boolean
+        Try
+            If (txtBegin.Text = "") Then
+                Master.tMsg("Error Check", "Error: Please enter valid dates!")
+                Return False
+            End If
+            If (txtBegin.Text = "") Then
+                Master.tMsg("Error Check", "Error: Please enter valid dates!")
+                Return False
+            End If
+
+            If (txtProdQ.Text = "") Then
+                Master.tMsg("Error Check", "Error: Please enter valid Job quantity!")
+                Return False
+            End If
+            If (txtShipQ.Text = "") Then
+                Master.tMsg("Error Check", "Error: Please enter valid Ship quantity!")
+                Return False
+            End If
+            If (txtShift1.Text = "") Then
+                Master.tMsg("Error Check", "Error: Please enter valid Shift1 quantity!")
+                Return False
+            End If
+            If (txtShift2.Text = "") Then
+                Master.tMsg("Error Check", "Error: Please enter valid Shift2 quantity!")
+                Return False
+            End If
+            If (txtShift3.Text = "") Then
+                Master.tMsg("Error Check", "Error: Please enter valid Shift3 quantity!")
+                Return False
+            End If
+
+            'm/d/yyyy
+            If (txtBegin.Text.Length < 8) Then
+                Master.tMsg("Error Check", "Error: Please enter valid dates!")
+                Return False
+            End If
+            If (txtEnd.Text.Length < 8) Then
+                Master.tMsg("Error Check", "Error: Please enter valid dates!")
+                Return False
+            End If
+            If (txtBegin.Text.Split(CChar("/")).Length < 3) Then
+                Master.tMsg("Error Check", "Error: Please enter valid dates!")
+                Return False
+            End If
+            If (txtEnd.Text.Split(CChar("/")).Length < 3) Then
+                Master.tMsg("Error Check", "Error: Please enter valid dates!")
+                Return False
+            End If
+
+
+            Dim bd As String = ""
+            Dim bm As String = ""
+            Dim by As String = ""
+            bm = txtBegin.Text.Split(CChar("/"))(0)
+            bd = txtBegin.Text.Split(CChar("/"))(1)
+            by = txtBegin.Text.Split(CChar("/"))(2)
+
+            Dim ed As String = ""
+            Dim em As String = ""
+            Dim ey As String = ""
+            em = txtEnd.Text.Split(CChar("/"))(0)
+            ed = txtEnd.Text.Split(CChar("/"))(1)
+            ey = txtEnd.Text.Split(CChar("/"))(2)
+
+            Dim bdt As New Date(CInt(by), CInt(bm), CInt(bd))
+            Dim edt As New Date(CInt(ey), CInt(em), CInt(ed))
+
+            If (edt < bdt) Then
+                Master.tMsg("Error Check", "Error: End date cannot be before Begin date!")
+                Return False
+            End If
+
+        Catch ex As Exception
+            Master.eMsg(ex.ToString())
+        End Try
+
+        Return True
+
+    End Function
+
+End Class

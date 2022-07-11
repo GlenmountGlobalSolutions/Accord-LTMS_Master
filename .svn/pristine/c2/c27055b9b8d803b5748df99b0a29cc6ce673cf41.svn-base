@@ -1,0 +1,118 @@
+﻿Public Class DTO_DailyBuildQuantity
+
+    Dim _productionDate As String
+    Dim _shiftQuantity1 As String
+    Dim _shiftQuantity2 As String
+    Dim _shiftQuantity3 As String
+    Dim _lot_Prod As String
+    Dim _lot_Ship As String
+    Dim _plannedShipQuantity As String
+    Dim _endLotProducedJobQuantity As String
+
+
+    Public Property ProductionDate() As String
+        Get
+            Return _productionDate
+        End Get
+        Set(ByVal value As String)
+            Dim valueTrimmed As String = value.Trim()
+
+            If valueTrimmed <> _productionDate Then
+                _productionDate = valueTrimmed
+            End If
+        End Set
+    End Property
+
+    Public Property ShiftQuantity1() As String
+        Get
+            Return _shiftQuantity1
+        End Get
+        Set(ByVal value As String)
+            Dim valueTrimmed As String = value.Trim()
+
+            If valueTrimmed <> _shiftQuantity1 Then
+                _shiftQuantity1 = valueTrimmed
+            End If
+        End Set
+    End Property
+
+    Public Property ShiftQuantity2() As String
+        Get
+            Return _shiftQuantity2
+        End Get
+        Set(ByVal value As String)
+            Dim valueTrimmed As String = value.Trim()
+
+            If valueTrimmed <> _shiftQuantity2 Then
+                _shiftQuantity2 = valueTrimmed
+            End If
+        End Set
+    End Property
+
+    Public Property ShiftQuantity3() As String
+        Get
+            Return _shiftQuantity3
+        End Get
+        Set(ByVal value As String)
+            Dim valueTrimmed As String = value.Trim()
+
+            If valueTrimmed <> _shiftQuantity3 Then
+                _shiftQuantity3 = valueTrimmed
+            End If
+        End Set
+    End Property
+
+    Public Property Lot_Prod() As String
+        Get
+            Return _lot_Prod
+        End Get
+        Set(ByVal value As String)
+            Dim valueTrimmed As String = value.Trim()
+
+            If valueTrimmed <> _lot_Prod Then
+                _lot_Prod = valueTrimmed
+            End If
+        End Set
+    End Property
+
+    Public Property Lot_Ship() As String
+        Get
+            Return _lot_Ship
+        End Get
+        Set(ByVal value As String)
+            Dim valueTrimmed As String = value.Trim()
+
+            If valueTrimmed <> _lot_Ship Then
+                _lot_Ship = valueTrimmed
+            End If
+        End Set
+    End Property
+
+    Public Property PlannedShipQuantity() As String
+        Get
+            Return _plannedShipQuantity
+        End Get
+        Set(ByVal value As String)
+            Dim valueTrimmed As String = value.Trim()
+
+            If valueTrimmed <> _plannedShipQuantity Then
+                _plannedShipQuantity = valueTrimmed
+            End If
+        End Set
+    End Property
+
+    Public Property EndLotProducedJobQuantity() As String
+        Get
+            Return _endLotProducedJobQuantity
+        End Get
+        Set(ByVal value As String)
+            Dim valueTrimmed As String = value.Trim()
+
+            If valueTrimmed <> _endLotProducedJobQuantity Then
+                _endLotProducedJobQuantity = valueTrimmed
+            End If
+        End Set
+    End Property
+
+
+End Class

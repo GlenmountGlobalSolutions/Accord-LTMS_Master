@@ -1,0 +1,423 @@
+﻿<%@ Page Title="" Language="vb" AutoEventWireup="false" MasterPageFile="~/Site.Master" CodeBehind="KDPlanProcessing.aspx.vb" Inherits="LTMS_Master.KDPlanProcessing" %>
+
+<%@ MasterType VirtualPath="~/Site.master" %>
+<asp:Content ID="Content1" ContentPlaceHolderID="HeadContent" runat="server">
+    <script type="text/javascript">
+        var $treeView;
+        var $cmdDelete;
+        var $cmdMove;
+        var $cmdProcess;
+        var $lbNfiles;
+
+        var $divDialogConfirmValidDisabled;
+        var $divDialogProcess;
+        var $divDialogConfirm;
+        var $divDialogConfirmValid;
+        var $cmdDialogProcessReport;
+        var $dialogProcessAction;
+
+        //Hidden controls for processing KD Plans
+        var $dialogControl;
+        var $captureConfirmFlag;
+        var $captureValidFlag;
+        var $captureProcessFlag;
+        var $captureDeleteFlag;
+
+
+        function contentPageLoad(sender, args) {
+            AddDirtyClassOnChange();
+            CacheControls();
+            AddUIClasses();
+
+            RemoveTreeViewSkipLinks();
+            AddEventToTreeView();
+
+            CreateDialog_Delete();
+            CreateDialog_Process();
+            CreateDialog_Confirm();
+            CreateDialog_ConfirmValid();
+            CreateDialog_ConfirmValidDisabled();
+
+            AddOverLay_lbnfiles();
+            AddOverLay_cmdMove();
+            AddOverLay_cmdProcess();
+
+            if (args.get_isPartialLoad()) {
+                //Specific code for partial postbacks can go in here.   code in here will only execute after a post back
+
+                CheckForAlerts();
+            }
+
+        }
+
+        function CacheControls() {
+            $treeView = $('#MainContent_TreeView');
+
+            $cmdMove = $('#MainContent_cmdMove');
+            $cmdDelete = $('#MainContent_cmdDelete');
+            $cmdProcess = $('#MainContent_cmdProcess');
+            $lbNfiles = $('#MainContent_lbNfiles');
+
+            $dialogControl = $('#MainContent_dialogControl');
+
+            $captureConfirmFlag = $('#MainContent_captureConfirmFlag');
+            $captureValidFlag = $('#MainContent_captureValidFlag');
+            $captureProcessFlag = $('#MainContent_captureProcessFlag');
+            $captureDeleteFlag = $('#MainContent_captureDeleteFlag');
+
+            //Dialogs
+            $divDialogConfirmValidDisabled = $('#divDialogConfirmValidDisabled');
+            $divDialogProcess = $('#divDialogProcess');
+            $divDialogConfirm = $('#divDialogConfirm');
+            $divDialogConfirmValid = $('#divDialogConfirmValid');
+            $cmdDialogProcessReport = $('#MainContent_cmdDialogProcessReport');
+            $dialogProcessAction = $('#MainContent_dialogProcessAction');
+        }
+
+        function CreateDialog_Delete() {
+            var $cmdButton = $('#MainContent_cmdDelete');
+            var $dlgDiv = $('#divDialogDelete');
+
+            // add event to button
+            $cmdButton.click(function () { $dlgDiv.dialog('open'); return false; });
+
+            // Add Delete Dialog
+            $dlgDiv.deleteDialog({ control: $cmdButton });
+        }
+
+        function CreateDialog_Process() {
+            // Add Dialog
+            $divDialogProcess.modalDialog({ control: $cmdProcess, width: 400 });
+
+            $divDialogProcess.dialog("option", "buttons", [
+                            {
+                                text: "Process",
+                                click: function () {
+                                    $dialogProcessAction.val("Process");
+                                    //set value for cmdProcess postback to access.
+                                    ShowWaitOverlay();
+                                    $captureProcessFlag.val("True");
+                                    __doPostBack($cmdProcess.prop('name'), '');
+                                    $(this).dialog("close");
+                                }
+                            },
+                            {
+                                text: "Cancel",
+                                click: function () {
+                                    $dialogProcessAction.val("Cancel");
+                                    //set value for cmdProcess postback to access.
+                                    $captureProcessFlag.val("FALSE");
+                                    __doPostBack($cmdProcess.prop('name'), '');
+                                    $(this).dialog("close");
+                                }
+                            }
+                    ]);
+        }
+
+
+        function CreateDialog_ConfirmValid() {
+            // Add Dialog
+            $divDialogConfirmValid.modalDialog({ control: $cmdProcess, width: 400 });
+
+            $divDialogConfirmValid.dialog("option", "buttons", [
+                            {
+                                text: "Process File",
+                                click: function () {
+                                    //set value for cmdProcess postback to access.
+                                    ShowWaitOverlay();
+                                    $captureValidFlag.val("True");
+                                    __doPostBack($cmdProcess.prop('name'), '');
+                                    $(this).dialog("close");
+                                }
+                            },
+                            {
+                                text: "Cancel",
+                                click: function () {
+                                    //set value for cmdProcess postback to access.
+                                    $captureValidFlag.val("FALSE");
+                                    __doPostBack($cmdProcess.prop('name'), '');
+                                    $(this).dialog("close");
+                                }
+                            }
+                    ]);
+        }
+
+        function CreateDialog_ConfirmValidDisabled() {
+            // Add Dialog
+            $divDialogConfirmValidDisabled.modalDialog({ control: $cmdProcess, width: 400 });
+
+            $divDialogConfirmValidDisabled.dialog("option", "buttons", [
+                            {
+                                text: "Cancel",
+                                click: function () {
+                                    //set value for cmdProcess postback to access.
+                                    $captureValidFlag.val("FALSE");
+                                    __doPostBack($cmdProcess.prop('name'), '');
+                                    $(this).dialog("close");
+                                }
+                            }
+                    ]);
+        }
+
+        function CreateDialog_Confirm() {
+            // Add Dialog
+            $divDialogConfirm.modalDialog({ control: $cmdProcess, width: 400 });
+
+            $divDialogConfirm.dialog("option", "buttons", [
+                            {
+                                text: "Yes",
+                                click: function () {
+                                    //set value for cmdProcess postback to access.
+                                    $captureConfirmFlag.val("TRUE");
+                                    ShowWaitOverlay();
+                                    __doPostBack($cmdProcess.prop('name'), '');
+                                    $(this).dialog("close");
+                                }
+                            },
+                            {
+                                text: "Cancel",
+                                click: function () {
+                                    //set value for cmdProcess postback to access.
+                                    $captureConfirmFlag.val("FALSE");
+                                    __doPostBack($cmdProcess.prop('name'), '');
+                                    $(this).dialog("close");
+                                }
+                            }
+                    ]);
+        }
+
+        function CheckForAlerts() {
+            //  codebehind from cmdProcess.click will set the dialogControl.val to indicate
+            //  which popup dialog needs to be processed.
+            switch ($dialogControl.val()) {
+                case "captureValidDisabled":
+                    $divDialogConfirmValidDisabled.dialog('open');
+                    break;
+
+                case "captureProcess":
+                    $divDialogProcess.dialog('open');
+                    break;
+
+                case "captureConfirm":
+                    $divDialogConfirm.dialog('open');
+                    break;
+
+                case "captureConfirmValid":
+                    $divDialogConfirmValid.dialog('open');
+                    break;
+
+                case "captureValid":
+                    $divDialogConfirmValid.dialog('open');
+                    break;
+
+                default:
+                    break;
+            }
+
+            $dialogControl.val("");
+        }
+
+        function AddEventToTreeView() {
+            $treeView.click(function () { return GetSelectedNode(event, 'MainContent_treeView_Data'); });
+        }
+
+        function GetSelectedNode(evt, treeData) {
+            try {
+                var src = window.event != window.undefined ? window.event.srcElement : evt.target;
+                var nodeClick = src.tagName.toLowerCase() == "a" || src.tagName.toLowerCase() == "span";
+                if (nodeClick) {
+                    ShowWaitOverlay();  //I'm thinking
+                    return true;   //change to true if you want postback on node click
+                }
+            }
+            catch (Error) {
+                alert(Error);
+            }
+        }
+
+        function AddOverLay_lbnfiles() {
+            $lbNfiles.click(function () { ShowWaitOverlay(); return true; });
+        }
+
+        function AddOverLay_cmdMove() {
+            $cmdMove.click(function () { ShowWaitOverlay(); return true; });
+        }
+
+        function AddOverLay_cmdProcess() {
+            $cmdProcess.click(function () { ShowWaitOverlay(); return true; });
+        }
+    </script>
+    <style type="text/css">
+        #PlanProperties
+        {
+            margin: 0px 0px 12px 0px;
+            width: 700px;
+        }
+        .spanValue
+        {
+            font-weight: bold;
+            width: 500px !important;
+        }
+        #divMainCenterPanel .spanLabel
+        {
+            /*Line up the spans to similate table columns.*/
+            width: 150px;
+            display: inline-block;
+            margin-bottom: 4px;
+        }
+        #PlanProperties .selectListBox
+        {
+            vertical-align: text-top;
+        }
+        #PlanProperties .h2
+        {
+            /*push other labels to the next line.*/
+            display: block;
+            padding-bottom: 5px;
+        }
+        #divMainLeftPanel
+        {
+            width: 270px;
+        }
+        #divMainLeftPanel select, #cmdPanel
+        {
+            width: 240px;
+        }
+        #cmdPanel input
+        {
+            width: 200px;
+        }
+        #MainContent_cmdProcess
+        {
+            white-space: normal;
+        }
+        .divBorder
+        {
+            overflow: auto;
+        }
+        #MainContent_TreeView a
+        {
+            padding-right: 4px;
+        }
+    </style>
+</asp:Content>
+<asp:Content ID="Content2" ContentPlaceHolderID="MainContent" runat="server">
+    <div id="divMainLeftPanel">
+        <asp:UpdatePanel ID="UpdatePanel1" runat="server">
+            <ContentTemplate>
+                <asp:Label ID="Label4" runat="server" CssClass="spanLabel h2">Files:</asp:Label>
+                <asp:TreeView ID="TreeView" runat="server" ShowLines="False" ShowExpandCollapse="True" RootNodeStyle-ImageUrl="~/Images/TreeView/dir.gif" ParentNodeStyle-ImageUrl="~/Images/TreeView/dir.gif"
+                    LeafNodeStyle-ImageUrl="~/Images/TreeView/aspxdoc.gif" RootNodeStyle-HorizontalPadding="0" RootNodeStyle-VerticalPadding="0" ParentNodeStyle-HorizontalPadding="0"
+                    ParentNodeStyle-VerticalPadding="0" LeafNodeStyle-HorizontalPadding="0" LeafNodeStyle-VerticalPadding="0" ExpandDepth="1" Height="270px" Width="240px"
+                    BackColor="White" CssClass="divBorder">
+                    <SelectedNodeStyle Font-Bold="True" />
+                </asp:TreeView>
+                <div id="cmdPanel">
+                    <asp:Button ID="cmdProcess" runat="server" ToolTip="Process selected file." Text="Process Selected KD Plan"></asp:Button>
+                    <asp:Button ID="cmdMove" runat="server" ToolTip="Move selected file." Text="Move File"></asp:Button>
+                    <asp:Button ID="cmdDelete" runat="server" ToolTip="Delete selected file." Text="Delete File"></asp:Button>
+                </div>
+                <input id="captureConfirmFlag" type="hidden" name="captureConfirmFlag" runat="server" />
+                <input id="captureValidFlag" type="hidden" name="captureValidFlag" runat="server" />
+                <input id="captureProcessFlag" type="hidden" name="captureProcessFlag" runat="server" />
+                <input id="captureDeleteFlag" type="hidden" name="captureDeleteFlag" runat="server" />
+                <input id="dialogControl" type="hidden" name="dialogControl" runat="server" />
+                <!--    Store which action button was pressed.  -->
+                <input id="dialogProcessAction" type="hidden" name="dialogProcessAction" runat="server" />
+            </ContentTemplate>
+        </asp:UpdatePanel>
+    </div>
+    <div id="divMainCenterPanel">
+        <asp:UpdatePanel ID="UpdatePanel2" runat="server">
+            <ContentTemplate>
+                <div id="PlanProperties">
+                    <asp:Label ID="Label3" runat="server" CssClass="h2">File Properties:</asp:Label>
+                    <asp:Label ID="Label2" runat="server" CssClass="spanLabel">File Name:</asp:Label>
+                    <asp:Label ID="lblFileName" runat="server" CssClass="spanLabel spanValue">asdf</asp:Label>
+                    <asp:Label ID="Label20" runat="server" CssClass="spanLabel">Status:</asp:Label>
+                    <asp:Label ID="lblStatus" runat="server" CssClass="spanLabel spanValue">asdf</asp:Label>
+                    <asp:Label ID="Label5" runat="server" CssClass="spanLabel">KD Plan Send Date:</asp:Label>
+                    <asp:Label ID="lblSendDate" runat="server" CssClass="spanLabel spanValue">asdf</asp:Label>
+                    <asp:Label ID="Label1" runat="server" CssClass="spanLabel">KD Plans Found in File:</asp:Label>
+                    <asp:ListBox ID="lbNfiles" runat="server" Width="224px" AutoPostBack="True" CssClass="selectListBox"></asp:ListBox>
+                </div>
+                <div id="FileContents">
+                    <asp:Label ID="LABEL6" runat="server" CssClass="spanLabel h2">File Contents:</asp:Label>
+                    <asp:Label ID="lblAsterick" runat="server" CssClass="spanLabel ui-state-highlight" Width="300px" Visible="false">asdf</asp:Label>
+                    <asp:TextBox ID="tbFileContents" runat="server" Width="664px" Height="354px" TextMode="MultiLine" ReadOnly="True" CssClass="textEntry"></asp:TextBox>
+                </div>
+            </ContentTemplate>
+        </asp:UpdatePanel>
+    </div>
+    <div id="divDialogDelete" title="Delete Label Configuration">
+        <div class="ui-corner-all ui-state-error" style="top: 40%; position: absolute;">
+            <span class="ui-icon ui-icon-alert"></span>
+        </div>
+        <p class="pCenter" style="margin-left: 30px;">
+            You are about to delete the selected file. Do you wish to continue?.
+        </p>
+    </div>
+    <div id="divDialogConfirmValidDisabled" title="Critical Validation Error">
+        <!--    modalValidDisabled_.aspx    -->
+        <asp:UpdatePanel ID="UpdatePanel3" runat="server">
+            <ContentTemplate>
+                <p class="pCenter">
+                    <span class="spanLabel bold">The following validation errors exist in the selected file.</span>
+                </p>
+                <p class="pCenter">
+                    <asp:TextBox ID="tbConfirmValidDisabledMessage" runat="server" Width="320px" Height="100px" TextMode="MultiLine" ReadOnly="True" CssClass="textEntry">WEll</asp:TextBox>
+                </p>
+                <div style="position: relative;">
+                    <div class="ui-corner-all ui-state-error" style="top: 50%; position: absolute; margin-top: -9px; margin-left: 10px;">
+                        <span class="ui-icon ui-icon-alert"></span>
+                    </div>
+                    <p class="pCenter" style="margin-left: 30px;">
+                        <span class="ui-state-error-text">A critical validation error exists, this file cannot be processed.</span>
+                    </p>
+                </div>
+            </ContentTemplate>
+        </asp:UpdatePanel>
+    </div>
+    <div id="divDialogProcess" title="Confirm Process File">
+        <!--    modalProcess_.aspx    -->
+        <asp:UpdatePanel runat="server">
+            <ContentTemplate>
+                <p id="divDialogProcessMessage" class="pCenter" runat="server">
+                </p>
+                <!--Buttons:  "Process", "Cancel"-->
+            </ContentTemplate>
+        </asp:UpdatePanel>
+    </div>
+    <div id="divDialogConfirmValid" title="Non-critical Validation Errors">
+        <!--    modalValid.aspx    -->
+        <asp:UpdatePanel ID="UpdatePanel4" runat="server">
+            <ContentTemplate>
+                <p class="pCenter">
+                    <span class="spanLabel bold">The following validation errors exist in the selected file.</span>
+                </p>
+                <p class="pCenter">
+                    <asp:TextBox ID="tbConfirmValidMessage" runat="server" Width="320px" Height="100px" TextMode="MultiLine" ReadOnly="True" CssClass="textEntry">WEll</asp:TextBox>
+                </p>
+                <div style="position: relative;">
+                    <div class="ui-corner-all ui-state-error" style="top: 50%; position: absolute; margin-top: -9px; margin-left: 10px;">
+                        <span class="ui-icon ui-icon-alert"></span>
+                    </div>
+                    <p class="pCenter" style="margin-left: 30px;">
+                        <span class="ui-state-error-text">Do you wish to process the file?</span>
+                    </p>
+                </div>
+                <!--Buttons:  "Process File", "Cancel"-->
+            </ContentTemplate>
+        </asp:UpdatePanel>
+    </div>
+    <div id="divDialogConfirm" title="Confirmation">
+        <!--    modalConfirmation_.aspx    -->
+        <asp:UpdatePanel ID="UpdatePanel5" runat="server">
+            <ContentTemplate>
+                <p id="divDialogConfirmMessage" class="pCenter" runat="server">
+                </p>
+                <!--Buttons:  Yes, Cancel-->
+            </ContentTemplate>
+        </asp:UpdatePanel>
+    </div>
+</asp:Content>

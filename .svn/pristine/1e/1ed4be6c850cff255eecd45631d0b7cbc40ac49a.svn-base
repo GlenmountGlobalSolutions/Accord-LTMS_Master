@@ -1,0 +1,527 @@
+﻿<%@ Page Title="" Language="vb" AutoEventWireup="false" MasterPageFile="~/Site.Master" CodeBehind="ShippingSchedule.aspx.vb" Inherits="LTMS_Master.ShippingSchedule" EnableEventValidation="false" ValidateRequest="false" %>
+
+<%@ MasterType VirtualPath="~/Site.master" %>
+<asp:Content ID="Content1" ContentPlaceHolderID="HeadContent" runat="server">
+	<script type="text/javascript" src="<%# ResolveUrl("~/Scripts/systemOperations.js") %>"></script>
+	<script type="text/javascript" src="<%# ResolveUrl("~/Scripts/date.js") %>"></script>
+	<script type="text/javascript" src="<%# ResolveUrl("~/Scripts/jquery.maskedinput-1.3.1.min.js") %>"></script>
+	<script type="text/javascript">
+		var $tbDay;
+
+		var $hidNodeDepth;
+		var $hidNodeSeqDT;
+		var $hidNodeLot;
+		var $hidLotNum;
+
+		var $ddlLotNum;
+
+		var $cmdRefresh;
+
+		function contentPageLoad(sender, args) {
+			AddDirtyClassOnChange();
+			RemoveTreeViewSkipLinks();
+
+			CacheControls();
+
+			if (!args.get_isPartialLoad()) {
+				$ddlLotNum.change(function () { $hidLotNum.val($(this).val()); });
+			}
+			AddDatePicker();
+
+			AddEventToTreeView();
+
+			AddEventsToControls();
+
+			CreateDialog_MoveLot();
+
+			CreateDialog_Revision();
+
+			CreateDialog_AssignTemplate();
+		}
+
+		function CacheControls() {
+			$tbDay = $("#MainContent_tbDay");
+
+			$hidNodeDepth = $("#MainContent_hidNodeDepth");
+			$hidNodeSeqDT = $("#MainContent_hidNodeSeqDT");
+			$hidNodeLot = $("#MainContent_hidNodeLot");
+			$hidLotNum = $("#MainContent_hidLotNum");
+
+			$ddlLotNum = $("#MainContent_ddlLot");
+
+			$cmdRefresh = $("#MainContent_cmdRefresh");
+
+		}
+
+		function AddDatePicker() {
+			$tbDay.mask("99/99/9999").addDatePicker().datepicker({
+				onSelect: function (dateText, inst) {
+					DoRefreshPostBack(dateText);
+				}
+			})
+			.change(function () {// if the edit box is changed
+				DoRefreshPostBack(this.value);
+			});
+
+			PositionCalendarPickerIcon();
+		}
+
+		function AddEventToTreeView() {
+		    $('#MainContent_treeShip').click(function (event) { GetSelectedNode(event, 'MainContent_treeShip_Data'); return true; });
+		    $('#MainContent_btnExpShip').click(function () { TreeviewExpandCollapseAll('MainContent_treeShip', true); return false });
+		    $('#MainContent_btnColShip').click(function () { TreeviewExpandCollapseAll('MainContent_treeShip', false); return false; });
+		}
+
+		function AddEventsToControls() {
+			$('#MainContent_cmdPrint').click(function () { OpenScheduleReport(1); });
+			$('#MainContent_cmdPrint2').click(function () { OpenScheduleReport(2); });
+
+			$(".cmdShowWait").on('click', function () { ShowWaitOverlay(); });
+
+			//Add Wait cursor to the PRevious and Next Image buttons
+			$('[id^="MainContent_ib"]').on('click', function () { ShowWaitOverlay(); }).mouseover(function () { $(this).css('cursor', 'pointer'); });
+		}
+
+		function GetSelectedNode(evt, treeData) {
+		    try {
+		        var src = window.event != window.undefined ? window.event.srcElement : evt.target;
+		        var nodeClick = src.tagName.toLowerCase() == "a" || src.tagName.toLowerCase() == "span";
+		        if (nodeClick) {
+
+		            var treeViewData = window[treeData];
+
+		            if (treeViewData.selectedNodeID.value != "") {
+
+		                var selectedNode = document.getElementById(treeViewData.selectedNodeID.value);
+		                var value = selectedNode.href.substring(selectedNode.href.indexOf(",") + 3, selectedNode.href.length - 2);
+		                var levelSplit = value.split("\\\\");
+		                var nodeLevel = levelSplit.length;
+		                var text = selectedNode.innerText;
+
+		                $hidNodeDepth.val(nodeLevel);
+
+		                $hidNodeSeqDT.val(levelSplit[nodeLevel - 1].toString());
+
+		                $hidNodeLot.val("");
+		                if (nodeLevel >= 2) {   //get the Lot 
+		                    $hidNodeLot.val(text.substring(0, 10));
+		                }
+		                ShowWaitOverlay();
+		            }
+		        }
+		    } catch (Error) {
+		        alert(Error);
+		    }
+		}
+
+		function DoRefreshPostBack(dateText) {
+			d1 = Date.parse(dateText);
+			if (d1 != null) {
+				ShowWaitOverlay();
+				__doPostBack($cmdRefresh.prop('name'), '');
+			}
+		}
+
+		function OpenScheduleReport(lineNumber) {
+			var url = baseUrl + '/2Reporting/Reports.aspx?report=ShippingSchedule&amp;webpageTitle=Shipping Schedule Report'
+			url += '&BegDT=' + $tbDay.val();
+			url += '&LineNum=' + lineNumber;
+			window.open(url);
+			return false;
+		}
+
+		function CreateDialog_MoveLot() {
+			var $cmdMove = $('#MainContent_cmdMove');
+			var $dlgMove = $('#divDlgMoveLot');
+
+			$dlgMove.modalDialog({
+				control: $cmdMove,
+				width: 300
+			});
+
+			$cmdMove.click(function () {
+				$dlgMove.dialog('open');
+				ShowCursor_Wait();
+				$("#divDlgMoveOverlay").fadeIn();
+
+				var nodeLevel = $hidNodeDepth.val();
+				if (nodeLevel == 2) {
+					$("#MainContent_lblType").text("LOT");
+					$("#MainContent_lblLotNum").text($hidNodeLot.val());
+				}
+				else if (nodeLevel == 3) {
+					$("#MainContent_lblType").text("SUBLOT");
+					$("#MainContent_lblLotNum").text($hidNodeSubLot.val());
+				}
+
+				$ddlLotNum.empty();
+				$('#MainContent_cbMoveShipIndex').attr('checked', false);
+
+				var param = "{\"nodeLevel\": \"" + $hidNodeDepth.val() +
+						"\", \"seqDT\": \"" + $hidNodeSeqDT.val() +
+						"\", \"lot\": \"" + $hidNodeLot.val() +
+						"\", \"boolSetexOrder\": \"1" +
+						"\"}";
+
+				GetProductionScheduleGetMoveList(param).success(function (data) {
+					PopulateNameValueDDL(data, $ddlLotNum);
+					$hidLotNum.val($ddlLotNum.val())
+					ShowCursor_Default();
+					$("#divDlgMoveOverlay").fadeOut();
+				});
+
+				return false;
+			});
+		}
+
+		function CreateDialog_Revision() {
+			var $cmdRevision = $("#MainContent_cmdRevInc");
+			var $dlgRevision = $('#divDlgAddRevision');
+
+			$cmdRevision.on('click', function () { $dlgRevision.dialog('open'); return false; });
+
+			// Revision Dialog			
+			$dlgRevision.modalDialog({
+				control: $cmdRevision,
+				width: 360,
+				width: 420,
+				validationFunction: function () { return checkLength($("#MainContent_txtComment"), "Comment", 1, 500, $("#helpRevisionComment")); }
+			});
+		}
+
+		function CreateDialog_AssignTemplate() {
+			var $cmdTemplate = $("#MainContent_cmdTemplate");
+			var $dlgTemplate = $('#divDlgAssignTemplate');
+
+			$cmdTemplate.on('click', function () { $dlgTemplate.dialog('open'); return false; });
+
+			// Revision Dialog			
+			$dlgTemplate.modalDialog({
+				control: $cmdTemplate,
+				width: 360,
+				validationFunction: function () { return checkDropDownList($("#MainContent_ddlTemplates"), "Please select a Delivery Template.", $('#helpTemplate')); }
+			});
+
+		}
+
+
+	</script>
+	<style type="text/css">
+		#divshippingSchedule .inputButton
+		{
+			width: 140px;
+		}
+		#divshippingSchedule .textEntry
+		{
+			width: 160px;
+		}
+		#divshippingSchedule .selectDropDown
+		{
+			width: 165px;
+		}
+		#divButtonsShip .inputButton
+		{
+			width: 80px;
+		}
+		#divComments
+		{
+		    vertical-align: bottom; 
+		    text-align: left; 
+		    margin: 4px; 
+		    max-width:665px;
+		}
+	</style>
+</asp:Content>
+<asp:Content ID="Content2" ContentPlaceHolderID="MainContent" runat="server">
+	<div id="divOverlay" class="ui-widget-overlay" style="z-index: 1000;">
+	</div>
+	<asp:UpdatePanel ID="UpdatePanel1" runat="server">
+		<ContentTemplate>
+			<div id="divHiddenFields">
+				<input id="hidLotNum" type="hidden" runat="server">
+				<input id="hidNodeDepth" type="hidden" runat="server">
+				<input id="hidNodeSeqDT" type="hidden" runat="server">
+				<input id="hidNodeLot" type="hidden" runat="server">
+			</div>
+			<div id="divFilters" >
+				<table style="border-collapse: collapse; padding: 0; margin-bottom: 10px;" >
+					<tr style="vertical-align: bottom;">
+						<td style="width: 170px">
+							<asp:Label ID="LABEL13" runat="server" CssClass="spanLabel h3">Enter Date:</asp:Label>
+						</td>
+						<td style="width: 16px; text-align: right;">
+							<asp:ImageButton ID="ibPrev" runat="server" ImageUrl="~/images/Arrows/bbPrevpage.gif"></asp:ImageButton>
+						</td>
+						<td style="width: 140px; text-align: left; padding-left: 10px;">
+							<asp:TextBox ID="tbDay" runat="server" Width="96px" CssClass="textEntry NoColorOnChange"></asp:TextBox>
+						</td>
+						<td style="width: 16px; text-align: left;">
+							<asp:ImageButton ID="ibNext" runat="server" ImageUrl="~/images/Arrows/bbNextpage.gif"></asp:ImageButton>
+						</td>
+						<td style="text-align: left; padding: 0px 0px 0px 12px; width: 100px;">
+							<asp:Button ID="cmdRefresh" runat="server" Text="Refresh" CssClass="inputButton cmdShowWait"></asp:Button>
+						</td>
+						<td>
+							<asp:CheckBox ID="cbHold" runat="server" AutoPostBack="True" Text="Show ON HOLD Lots" Checked="True" CssClass="selectCheckBox h4 cmdShowWait" />
+						</td>
+					</tr>
+				</table>
+			</div>
+			<div id="divshippingSchedule">
+				<table id="tblContent" style="border-collapse: collapse; padding: 4px;" >
+					<tr>
+						<td style="width: 160px;">
+						</td>
+						<td style="width: 200px;">
+							<asp:Label ID="lblDayOfWeek" runat="server" CssClass="h3"></asp:Label>
+						</td>
+						<td>
+						</td>
+					</tr>
+					<tr>
+						<td style="text-align: center;">
+							<asp:Button ID="cmdSave" runat="server" Text="Save" CssClass="inputButton cmdShowWait"></asp:Button><br>
+							<asp:Button ID="cmdMove" runat="server" Text="Move" CssClass="inputButton"></asp:Button><br>
+							<asp:Button ID="cmdPrint" runat="server" Text="Print Line 1" CssClass="inputButton"></asp:Button><br>
+							<asp:Button ID="cmdPrint2" runat="server" Text="Print Line 2" CssClass="inputButton"></asp:Button><br>
+							<asp:Button ID="cmdTemplate" runat="server" Text="Assign Template" CssClass="inputButton"></asp:Button><br>
+							<asp:Button ID="cmdRevInc" runat="server" Text="Revisions" CssClass="inputButton"></asp:Button>
+						</td>
+						<td style="text-align: center;">
+							<asp:Panel ID="pnlTreeviewShip" runat="server" ScrollBars="Auto" Width="200" Height="280" CssClass="divBorder">
+								<asp:TreeView ID="treeShip" runat="server" BorderWidth="0" NodeIndent="10" ExpandDepth="1">
+									<NodeStyle CssClass="treeViewNode" />
+									<SelectedNodeStyle CssClass="treeViewNodeSelected ui-state-default" />
+								</asp:TreeView>
+							</asp:Panel>
+						</td>
+						<td style="padding-left: 20px;">
+							<asp:Panel ID="pnlLotData" runat="server">
+								<table id="tblDetails" style="border-collapse: separate;">
+									<tr>
+										<td>
+											<asp:Label ID="Label1" runat="server" CssClass="spanLabel">Lot</asp:Label>
+										</td>
+										<td>
+											<asp:Label ID="lblLdLot" runat="server" CssClass="spanLabel h3"></asp:Label>
+										</td>
+									</tr>
+									<tr>
+										<td>
+											<asp:Label ID="Label3" runat="server" CssClass="spanLabel">Load</asp:Label>
+										</td>
+										<td>
+											<asp:Label ID="lblLdLoad" runat="server" CssClass="spanLabel h3"></asp:Label>
+										</td>
+									</tr>
+									<tr>
+										<td>
+											<asp:Label ID="Label5" runat="server" CssClass="spanLabel">Ship Time</asp:Label>
+										</td>
+										<td>
+											<asp:TextBox ID="tbLdShipTime" runat="server" CssClass="textEntry"></asp:TextBox>
+										</td>
+									</tr>
+									<tr>
+										<td>
+											<asp:Label ID="LABEL2" runat="server" CssClass="spanLabel">Arrival Time</asp:Label>
+										</td>
+										<td>
+											<asp:TextBox ID="tbLdArrivalTime" runat="server" CssClass="textEntry"></asp:TextBox>
+										</td>
+									</tr>
+									<tr>
+										<td>
+											<asp:Label ID="LABEL4" runat="server" CssClass="spanLabel">Approx. Seq. Time</asp:Label>
+										</td>
+										<td>
+											<asp:TextBox ID="tbLdSeqTime" runat="server" CssClass="textEntry"></asp:TextBox>
+										</td>
+									</tr>
+									<tr>
+										<td>
+											<asp:Label ID="LABEL6" runat="server" CssClass="spanLabel">Trailer Number</asp:Label>
+										</td>
+										<td>
+											<asp:TextBox ID="txtTrailer" runat="server" CssClass="textEntry"></asp:TextBox>
+										</td>
+									</tr>
+									<tr>
+										<td>
+											<asp:Label ID="LABEL8" runat="server" CssClass="spanLabel">Driver Name</asp:Label>
+										</td>
+										<td>
+											<asp:DropDownList ID="ddlDriver" runat="server" CssClass="selectDropDown">
+											</asp:DropDownList>
+										</td>
+									</tr>
+									<tr>
+										<td>
+											<asp:Label ID="LABEL9" runat="server" CssClass="spanLabel">Actual Departure Time</asp:Label>
+										</td>
+										<td>
+											<asp:TextBox ID="tbLdDepartureTime" runat="server" CssClass="textEntry"></asp:TextBox>
+										</td>
+									</tr>
+									<tr>
+										<td>
+											<asp:Label ID="LABEL10" runat="server" Visible="False" CssClass="spanLabel">Shipping Notes</asp:Label>
+										</td>
+										<td>
+											<asp:TextBox ID="tbLdNotes" runat="server" Visible="False" CssClass="textEntry"></asp:TextBox>
+										</td>
+									</tr>
+								</table>
+							</asp:Panel>
+						</td>
+					</tr>
+					<tr>
+						<td>
+						</td>
+						<td style="text-align: center; height: 80px;">
+							<div id="divButtonsShip" class="divExpandCollapse" style="margin-bottom: 4px;">
+								<asp:Button ID="btnExpShip" runat="server" Text="Expand" CssClass="inputButton" />
+								<asp:Button ID="btnColShip" runat="server" Text="Collapse" CssClass="inputButton" />
+							</div>
+							<asp:Label ID="Label7" runat="server" CssClass="spanLabel">Total: </asp:Label>
+							<asp:Label ID="lblTotalShip" runat="server" CssClass="spanLabel">0</asp:Label>
+						</td>
+						<td>
+						</td>
+					</tr>
+				</table>
+			</div>
+			<br />
+			<div id="divComments">
+				<asp:Panel ID="pnlRev" runat="server" CssClass="panelComments">
+					<asp:Label ID="Label11" runat="server" ForeColor="Black">Revision No:</asp:Label>
+					<asp:Label ID="lblRevNo" runat="server" CssClass="h3"></asp:Label>
+					<asp:Label ID="Label12" runat="server" ForeColor="Black" Style="margin-left: 8px;">Comments:</asp:Label>
+					<asp:Label ID="lblRevComments" runat="server" CssClass="h3"></asp:Label>
+				</asp:Panel>
+			</div>
+		</ContentTemplate>
+	</asp:UpdatePanel>
+	<div id="divDlgAddRevision" title="Revision">
+		<asp:UpdatePanel ID="UpdatePanel2" runat="server">
+			<ContentTemplate>
+				<p class="validationHints h4">
+					All fields must be completed.</p>
+				<table id="tblRevision" class="tableCenter">
+					<tr>
+						<td  style="width: 92px">
+							<asp:Label ID="Label14" runat="server" CssClass="spanLabel">Date:</asp:Label>
+						</td>
+						<td style="width: 100%">
+							<asp:Label ID="lblDate" runat="server" CssClass="spanLabel"></asp:Label>
+						</td>
+						<td>
+						</td>
+					</tr>
+					<tr>
+						<td>
+							<asp:Label ID="LABEL15" runat="server" CssClass="spanLabel">Revision: </asp:Label>
+						</td>
+						<td>
+							<asp:Label ID="lblRev" runat="server" CssClass="spanLabel"></asp:Label>
+						</td>
+						<td>
+						</td>
+					</tr>
+					<tr  style="height: 100%">
+						<td style="vertical-align: top" >
+							<asp:Label ID="LABEL16" runat="server" CssClass="spanLabel">Comments: </asp:Label>
+						</td>
+						<td>
+							<asp:TextBox ID="txtComment" runat="server" CssClass="textEntry h4" MaxLength="500" TextMode="MultiLine" Width="100%" Height="100px"></asp:TextBox>
+						</td>
+						<td>
+							<div id="helpRevisionComment" class="ui-state-default ui-corner-all">
+								<span class="ui-icon ui-icon-help"></span>
+							</div>
+						</td>
+					</tr>
+				</table>
+			</ContentTemplate>
+		</asp:UpdatePanel>
+	</div>
+	<div id="divDlgAssignTemplate" title="Assign Template">
+		<asp:UpdatePanel ID="UpdatePanel3" runat="server">
+			<ContentTemplate>
+				<p class="validationHints h4">
+					All fields must be completed.</p>
+				<table id="tblAssign" class="tableCenter">
+					<tr>
+						<td style="width: 120px;">
+							<asp:Label ID="Label17" runat="server" CssClass="spanLabel">Delivery Date:</asp:Label>
+						</td>
+						<td>
+							<asp:Label ID="lblDeliveryDate" runat="server" CssClass="spanLabel"></asp:Label>
+						</td>
+						<td>
+						</td>
+					</tr>
+					<tr>
+						<td>
+							<asp:Label ID="label21" runat="server" CssClass="spanLabel">Template:</asp:Label>
+						</td>
+						<td>
+							<asp:DropDownList ID="ddlTemplates" runat="server" CssClass="selectDropDown NoColorOnChange">
+							</asp:DropDownList>
+						</td>
+						<td>
+							<div id="helpTemplate" class="ui-state-default ui-corner-all">
+								<span class="ui-icon ui-icon-help"></span>
+							</div>
+						</td>
+					</tr>
+				</table>
+			</ContentTemplate>
+		</asp:UpdatePanel>
+	</div>
+	<div id="divDlgMoveLot" title="Move" class="displayNone">
+		<div id="divDlgMoveOverlay" class="ui-widget-overlay" style="z-index: 1000;"></div>
+		<table id="tblMoveLot" class="tableCenter">
+			<tr>
+				<td>
+					<asp:Label ID="Label20" runat="server" CssClass="spanLabel h3">Move</asp:Label>
+				</td>
+				<td>
+					<asp:Label ID="lblType" runat="server" CssClass="spanLabel h4"></asp:Label>
+				</td>
+			</tr>
+			<tr>
+				<td>
+				</td>
+				<td>
+					<asp:Label ID="lblLotNum" runat="server" CssClass="spanLabel h4"></asp:Label>
+				</td>
+			</tr>
+			<tr>
+				<td>
+				</td>
+				<td>
+				</td>
+			</tr>
+			<tr>
+				<td>
+					<asp:Label ID="LABEL22" runat="server" CssClass="spanLabel h3">Location</asp:Label>
+				</td>
+				<td>
+					<asp:RadioButtonList ID="rblBeforeAfter" runat="server" RepeatDirection="Horizontal" CssClass="inputRadioButton h4">
+						<asp:ListItem Value="BEFORE" Selected="True">Before</asp:ListItem>
+						<asp:ListItem Value="AFTER">After</asp:ListItem>
+					</asp:RadioButtonList>
+				</td>
+			</tr>
+			<tr>
+				<td>
+				</td>
+				<td>
+					<asp:DropDownList ID="ddlLot" runat="server" Width="160px" CssClass="selectDropDown h4">
+					</asp:DropDownList>
+				</td>
+			</tr>
+		</table>
+	</div>
+</asp:Content>

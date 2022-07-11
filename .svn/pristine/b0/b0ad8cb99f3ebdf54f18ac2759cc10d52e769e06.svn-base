@@ -1,0 +1,774 @@
+﻿<%@ Page Title="" Language="vb" AutoEventWireup="false" MasterPageFile="~/Site.Master" CodeBehind="LotTraceData.aspx.vb" Inherits="LTMS_Master.LotTraceData" %>
+
+<%@ MasterType VirtualPath="~/Site.master" %>
+<asp:Content ID="Content1" ContentPlaceHolderID="HeadContent" runat="server">
+    <script type="text/javascript" src="<%# ResolveUrl("~/Scripts/jquery.alphanum.js") %>"></script>
+    <script type="text/javascript">
+
+        var allFields;
+        var $txtBarCode;
+
+        var $txtTorque01;
+        var $txtTorque02;
+        var $txtTorque03;
+        var $txtTorque04;
+        var $txtTorque05;
+        var $txtTorque06;
+        var $txtTorque07;
+        var $txtTorque08;
+        var $txtTorque09;
+        var $txtTorque10;
+
+        var $txtAngle01;
+        var $txtAngle02;
+        var $txtAngle03;
+        var $txtAngle04;
+        var $txtAngle05;
+        var $txtAngle06;
+        var $txtAngle07;
+        var $txtAngle08;
+        var $txtAngle09;
+        var $txtAngle10;
+
+
+        function contentPageLoad(sender, args) {
+            AddDirtyClassOnChange();
+
+            CacheControls();
+
+            // make controls with class 'numericOnly' into numeric only
+            $('.numericOnly').numeric({ allowMinus: false,
+                allowThouSep: false,
+                allowDecSep: true
+            });
+            $("#MainContent_cmdView").on('click', function () { ShowWaitOverlay(); });
+
+
+            CreateDialog_ModifyAuxTaskHistory();
+            CreateDialog_ModifyComponentHistory();
+            CreateDialog_ModifyTorqueHistory();
+
+            createAnchorTagClickEvent();
+        }
+
+        function CacheControls() {
+            $txtBarCode = $('#MainContent_txtBarCode');
+
+            $txtTorque01 = $('#MainContent_txtTorque1');
+            $txtTorque02 = $('#MainContent_txtTorque2');
+            $txtTorque03 = $('#MainContent_txtTorque3');
+            $txtTorque04 = $('#MainContent_txtTorque4');
+            $txtTorque05 = $('#MainContent_txtTorque5');
+            $txtTorque06 = $('#MainContent_txtTorque6');
+            $txtTorque07 = $('#MainContent_txtTorque7');
+            $txtTorque08 = $('#MainContent_txtTorque8');
+            $txtTorque09 = $('#MainContent_txtTorque9');
+            $txtTorque10 = $('#MainContent_txtTorque10');
+
+            $txtAngle01 = $('#MainContent_txtAngle1');
+            $txtAngle02 = $('#MainContent_txtAngle2');
+            $txtAngle03 = $('#MainContent_txtAngle3');
+            $txtAngle04 = $('#MainContent_txtAngle4');
+            $txtAngle05 = $('#MainContent_txtAngle5');
+            $txtAngle06 = $('#MainContent_txtAngle6');
+            $txtAngle07 = $('#MainContent_txtAngle7');
+            $txtAngle08 = $('#MainContent_txtAngle8');
+            $txtAngle09 = $('#MainContent_txtAngle9');
+            $txtAngle10 = $('#MainContent_txtAngle10');
+
+            allFields = $([])
+                            .add($txtTorque01)
+                            .add($txtTorque02)
+                            .add($txtTorque03)
+                            .add($txtTorque04)
+                            .add($txtTorque05)
+                            .add($txtTorque06)
+                            .add($txtTorque07)
+                            .add($txtTorque08)
+                            .add($txtTorque09)
+                            .add($txtTorque10)
+
+                            .add($txtAngle01)
+                            .add($txtAngle02)
+                            .add($txtAngle03)
+                            .add($txtAngle04)
+                            .add($txtAngle05)
+                            .add($txtAngle06)
+                            .add($txtAngle07)
+                            .add($txtAngle08)
+                            .add($txtAngle09)
+                            .add($txtAngle10)
+
+                            .add($txtBarCode);
+        }
+
+        function createAnchorTagClickEvent() {
+            // for each in the lot trace datagrid item add an event to the anchor tag for the popup
+            $('a[id^="lotAnchor_"]').click(function () {
+                var thisAnchor = $(this);
+                var operationType = thisAnchor.attr('data-OperationType');
+
+                // Pull the data for the line item from the attributes and populate the fields in the popup dialog.                                
+                $('#MainContent_lblSerialNum, #MainContent_lblCompSerialNum,#MainContent_lblTorqueSerialNum').text(thisAnchor.attr('data-SSN'));
+                $('#MainContent_lblStationID, #MainContent_lblCompStationID,#MainContent_lblTorqueStationID').text(thisAnchor.attr('data-StationID'));
+
+                $('#MainContent_hidProductID').val(thisAnchor.attr('data-Product'));
+                $('#MainContent_hidStyleGroupID').val(thisAnchor.attr('data-StyleGroupID'));
+                $('#MainContent_hidOperationType').val(thisAnchor.attr('data-OperationType'));
+                $('#MainContent_hidOperationName').val(thisAnchor.attr('data-OperationName'));
+                $('#MainContent_hidRequirementData').val(thisAnchor.attr('data-RequirementData'));
+                $('#MainContent_hidOperationResult').val(thisAnchor.attr('data-OperationResult'));
+                $('#MainContent_hidStationID').val(thisAnchor.attr('data-StationID'));
+
+                $('#MainContent_lblDescription').text(thisAnchor.text() + ":");
+
+                if (operationType.equalTo("Aux Task")) {
+
+                    $('#divDlgModifyAuxTaskHistory').dialog('open');
+
+                } else if (operationType.equalTo("Component Scan")) {
+
+                    $('#divDlgModifyComponentHistory').dialog('open');
+
+                } else if (operationType.equalTo("Torque")) {
+
+                    $txtTorque01.val(thisAnchor.attr('data-Torque1'));
+                    $txtTorque02.val(thisAnchor.attr('data-Torque2'));
+                    $txtTorque03.val(thisAnchor.attr('data-Torque3'));
+                    $txtTorque04.val(thisAnchor.attr('data-Torque4'));
+                    $txtTorque05.val(thisAnchor.attr('data-Torque5'));
+                    $txtTorque06.val(thisAnchor.attr('data-Torque6'));
+                    $txtTorque07.val(thisAnchor.attr('data-Torque7'));
+                    $txtTorque08.val(thisAnchor.attr('data-Torque8'));
+                    $txtTorque09.val(thisAnchor.attr('data-Torque9'));
+                    $txtTorque10.val(thisAnchor.attr('data-Torque10'));
+
+                    $txtAngle01.val(thisAnchor.attr('data-Angle1'));
+                    $txtAngle02.val(thisAnchor.attr('data-Angle2'));
+                    $txtAngle03.val(thisAnchor.attr('data-Angle3'));
+                    $txtAngle04.val(thisAnchor.attr('data-Angle4'));
+                    $txtAngle05.val(thisAnchor.attr('data-Angle5'));
+                    $txtAngle06.val(thisAnchor.attr('data-Angle6'));
+                    $txtAngle07.val(thisAnchor.attr('data-Angle7'));
+                    $txtAngle08.val(thisAnchor.attr('data-Angle8'));
+                    $txtAngle09.val(thisAnchor.attr('data-Angle9'));
+                    $txtAngle10.val(thisAnchor.attr('data-Angle10'));
+
+                    $('#divDlgModifyTorqueHistory').dialog('open');
+                }
+
+                return false;
+            })
+        }
+
+        function CreateDialog_ModifyAuxTaskHistory() {
+            var $cmdButton = $('#MainContent_cmdModifyHistory');
+            var $dlgDiv = $('#divDlgModifyAuxTaskHistory');
+
+            $dlgDiv.modalDialog({ control: $cmdButton, width: 400 });
+        }
+
+
+        function CreateDialog_ModifyComponentHistory() {
+            var $cmdButton = $('#MainContent_cmdModifyHistory');
+            var $dlgDiv = $('#divDlgModifyComponentHistory');
+
+            $dlgDiv.modalDialog({
+                control: $cmdButton,
+                width: 400,
+                validationFunction: function () { return barcodeValidate(); }
+            });
+        }
+
+
+        function CreateDialog_ModifyTorqueHistory() {
+            var $cmdButton = $('#MainContent_cmdModifyHistory');
+            var $dlgDiv = $('#divDlgModifyTorqueHistory');
+
+            $dlgDiv.modalDialog({
+                control: $cmdButton,
+                clearInputOnOpen: false,
+                width: 400,
+                validationFunction: function () { return torqueValidate(); },
+                validationFunction: function () { return torque1ValueValidate(); }
+            });
+        }
+
+
+        function barcodeValidate() {
+            var bValid = true;
+            allFields.removeClass("ui-state-error");
+
+            bValid = checkText($txtBarCode, "A Value is Required", $("#helpBarcode"));
+
+            return bValid;
+        }
+
+
+        function torqueValidate() {
+            var bValid = true;
+            var msg = "A Numeric Value is Required in All Fields";
+
+            allFields.removeClass("ui-state-error");
+
+            bValid = checkText($txtTorque01, msg, $("#helpTorque1"));
+            bValid = checkText($txtTorque02, msg, $("#helpTorque2")) && bValid;
+            bValid = checkText($txtTorque03, msg, $("#helpTorque3")) && bValid;
+            bValid = checkText($txtTorque04, msg, $("#helpTorque4")) && bValid;
+            bValid = checkText($txtTorque05, msg, $("#helpTorque5")) && bValid;
+            bValid = checkText($txtTorque06, msg, $("#helpTorque6")) && bValid;
+            bValid = checkText($txtTorque07, msg, $("#helpTorque7")) && bValid;
+            bValid = checkText($txtTorque08, msg, $("#helpTorque8")) && bValid;
+            bValid = checkText($txtTorque09, msg, $("#helpTorque9")) && bValid;
+            bValid = checkText($txtTorque10, msg, $("#helpTorque10")) && bValid;
+
+            bValid = checkText($txtAngle01, msg, $("#helpAngle1")) && bValid;
+            bValid = checkText($txtAngle02, msg, $("#helpAngle2")) && bValid;
+            bValid = checkText($txtAngle03, msg, $("#helpAngle3")) && bValid;
+            bValid = checkText($txtAngle04, msg, $("#helpAngle4")) && bValid;
+            bValid = checkText($txtAngle05, msg, $("#helpAngle5")) && bValid;
+            bValid = checkText($txtAngle06, msg, $("#helpAngle6")) && bValid;
+            bValid = checkText($txtAngle07, msg, $("#helpAngle7")) && bValid;
+            bValid = checkText($txtAngle08, msg, $("#helpAngle8")) && bValid;
+            bValid = checkText($txtAngle09, msg, $("#helpAngle9")) && bValid;
+            bValid = checkText($txtAngle10, msg, $("#helpAngle10")) && bValid;
+
+            return bValid;
+        }
+
+
+        function torque1ValueValidate() {
+            var bValid = true;
+            var msg = "A Non-Zero Numeric Value is Required in the Torque1 Field";
+
+            allFields.removeClass("ui-state-error");
+
+            if ($txtTorque01.val() <= 0) {
+                bValid = false;
+                setValidationHint(msg);
+            }
+            else {
+                bValid = true;
+            }
+
+            return bValid;
+        }
+
+
+    </script>
+    <style type="text/css">
+        .updatePanelDiv
+        {
+            margin-left: 12px;
+            margin-top: 12px;
+        }
+        span.fontRed
+        {
+            color: #FF0000 !important;
+        }
+        
+        span.fontGreen
+        {
+            color: #00CA00 !important;
+        }
+    </style>
+</asp:Content>
+<asp:Content ID="Content2" ContentPlaceHolderID="MainContent" runat="server">
+    <asp:UpdatePanel ID="UpdatePanelSSN" runat="server">
+        <ContentTemplate>
+            <div>
+                <asp:Button ID="cmdModifyHistory" runat="server" Text="Modify History" Style="visibility: hidden; display: none;"></asp:Button>
+                <asp:HiddenField ID="hidStyleGroupID" runat="server" Value="0" />
+                <asp:HiddenField ID="hidOperationType" runat="server" Value="" />
+                <asp:HiddenField ID="hidProductID" runat="server" Value="" />
+                <asp:HiddenField ID="hidOperationName" runat="server" Value="" />
+                <asp:HiddenField ID="hidRequirementData" runat="server" Value="" />
+                <asp:HiddenField ID="hidOperationResult" runat="server" Value="" />
+                <asp:HiddenField ID="hidStationID" runat="server" Value="" />
+            </div>
+            <asp:Label ID="Label8" CssClass="spanLabel h3" runat="server" style="margin-top:8px;">Enter SSN:</asp:Label>
+            <asp:TextBox ID="txtSSN" runat="server" TabIndex="0" CssClass="textEntry NoColorOnChange" style="margin-top:8px;" ></asp:TextBox>
+            <asp:Button ID="cmdView" runat="server" Text="View" CssClass="inputButton" style="margin-top:-2px; margin-right:8px;"></asp:Button>
+            <asp:Label ID="lblMessage" runat="server" ForeColor="Red"></asp:Label>
+        </ContentTemplate>
+    </asp:UpdatePanel>
+    <asp:UpdatePanel ID="UpdatePanel_details" runat="server">
+        <ContentTemplate>
+            <asp:Panel ID="pnlShipStatus" runat="server" Visible="false" CssClass="updatePanelDiv">
+                <asp:Label ID="Label10" runat="server" CssClass="textEntry h2">Ship Status:</asp:Label>&nbsp;
+                <asp:Label ID="lblShipStatus" runat="server" CssClass="textEntry h2"></asp:Label>
+            </asp:Panel>
+            <asp:Panel ID="pnlSSNDetails" runat="server" Visible="False" CssClass="updatePanelDiv">
+                <table id="Table1">
+                    <tr>
+                        <td style="width: 14px; text-align: left;">
+                            <span class="ui-icon ui-icon-triangle-1-e"></span>
+                        </td>
+                        <td style="width: 90px">
+                            <asp:Label ID="Label2" runat="server" BorderStyle="None" CssClass="spanLabel h4">SSN:</asp:Label>
+                        </td>
+                        <td style="width: 260px">
+                            <asp:Label ID="lblSSN" runat="server" CssClass="spanLabel h4" EnableViewState="False"></asp:Label>
+                        </td>
+                        <td>
+                        </td>
+                        <td style="width: 14px; text-align: left;">
+                            <span class="ui-icon ui-icon-triangle-1-e"></span>
+                        </td>
+                        <td style="width: 90px">
+                            <asp:Label ID="Label5" runat="server" CssClass="spanLabel h4">Seat Style:</asp:Label>
+                        </td>
+                        <td style="width: 260px">
+                            <asp:Label ID="lblSeatStyle" runat="server" CssClass="spanLabel h4" EnableViewState="False"></asp:Label>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td style="width: 14px; text-align: left;">
+                            <span class="ui-icon ui-icon-triangle-1-e"></span>
+                        </td>
+                        <td>
+                            <asp:Label ID="Label3" runat="server" CssClass="spanLabel h4">Product ID:</asp:Label>
+                        </td>
+                        <td>
+                            <asp:Label ID="lblProductID" runat="server" CssClass="spanLabel h4" EnableViewState="False"></asp:Label>
+                        </td>
+                        <td>
+                        </td>
+                        <td style="width: 14px; text-align: left;">
+                            <span class="ui-icon ui-icon-triangle-1-e"></span>
+                        </td>
+                        <td>
+                            <asp:Label ID="Label6" runat="server" CssClass="spanLabel h4">Color Desc:</asp:Label>
+                        </td>
+                        <td>
+                            <asp:Label ID="lblColorDesc" runat="server" CssClass="spanLabel h4" EnableViewState="False"></asp:Label>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td style="width: 14px; text-align: left;">
+                            <span class="ui-icon ui-icon-triangle-1-e"></span>
+                            <td>
+                                <asp:Label ID="Label39" runat="server" CssClass="spanLabel h4">Seat Desc:</asp:Label>
+                        <td>
+                            <asp:Label ID="lblSeatDesc" runat="server" CssClass="spanLabel h4" EnableViewState="False"></asp:Label>
+                        </td>
+                        <td>
+                        </td>
+                        <td style="width: 14px; text-align: left;">
+                            <span class="ui-icon ui-icon-triangle-1-e"></span>
+                        </td>
+                        <td>
+                            <asp:Label ID="Label9" runat="server" CssClass="spanLabel h4">Seat Type:</asp:Label>
+                        </td>
+                        <td>
+                            <asp:Label ID="lblSeatType" runat="server" CssClass="spanLabel h4" EnableViewState="False"></asp:Label>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td style="width: 14px; text-align: left;">
+                            &nbsp;
+                        </td>
+                        <td>
+                            &nbsp;
+                        </td>
+                        <td>
+                            &nbsp;
+                        </td>
+                        <td colspan="4">
+                        </td>
+                    </tr>
+                </table>
+            </asp:Panel>
+            <asp:Panel ID="pnlSSNReport" runat="server" Visible="False">
+                <div style="margin-top: 12px; margin-left: 12px; margin-bottom: 10px;" class="datagrid">
+                    <asp:DataGrid ID="dgHistory" Width="100%" AutoGenerateColumns="False" runat="server" HeaderStyle-CssClass="DataGrid_HeaderStyle" FooterStyle-CssClass="DataGrid_FooterStyle" AlternatingItemStyle-CssClass="DataGrid_AlternatingItemStyle" EditItemStyle-CssClass="DataGrid_EditItemStyle" PagerStyle-CssClass="DataGrid_PagerStyle" SelectedItemStyle-CssClass="DataGrid_SelectedItemStyle" ItemStyle-CssClass="DataGrid_ItemStyle">
+                        <Columns>
+                            <asp:BoundColumn Visible="False" DataField="SSN" HeaderText="SSN">
+                                <ItemStyle Wrap="False"></ItemStyle>
+                            </asp:BoundColumn>
+                            <asp:BoundColumn Visible="False" DataField="StyleGroupID" HeaderText="Style Group ID">
+                                <ItemStyle Wrap="False"></ItemStyle>
+                            </asp:BoundColumn>
+                            <asp:BoundColumn Visible="False" DataField="Product" HeaderText="Product ID">
+                                <ItemStyle Wrap="False"></ItemStyle>
+                            </asp:BoundColumn>
+                            <asp:BoundColumn DataField="OperationType" HeaderText="Operation Type">
+                                <ItemStyle Wrap="False" Width="150px"></ItemStyle>
+                            </asp:BoundColumn>
+                            <asp:BoundColumn DataField="OperationName" HeaderText="Operation">
+                                <ItemStyle Wrap="False" Width="150px"></ItemStyle>
+                            </asp:BoundColumn>
+                            <asp:BoundColumn Visible="False" DataField="RequirementData" HeaderText="Requirement Data">
+                                <ItemStyle></ItemStyle>
+                            </asp:BoundColumn>
+                            <asp:BoundColumn DataField="OperationStatus" HeaderText="Status">
+                                <ItemStyle Wrap="False" Width="100px"></ItemStyle>
+                            </asp:BoundColumn>
+                            <asp:BoundColumn DataField="OperationResult" HeaderText="Operation Results">
+                                <ItemStyle Wrap="False" Width="150px"></ItemStyle>
+                            </asp:BoundColumn>
+                            <asp:BoundColumn DataField="StationID" HeaderText="Station ID">
+                                <ItemStyle Wrap="False" Width="100px"></ItemStyle>
+                            </asp:BoundColumn>
+                            <asp:BoundColumn DataField="EndDT" HeaderText="Performed DT">
+                                <ItemStyle Wrap="False" Width="150px"></ItemStyle>
+                            </asp:BoundColumn>
+                        </Columns>
+                    </asp:DataGrid>
+                </div>
+            </asp:Panel>
+        </ContentTemplate>
+    </asp:UpdatePanel>
+    <div id="divDlgModifyAuxTaskHistory" title="Modify Lot Trace Aux Task Data" class="displayNone">
+        <table id="Table2" class="tableCenter">
+            <tr>
+                <td style="text-align: right;">
+                    <asp:Label ID="Label15" runat="server" CssClass="spanLabel h3">Serial Number:</asp:Label>
+                </td>
+                <td style="vertical-align: baseline; padding-left: 10px">
+                    <asp:Label ID="lblSerialNum" runat="server" CssClass="spanLabel h3">?????</asp:Label>
+                </td>
+            </tr>
+            <tr>
+                <td style="text-align: right;">
+                    <asp:Label ID="Label16" runat="server" CssClass="spanLabel h3">Station ID:</asp:Label>
+                </td>
+                <td style="vertical-align: baseline; padding-left: 10px">
+                    <asp:Label ID="lblStationID" runat="server" CssClass="spanLabel h3">?????</asp:Label>
+                </td>
+            </tr>
+            <tr>
+                <td colspan="2" style="height: 20px">
+                </td>
+            </tr>
+            <tr>
+                <td style="vertical-align: middle; text-align: center;" colspan="2">
+                    <asp:Label ID="Label13" runat="server" CssClass="spanLabel h3">Are you sure you want to create a new record and set the status to Pass for this task?</asp:Label>
+                </td>
+            </tr>
+        </table>
+    </div>
+    <div id="divDlgModifyComponentHistory" title="Modify Lot Trace Component Data" class="displayNone">
+        <p class="validationHints h4">
+            All form fields are required.</p>
+        <table id="Table4" class="tableCenter" style="width: 375px">
+            <tr>
+                <td style="text-align: right;">
+                    <asp:Label ID="Label4" runat="server" CssClass="spanLabel h3">Serial Number:</asp:Label>
+                </td>
+                <td style="vertical-align: baseline; padding-left: 10px">
+                    <asp:Label ID="lblCompSerialNum" runat="server" CssClass="spanLabel h3">?????</asp:Label>
+                </td>
+            </tr>
+            <tr>
+                <td style="text-align: right;">
+                    <asp:Label ID="Label18" runat="server" CssClass="spanLabel h3">Station ID:</asp:Label>
+                </td>
+                <td style="vertical-align: baseline; padding-left: 10px">
+                    <asp:Label ID="lblCompStationID" runat="server" CssClass="spanLabel h3">?????</asp:Label>
+                </td>
+            </tr>
+            <tr>
+                <td colspan="2" style="height: 20px">
+                </td>
+            </tr>
+            <tr>
+                <td style="vertical-align: middle; text-align: center;" colspan="2">
+                    <asp:Label ID="Label20" runat="server" CssClass="spanLabel h3">Are you sure you want to create a new record and set the status to Pass for this component?</asp:Label>
+                </td>
+            </tr>
+            <tr>
+                <td colspan="2" style="height: 20px">
+                </td>
+            </tr>
+            <tr>
+                <td style="text-align: right;">
+                    <asp:Label ID="Label14" runat="server" CssClass="spanLabel h3">Bar Code:</asp:Label>
+                </td>
+                <td style="vertical-align: middle; padding-left: 10px; width: 130px;">
+                    <asp:TextBox ID="txtBarCode" runat="server" Width="130px" CssClass="textEntry" MaxLength="12"></asp:TextBox>
+                </td>
+                <td style="width: 10px">
+                    <div id="helpBarcode" class="ui-state-default ui-corner-all">
+                        <span class="ui-icon ui-icon-help"></span>
+                    </div>
+                </td>
+            </tr>
+        </table>
+    </div>
+    <div id="divDlgModifyTorqueHistory" title="Modify Lot Trace Torque Data" class="displayNone">
+        <p class="validationHints h4">
+            All form fields are required.</p>
+        <table id="Table3" class="tableCenter" style="width: 375">
+            <tr>
+                <td style="text-align: right;" colspan="3">
+                    <asp:Label ID="Label1" runat="server" CssClass="spanLabel h3">Serial Number:</asp:Label>
+                </td>
+                <td style="vertical-align: baseline; padding-left: 10px" colspan="4">
+                    <asp:Label ID="lblTorqueSerialNum" runat="server" CssClass="spanLabel h3">?????</asp:Label>
+                </td>
+            </tr>
+            <tr>
+                <td style="text-align: right;" colspan="3">
+                    <asp:Label ID="Label12" runat="server" CssClass="spanLabel h3">Station ID:</asp:Label>
+                </td>
+                <td style="vertical-align: baseline; padding-left: 10px" colspan="4">
+                    <asp:Label ID="lblTorqueStationID" runat="server" CssClass="spanLabel h3">?????</asp:Label>
+                </td>
+            </tr>
+            <tr>
+                <td colspan="5" style="height: 20px">
+                </td>
+            </tr>
+            <tr>
+                <td style="vertical-align: middle; text-align: center;" colspan="5">
+                    <asp:Label ID="Label19" runat="server" CssClass="spanLabel h3">Are you sure you want to create a new record and set the status to Pass for this torque?</asp:Label>
+                </td>
+            </tr>
+            <tr>
+                <td colspan="5" style="height: 20px">
+                </td>
+            </tr>
+            <tr>
+                <td style="text-align: right; width: 80px;">
+                    <asp:Label ID="Label21" runat="server" CssClass="spanLabel h3">Torque 1:</asp:Label>
+                </td>
+                <td style="vertical-align: middle; padding-left: 10px; width: 60px;">
+                    <asp:TextBox ID="txtTorque1" runat="server" Width="50px" CssClass="textEntry addNumeric">0</asp:TextBox>
+                </td>
+                <td style="width: 10px">
+                    <div id="helpTorque1" class="ui-state-default ui-corner-all">
+                        <span class="ui-icon ui-icon-help"></span>
+                    </div>
+                </td>
+                <td style="text-align: right; width: 80px;">
+                    <asp:Label ID="Label17" runat="server" CssClass="spanLabel h3">Angle 1:</asp:Label>
+                </td>
+                <td style="vertical-align: middle; padding-left: 10px; width: 60px;">
+                    <asp:TextBox ID="txtAngle1" runat="server" Width="50px" CssClass="textEntry addNumeric">0</asp:TextBox>
+                </td>
+                <td style="width: 10px">
+                    <div id="helpAngle1" class="ui-state-default ui-corner-all">
+                        <span class="ui-icon ui-icon-help"></span>
+                    </div>
+                </td>
+            </tr>
+            <tr>
+                <td style="text-align: right;">
+                    <asp:Label ID="Label11" runat="server" CssClass="spanLabel h3">Torque 2:</asp:Label>
+                </td>
+                <td style="vertical-align: middle; padding-left: 10px">
+                    <asp:TextBox ID="txtTorque2" runat="server" Width="50px" CssClass="textEntry addNumeric">0</asp:TextBox>
+                </td>
+                <td style="width: 10px">
+                    <div id="helpTorque2" class="ui-state-default ui-corner-all">
+                        <span class="ui-icon ui-icon-help"></span>
+                    </div>
+                </td>
+                <td style="text-align: right;">
+                    <asp:Label ID="Label22" runat="server" CssClass="spanLabel h3">Angle 2:</asp:Label>
+                </td>
+                <td style="vertical-align: middle; padding-left: 10px">
+                    <asp:TextBox ID="txtAngle2" runat="server" Width="50px" CssClass="textEntry addNumeric">0</asp:TextBox>
+                </td>
+                <td style="width: 10px">
+                    <div id="helpAngle2" class="ui-state-default ui-corner-all">
+                        <span class="ui-icon ui-icon-help"></span>
+                    </div>
+                </td>
+            </tr>
+            <tr>
+                <td style="text-align: right;">
+                    <asp:Label ID="Label23" runat="server" CssClass="spanLabel h3">Torque 3:</asp:Label>
+                </td>
+                <td style="vertical-align: middle; padding-left: 10px">
+                    <asp:TextBox ID="txtTorque3" runat="server" Width="50px" CssClass="textEntry addNumeric">0</asp:TextBox>
+                </td>
+                <td style="width: 10px">
+                    <div id="helpTorque3" class="ui-state-default ui-corner-all">
+                        <span class="ui-icon ui-icon-help"></span>
+                    </div>
+                </td>
+                <td style="text-align: right;">
+                    <asp:Label ID="Label24" runat="server" CssClass="spanLabel h3">Angle 3:</asp:Label>
+                </td>
+                <td style="vertical-align: middle; padding-left: 10px">
+                    <asp:TextBox ID="txtAngle3" runat="server" Width="50px" CssClass="textEntry addNumeric">0</asp:TextBox>
+                </td>
+                <td style="width: 10px">
+                    <div id="helpAngle3" class="ui-state-default ui-corner-all">
+                        <span class="ui-icon ui-icon-help"></span>
+                    </div>
+                </td>
+            </tr>
+            <tr>
+                <td style="text-align: right;">
+                    <asp:Label ID="Label25" runat="server" CssClass="spanLabel h3">Torque 4:</asp:Label>
+                </td>
+                <td style="vertical-align: middle; padding-left: 10px">
+                    <asp:TextBox ID="txtTorque4" runat="server" Width="50px" CssClass="textEntry addNumeric">0</asp:TextBox>
+                </td>
+                <td style="width: 10px">
+                    <div id="helpTorque4" class="ui-state-default ui-corner-all">
+                        <span class="ui-icon ui-icon-help"></span>
+                    </div>
+                </td>
+                <td style="text-align: right;">
+                    <asp:Label ID="Label26" runat="server" CssClass="spanLabel h3">Angle 4:</asp:Label>
+                </td>
+                <td style="vertical-align: middle; padding-left: 10px">
+                    <asp:TextBox ID="txtAngle4" runat="server" Width="50px" CssClass="textEntry addNumeric">0</asp:TextBox>
+                </td>
+                <td style="width: 10px">
+                    <div id="helpAngle4" class="ui-state-default ui-corner-all">
+                        <span class="ui-icon ui-icon-help"></span>
+                    </div>
+                </td>
+            </tr>
+            <tr>
+                <td style="text-align: right;">
+                    <asp:Label ID="Label27" runat="server" CssClass="spanLabel h3">Torque 5:</asp:Label>
+                </td>
+                <td style="vertical-align: middle; padding-left: 10px">
+                    <asp:TextBox ID="txtTorque5" runat="server" Width="50px" CssClass="textEntry addNumeric">0</asp:TextBox>
+                </td>
+                <td style="width: 10px">
+                    <div id="helpTorque5" class="ui-state-default ui-corner-all">
+                        <span class="ui-icon ui-icon-help"></span>
+                    </div>
+                </td>
+                <td style="text-align: right;">
+                    <asp:Label ID="Label28" runat="server" CssClass="spanLabel h3">Angle 5:</asp:Label>
+                </td>
+                <td style="vertical-align: middle; padding-left: 10px">
+                    <asp:TextBox ID="txtAngle5" runat="server" Width="50px" CssClass="textEntry addNumeric">0</asp:TextBox>
+                </td>
+                <td style="width: 10px">
+                    <div id="helpAngle5" class="ui-state-default ui-corner-all">
+                        <span class="ui-icon ui-icon-help"></span>
+                    </div>
+                </td>
+            </tr>
+            <tr>
+                <td style="text-align: right;">
+                    <asp:Label ID="Label29" runat="server" CssClass="spanLabel h3">Torque 6:</asp:Label>
+                </td>
+                <td style="vertical-align: middle; padding-left: 10px">
+                    <asp:TextBox ID="txtTorque6" runat="server" Width="50px" CssClass="textEntry addNumeric">0</asp:TextBox>
+                </td>
+                <td style="width: 10px">
+                    <div id="helpTorque6" class="ui-state-default ui-corner-all">
+                        <span class="ui-icon ui-icon-help"></span>
+                    </div>
+                </td>
+                <td style="text-align: right;">
+                    <asp:Label ID="Label30" runat="server" CssClass="spanLabel h3">Angle 6:</asp:Label>
+                </td>
+                <td style="vertical-align: middle; padding-left: 10px">
+                    <asp:TextBox ID="txtAngle6" runat="server" Width="50px" CssClass="textEntry addNumeric">0</asp:TextBox>
+                </td>
+                <td style="width: 10px">
+                    <div id="helpAngle6" class="ui-state-default ui-corner-all">
+                        <span class="ui-icon ui-icon-help"></span>
+                    </div>
+                </td>
+            </tr>
+            <tr>
+                <td style="text-align: right;">
+                    <asp:Label ID="Label31" runat="server" CssClass="spanLabel h3">Torque 7:</asp:Label>
+                </td>
+                <td style="vertical-align: middle; padding-left: 10px">
+                    <asp:TextBox ID="txtTorque7" runat="server" Width="50px" CssClass="textEntry addNumeric">0</asp:TextBox>
+                </td>
+                <td style="width: 10px">
+                    <div id="helpTorque7" class="ui-state-default ui-corner-all">
+                        <span class="ui-icon ui-icon-help"></span>
+                    </div>
+                </td>
+                <td style="text-align: right;">
+                    <asp:Label ID="Label32" runat="server" CssClass="spanLabel h3">Angle 7:</asp:Label>
+                </td>
+                <td style="vertical-align: middle; padding-left: 10px">
+                    <asp:TextBox ID="txtAngle7" runat="server" Width="50px" CssClass="textEntry addNumeric">0</asp:TextBox>
+                </td>
+                <td style="width: 10px">
+                    <div id="helpAngle7" class="ui-state-default ui-corner-all">
+                        <span class="ui-icon ui-icon-help"></span>
+                    </div>
+                </td>
+            </tr>
+            <tr>
+                <td style="text-align: right;">
+                    <asp:Label ID="Label33" runat="server" CssClass="spanLabel h3">Torque 8:</asp:Label>
+                </td>
+                <td style="vertical-align: middle; padding-left: 10px">
+                    <asp:TextBox ID="txtTorque8" runat="server" Width="50px" CssClass="textEntry addNumeric">0</asp:TextBox>
+                </td>
+                <td style="width: 10px">
+                    <div id="helpTorque8" class="ui-state-default ui-corner-all">
+                        <span class="ui-icon ui-icon-help"></span>
+                    </div>
+                </td>
+                <td style="text-align: right;">
+                    <asp:Label ID="Label34" runat="server" CssClass="spanLabel h3">Angle 8:</asp:Label>
+                </td>
+                <td style="vertical-align: middle; padding-left: 10px">
+                    <asp:TextBox ID="txtAngle8" runat="server" Width="50px" CssClass="textEntry addNumeric">0</asp:TextBox>
+                </td>
+                <td style="width: 10px">
+                    <div id="helpAngle8" class="ui-state-default ui-corner-all">
+                        <span class="ui-icon ui-icon-help"></span>
+                    </div>
+                </td>
+            </tr>
+            <tr>
+                <td style="text-align: right;">
+                    <asp:Label ID="Label35" runat="server" CssClass="spanLabel h3">Torque 9:</asp:Label>
+                </td>
+                <td style="vertical-align: middle; padding-left: 10px">
+                    <asp:TextBox ID="txtTorque9" runat="server" Width="50px" CssClass="textEntry addNumeric">0</asp:TextBox>
+                </td>
+                <td style="width: 10px">
+                    <div id="helpTorque9" class="ui-state-default ui-corner-all">
+                        <span class="ui-icon ui-icon-help"></span>
+                    </div>
+                </td>
+                <td style="text-align: right;">
+                    <asp:Label ID="Label36" runat="server" CssClass="spanLabel h3">Angle 9:</asp:Label>
+                </td>
+                <td style="vertical-align: middle; padding-left: 10px">
+                    <asp:TextBox ID="txtAngle9" runat="server" Width="50px" CssClass="textEntry addNumeric">0</asp:TextBox>
+                </td>
+                <td style="width: 10px">
+                    <div id="helpAngle9" class="ui-state-default ui-corner-all">
+                        <span class="ui-icon ui-icon-help"></span>
+                    </div>
+                </td>
+            </tr>
+            <tr>
+                <td style="text-align: right;">
+                    <asp:Label ID="Label37" runat="server" CssClass="spanLabel h3">Torque 10:</asp:Label>
+                </td>
+                <td style="vertical-align: middle; padding-left: 10px">
+                    <asp:TextBox ID="txtTorque10" runat="server" Width="50px" CssClass="textEntry addNumeric">0</asp:TextBox>
+                </td>
+                <td style="width: 10px">
+                    <div id="helpTorque10" class="ui-state-default ui-corner-all">
+                        <span class="ui-icon ui-icon-help"></span>
+                    </div>
+                </td>
+                <td style="text-align: right;">
+                    <asp:Label ID="Label38" runat="server" CssClass="spanLabel h3">Angle 10:</asp:Label>
+                </td>
+                <td style="vertical-align: middle; padding-left: 10px">
+                    <asp:TextBox ID="txtAngle10" runat="server" Width="50px" CssClass="textEntry addNumeric">0</asp:TextBox>
+                </td>
+                <td style="width: 10px">
+                    <div id="helpAngle10" class="ui-state-default ui-corner-all">
+                        <span class="ui-icon ui-icon-help"></span>
+                    </div>
+                </td>
+            </tr>
+        </table>
+    </div>
+</asp:Content>

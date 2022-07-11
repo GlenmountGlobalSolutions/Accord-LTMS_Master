@@ -1,0 +1,1348 @@
+﻿<%@ Page Title="Production Schedule" Language="vb" ValidateRequest="false" AutoEventWireup="false" MasterPageFile="~/Site.Master" CodeBehind="ProductionSchedule.aspx.vb" Inherits="LTMS_Master.ProductionSchedule" EnableEventValidation="false" %>
+
+<%@ MasterType VirtualPath="~/Site.master" %>
+<asp:Content ID="Content1" ContentPlaceHolderID="HeadContent" runat="server">
+	<script type="text/javascript" src="<%# ResolveUrl("~/Scripts/systemOperations.js") %>"></script>
+	<script type="text/javascript" src="<%# ResolveUrl("~/Scripts/date.js") %>"></script>
+	<script type="text/javascript" src="<%# ResolveUrl("~/Scripts/jquery.maskedinput-1.3.1.min.js") %>"></script>
+    <script type="text/javascript" src="<%# ResolveUrl("~/Scripts/jquery.alphanum.js") %>"></script>
+	<script type="text/javascript">
+
+		var orderType;
+
+		var $tbDay;
+		var $hidSelectedTree;
+		var $hidNodeText;
+		var $hidNodeDepth;
+		var $hidNodeSeqDT;
+		var $hidNodeLot;
+		var $hidNodeID;
+		var $hidNodeSubLot;
+		var $hidLastTab;
+
+		var $hidLotNum;
+		var $hidNewProdID;
+		var $hidNewLotNew;
+		var $hidNewNValues;
+		var $hidEditProdID;
+
+		var $ddlLotNum;
+		var $ddlNewProdID;
+		var $ddlNewLotNew;
+		var $ddlNewNValues;
+		var $ddlEditProdID;
+
+		var $cbMoveShipIndex;
+
+		var $txtNewLotNum;
+		var $txtNewSLIndex;
+
+		var $txtEditSLIndex;
+
+		var $cmdRefresh;
+		var $cmdNew;
+		var $cmdMove;
+		var $cmdEdit;
+		var $cmdOnHold;
+		var $cmdOffHold;
+		var $cmdDelete;
+
+		var $cmdResequence;
+
+		function contentPageLoad(sender, args) {
+			AddAJAXSettings();
+
+			CacheControls();
+
+			if (!args.get_isPartialLoad()) {
+				$ddlLotNum.change(function () { $hidLotNum.val($(this).val()); });
+				$ddlEditProdID.change(function () {
+				    $hidEditProdID.val($(this).val());
+				    ProductionSchedule_DialogEdit_PopulateProductDetail($(this).val());
+				});
+
+				$ddlNewProdID.change(function () {
+				    $hidNewProdID.val($(this).val());
+				    ProductionSchedule_DialogNew_PopulateProductDetail($(this).val());
+				});
+				$ddlNewLotNew.change(function () { $hidNewLotNew.val($(this).val()); });
+				$ddlNewNValues.change(function () { $hidNewNValues.val($(this).val()); });
+
+				$txtNewLotNum.change(function () { setControls(); });
+				$('#MainContent_cbNewNextPos').click(function () { setControls(); });
+			}
+
+			MakeDivIntoTabs();
+
+			MakeDateTimePicker();
+
+
+			RemoveTreeViewSkipLinks();
+
+			AddEventToTreeView();
+
+			EnableCommandButtons($hidNodeDepth.val());
+
+			AddEventsToControls();
+
+			SetButtonsEnabledState();
+
+
+			CreateDialog_Delete();
+
+			CreateDialog_Resequence();
+
+			CreateDialog_Revision();
+
+			CreateDialog_New();
+
+			CreateDialog_Edit();
+
+			CreateDialog_MoveLot();
+		}
+
+		function CacheControls() {
+			$tbDay = $("#MainContent_tbDay");
+			$hidEditProdID = $("#MainContent_hidEditProdID");
+			$hidNewProdID = $("#MainContent_hidNewProdID");
+			$hidNewLotNew = $("#MainContent_hidNewLotNew");
+			$hidNewNValues = $("#MainContent_hidNewNValues");
+
+			$hidSelectedTree = $("#MainContent_hidSelectedTree");
+
+			$hidNodeText = $("#MainContent_hidNodeText");
+			$hidNodeDepth = $("#MainContent_hidNodeDepth");
+			$hidNodeSeqDT = $("#MainContent_hidNodeSeqDT");
+			$hidNodeLot = $("#MainContent_hidNodeLot");
+			$hidNodeID = $("#MainContent_hidNodeID");
+			$hidNodeSubLot = $("#MainContent_hidNodeSubLot");
+			$hidLastTab = $("#MainContent_hidLastTab");
+			$hidLotNum = $("#MainContent_hidLotNum");
+
+			$ddlLotNum = $("#MainContent_ddlLot");
+			$ddlEditProdID = $('#MainContent_ddlEditProdID');
+
+			$ddlNewProdID = $("#MainContent_ddlNewProdID");
+			$ddlNewLotNew = $("#MainContent_ddlNewLotNew");
+			$ddlNewNValues = $("#MainContent_ddlNewNValues");
+
+			$cbMoveShipIndex = $("#MainContent_cbMoveShipIndex");
+
+			$txtNewLotNum = $("#MainContent_txtNewLotNum").mask("9-9999-999");
+			$txtNewSLIndex = $("#MainContent_txtNewSLIndex").mask("99");
+
+			$txtEditSLIndex = $("#MainContent_txtEditSLIndex").mask("99");
+
+			$cmdRefresh = $('#MainContent_cmdRefresh');
+
+			$cmdNew = $('#MainContent_cmdNew');
+			$cmdMove = $('#MainContent_cmdMove');
+			$cmdEdit = $('#MainContent_cmdEdit');
+			$cmdOnHold = $('#MainContent_cmdOnHold');
+			$cmdOffHold = $('#MainContent_cmdOffHold');
+			$cmdDelete = $('#MainContent_cmdDelete');
+			$cmdResequence = $('#MainContent_cmdResequence');
+			orderType = $('#MainContent_rbOrders input:checked').val();
+
+			// make controls with class 'numericOnly' into numeric only
+			$('.numericOnly').numeric({ allowMinus: false,
+			    allowThouSep: false,
+			    allowDecSep: false
+			});
+		}
+
+		function AddEventsToControls() {
+			// Make the Radio button a UI radio button
+			$("#MainContent_rbOrders").buttonset();
+
+			$(".cmdShowWait, #MainContent_cbHold").on('click', function () { ShowWaitOverlay(); });
+
+
+			$("#MainContent_rbOrders_0 + label").mouseover(function () { if (orderType == "1") { $(this).css('cursor', 'text'); } else { $(this).css('cursor', 'pointer').click(function () { ShowWaitOverlay(); }); } });
+			$("#MainContent_rbOrders_1 + label").mouseover(function () { if (orderType == "0") { $(this).css('cursor', 'text'); } else { $(this).css('cursor', 'pointer').click(function () { ShowWaitOverlay(); }); } });
+-
+			$("#divFilters input:image").mouseover(function () { $(this).css('cursor', 'pointer'); });
+
+			//Add the events for the bottom row of buttons
+			$("#MainContent_cmdPrint").on('click', function () { return OpenProductionScheduleReport(); });
+
+
+			// Add dialogs to button
+			$cmdDelete.on('click', function () { if ($hidNodeID.val() != null) { $('#divDlgDelete').dialog('open'); } else { alert("Please Select a Lot or Sublot"); } ClearWaitOverlay(); return false; });
+			$cmdResequence.on('click', function () { if ($hidNodeID.val() != null) { $('#divDlgResequence').dialog('open'); } else { alert("Please Select a Lot or Sublot"); } ClearWaitOverlay(); return false; });
+
+			$("#MainContent_cmdExport").on('click', function () { ExportSchedule();  return false; });
+			$("#MainContent_cmdExpandAll").on('click', function () { TreeviewExpandAll(true); return false; });
+			$("#MainContent_cmdCollapseAll").on('click', function () { TreeviewExpandAll(false); return false; });
+
+		}
+
+		function SetButtonsEnabledState() {
+			// Set the Action buttons to disabled intially until a tree is selected.
+			if ($hidNodeID.val() == null) {
+			    $cmdNew.button("disable");
+			    $cmdMove.button("disable");
+			    $cmdEdit.button("disable");
+			    $cmdOnHold.button("disable");
+			    $cmdOffHold.button("disable");
+			    $cmdDelete.button("disable");
+			}
+		}
+
+		function AddEventToTreeView() {
+		    $('#MainContent_treeMon').click(function (event) { $hidSelectedTree.val('2'); return GetSelectedNode(event, 'MainContent_treeMon_Data', 'treeMon'); });
+		    $('#MainContent_treeTue').click(function (event) { $hidSelectedTree.val('3'); return GetSelectedNode(event, 'MainContent_treeTue_Data', 'treeTue'); });
+		    $('#MainContent_treeWed').click(function (event) { $hidSelectedTree.val('4'); return GetSelectedNode(event, 'MainContent_treeWed_Data', 'treeWed'); });
+		    $('#MainContent_treeThu').click(function (event) { $hidSelectedTree.val('5'); return GetSelectedNode(event, 'MainContent_treeThu_Data', 'treeThu'); });
+		    $('#MainContent_treeFri').click(function (event) { $hidSelectedTree.val('6'); return GetSelectedNode(event, 'MainContent_treeFri_Data', 'treeFri'); });
+		    $('#MainContent_treeSat').click(function (event) { $hidSelectedTree.val('7'); return GetSelectedNode(event, 'MainContent_treeSat_Data', 'treeSat'); });
+		    $('#MainContent_treeSun').click(function (event) { $hidSelectedTree.val('1'); return GetSelectedNode(event, 'MainContent_treeSun_Data', 'treeSun'); });
+		    $('#MainContent_treeDay').click(function (event) { $hidSelectedTree.val('0'); return GetSelectedNode(event, 'MainContent_treeDay_Data', 'treeDay'); });
+
+			$('#MainContent_btnExpMon').click(function () { TreeviewExpandCollapseAll('MainContent_treeMon', true); return false; });
+			$('#MainContent_btnColMon').click(function () { TreeviewExpandCollapseAll('MainContent_treeMon', false); return false; });
+			$('#MainContent_btnExpTue').click(function () { TreeviewExpandCollapseAll('MainContent_treeTue', true); return false; });
+			$('#MainContent_btnColTue').click(function () { TreeviewExpandCollapseAll('MainContent_treeTue', false); return false; });
+			$('#MainContent_btnExpWed').click(function () { TreeviewExpandCollapseAll('MainContent_treeWed', true); return false; });
+			$('#MainContent_btnColWed').click(function () { TreeviewExpandCollapseAll('MainContent_treeWed', false); return false; });
+			$('#MainContent_btnExpThu').click(function () { TreeviewExpandCollapseAll('MainContent_treeThu', true); return false; });
+			$('#MainContent_btnColThu').click(function () { TreeviewExpandCollapseAll('MainContent_treeThu', false); return false; });
+			$('#MainContent_btnExpFri').click(function () { TreeviewExpandCollapseAll('MainContent_treeFri', true); return false; });
+			$('#MainContent_btnColFri').click(function () { TreeviewExpandCollapseAll('MainContent_treeFri', false); return false; });
+			$('#MainContent_btnExpSat').click(function () { TreeviewExpandCollapseAll('MainContent_treeSat', true); return false; });
+			$('#MainContent_btnColSat').click(function () { TreeviewExpandCollapseAll('MainContent_treeSat', false); return false; });
+			$('#MainContent_btnExpSun').click(function () { TreeviewExpandCollapseAll('MainContent_treeSun', true); return false; });
+			$('#MainContent_btnColSun').click(function () { TreeviewExpandCollapseAll('MainContent_treeSun', false); return false; });
+			$('#MainContent_cmdExpDay').click(function () { TreeviewExpandCollapseAll('MainContent_treeDay', true); return false; });
+			$('#MainContent_cmdColDay').click(function () { TreeviewExpandCollapseAll('MainContent_treeDay', false); return false; });
+		}
+
+		function TreeviewExpandAll(expand) {
+			TreeviewExpandCollapseAll('MainContent_treeMon', expand);
+			TreeviewExpandCollapseAll('MainContent_treeTue', expand);
+			TreeviewExpandCollapseAll('MainContent_treeWed', expand);
+			TreeviewExpandCollapseAll('MainContent_treeThu', expand);
+			TreeviewExpandCollapseAll('MainContent_treeFri', expand);
+			TreeviewExpandCollapseAll('MainContent_treeSat', expand);
+			TreeviewExpandCollapseAll('MainContent_treeSun', expand);
+		}
+
+		function GetSelectedNode(evt, treeData, treeSubName) {
+			try {
+
+				var src = window.event != window.undefined ? window.event.srcElement : evt.target;
+				var nodeClick = src.tagName.toLowerCase() == "a" || src.tagName.toLowerCase() == "span";
+				if (nodeClick) {
+
+				    TreeViewClearAllExcept(treeSubName); 
+					var treeViewData = window[treeData];
+
+					if (treeViewData.selectedNodeID.value != "") {
+
+						var selectedNode = document.getElementById(treeViewData.selectedNodeID.value);
+						var value = selectedNode.href.substring(selectedNode.href.indexOf(",") + 3, selectedNode.href.length - 2);
+						var levelSplit = value.split("\\\\");
+						var nodeLevel = levelSplit.length;
+						var text = selectedNode.innerText;
+
+						$hidNodeDepth.val(nodeLevel);
+
+
+						$hidNodeText.val(text);
+						$hidNodeID.val(selectedNode.id);
+						$hidNodeSeqDT.val(levelSplit[nodeLevel - 1].toString());
+
+
+						$hidNodeLot.val("");
+						$hidNodeSubLot.val("");
+
+						if (nodeLevel >= 2) {   //get the Lot 
+							$hidNodeLot.val(text.substring(0, 10));
+						}
+						if (nodeLevel >= 3) {   //get the Sub Lot 
+							$hidNodeSubLot.val(text.substring(11, 13));
+						}
+
+            			EnableCommandButtons($hidNodeDepth.val());
+
+						//DEBUG:: alert("Text: " + text + "\r\n" + "Value: " + value + "\r\n" + "Level: " + nodeLevel);
+						return false;   //change to true if you want postback on node click
+					}
+				}
+
+			}
+
+			catch (Error) {
+				alert(Error);
+			}
+		}
+
+		function MakeDivIntoTabs() {
+
+			$("#tabs").tabs({
+
+			    active: $hidLastTab.val(),    //set to previously Selected Tab (for postback)
+
+				beforeActivate: function (event, ui) {
+				    $hidLastTab.val(ui.newTab.index()); // when the tabs are selected set the hidden field
+
+					$("#divToggleButtons").toggle();       //remove these buttons on single day view
+					$("#divComments").toggle();            //remove this div on single day view
+
+					ShowWaitOverlay();
+					__doPostBack($cmdRefresh.prop('name'), '');
+				}
+			});
+		}
+
+		function MakeDateTimePicker() {
+			$tbDay.mask("99/99/9999").addDatePicker()
+			.datepicker("option", "firstDay", 1)
+			.datepicker({
+				onSelect: function (dateText, inst) {
+					DoRefreshPostBack(dateText);
+				}
+			})
+			.change(function () {
+				DoRefreshPostBack(this.value);
+			});
+
+			// position the calendar icon
+			PositionCalendarPickerIcon();
+		}
+
+		function DoRefreshPostBack(dateText) {
+			d1 = Date.parse(dateText);
+			if (d1 != null) {
+				ShowWaitOverlay();
+				__doPostBack($cmdRefresh.prop('name'), '');
+			}
+		}
+
+		function EnableCommandButtons(nodeLevel) {
+			var nodeType = ""
+			var $selectedNodeOnHold = false;
+
+			if (orderType == "0" && nodeLevel > 0) {
+			    $cmdNew.button("enable");
+			} else {
+			    $cmdNew.button("disable");
+			}
+			if ($hidNodeText.val().indexOf("ON HOLD") != -1) {
+			    $selectedNodeOnHold = true;
+			}
+
+			switch (nodeLevel) {
+				case '1':
+					//    case 1:   
+					nodeType = "SHIFT";
+					$cmdEdit.button("disable");
+					$cmdMove.button("disable");
+					$cmdDelete.button("disable");
+					$cmdOnHold.button("disable");
+					$cmdOffHold.button("disable");
+					break;
+				case '2':
+					nodeType = "LOT";
+					//enable and disable the following buttons
+	                $cmdEdit.button("disable");
+	                $cmdMove.button("enable");
+	                $cmdDelete.button("enable");
+	                if ($selectedNodeOnHold) {
+	                    $cmdOnHold.button("disable");
+	                    $cmdOffHold.button("enable");
+	                } else {
+	                    $cmdOnHold.button("enable");
+	                    $cmdOffHold.button("disable");
+	                }
+					break;
+				case '3':
+					nodeType = "SUBLOT";
+					//enable and disable the following buttons
+					$cmdEdit.button("enable");
+					$cmdMove.button("enable");
+					$cmdDelete.button("enable");
+					$cmdOnHold.button("disable");
+					$cmdOffHold.button("disable");
+					break;
+				default:
+					nodeType = "";
+					$cmdEdit.button("disable");
+					$cmdMove.button("disable");
+					$cmdDelete.button("disable");
+					$cmdOnHold.button("disable");
+					$cmdOffHold.button("disable");
+					break;
+			}
+			return nodeType;
+		}
+
+		function CreateDialog_Delete() {
+			var $dlgDelete = $('#divDlgDelete');
+
+			$cmdDelete.click(function () { $dlgDelete.dialog('open'); return false; });
+			$dlgDelete.deleteDialog({ control: $cmdDelete, width: 360 });
+		}
+
+		function CreateDialog_MoveLot() {
+			var $dlgMove = $('#divDlgMoveLot');
+
+			$dlgMove.modalDialog({
+				control: $cmdMove,
+				width: 410
+			});
+
+			$cmdMove.click(function () {
+				$dlgMove.dialog('open');
+				ShowCursor_Wait();
+				$("#divDlgMoveOverlay").fadeIn();
+
+				var nodeLevel = $hidNodeDepth.val();
+
+				if (nodeLevel == 2) {
+					$("#MainContent_lblType").text("LOT");
+					$("#MainContent_lblLotNum").text($hidNodeLot.val());
+			    $cbMoveShipIndex.prop("disabled", false);
+				}
+				else if (nodeLevel == 3) {
+					$("#MainContent_lblType").text("SUBLOT");
+					$("#MainContent_lblLotNum").text($hidNodeSubLot.val());
+					$cbMoveShipIndex.prop("disabled", true);	
+				}
+
+				if (orderType == "1") {
+					$("#MainContent_divMoveShipIndex").show();
+				} else {
+					$("#MainContent_divMoveShipIndex").hide();
+				};
+
+        $cbMoveShipIndex.attr('checked', false);
+				$ddlLotNum.empty();
+
+				var param = "{\"nodeLevel\": \"" + $hidNodeDepth.val() +
+						"\", \"seqDT\": \"" + $hidNodeSeqDT.val() +
+						"\", \"lot\": \"" + $hidNodeLot.val() +
+						"\", \"boolSetexOrder\": \"" + orderType +
+						"\"}";
+
+				GetProductionScheduleGetMoveList(param).success(function (data) {
+					PopulateNameValueDDL(data, $ddlLotNum);
+					$hidLotNum.val($ddlLotNum.val())
+					ShowCursor_Default();
+					$("#divDlgMoveOverlay").fadeOut();
+				});
+
+				return false;
+			});
+		}
+
+		function CreateDialog_Resequence() {
+		    var $dlgResequence = $('#divDlgResequence');
+		    $dlgResequence.modalDialog({
+		        control: $cmdResequence,
+		        width: 320
+		    });
+		}
+
+		function CreateDialog_Revision() {
+			var $cmdRevision = $('#MainContent_cmdRevInc');
+			var $dlgRevision = $('#divDlgAddRevision');
+
+			$cmdRevision.click(function () { $dlgRevision.dialog('open'); return false; });
+
+			$dlgRevision.modalDialog({
+				control: $cmdRevision,
+				width: 420,
+				validationFunction: function () { return checkLength($("#MainContent_txtComment"), "Comment", 1, 500, $("#helpRevisionComment")); }
+			});
+		}
+
+		function CreateDialog_New() {
+			var $cmdNew = $('#MainContent_cmdNew');
+			var $dlgNew = $('#divDlgNewLot');
+
+			$cmdNew.click(function () {
+				$dlgNew.dialog('open');
+				ShowCursor_Wait();
+				$("#divDlgNewOverlay").fadeIn();
+				GetProductionSchedule_DialogNew_Populate($hidNodeSeqDT.val());
+				GetProductionSchedule_DialogNew_GetNValueList($ddlNewNValues);
+				GetProductionSchedule_DialogNew_LotList($ddlNewLotNew, $hidNodeLot.val(), orderType);
+				return false;
+			});
+
+			$dlgNew.modalDialog({
+				control: $cmdNew,
+				width: 400,
+				validationFunction: function () { return ValidateDialog_New(); }
+			});
+		}
+
+		function CreateDialog_Edit() {
+			try {
+				var $cmdEdit = $('#MainContent_cmdEdit');
+				var $dlgEdit = $('#divDlgEditLot');
+
+				$cmdEdit.click(function () {
+					$dlgEdit.dialog('open');
+					ShowCursor_Wait();
+					$("#divDlgEditOverlay").fadeIn();
+					GetProductionSchedule_DialogEdit_Populate($hidNodeSeqDT.val());
+					$hidEditProdID.val($ddlEditProdID.val());
+					return false;
+				});
+
+				$dlgEdit.modalDialog({
+					control: $cmdEdit,
+					width: 400,
+					validationFunction: function () { return ValidateDialog_Edit(); }
+				});
+			} catch (err) {
+				alert(err);
+			}
+		}
+
+		function ValidateDialog_New() {
+			var bValid = false;
+			var $txtNewQuantity = $("#MainContent_txtNewQuantity");
+			var $ddlNewProdID = $('#MainContent_ddlNewProdID');
+
+			try {
+				bValid = checkDropDownList($ddlNewProdID, "Enter a value for Frame Code.");
+				bValid = checkText($txtNewQuantity, "Enter a value for Job Quantity.", $('#helptxtNewQuantity')) && bValid;
+
+				bValid = checkLength($txtNewSLIndex, "Sub Lot Number", 0, 2, $('#helptxtNewSLIndex')) && bValid;
+				bValid = checkText($txtNewSLIndex, "Enter a value for Sub Lot Index.", $('#helptxtNewSLIndex')) && bValid;
+				
+				if ($txtNewLotNum.val().replace(/-/g, '').length != 8) {
+					bValid = false;
+
+					setValidationHint('Invalid Lot Number use format: 0-1234-567');
+					$txtNewLotNum.addClass("ui-state-error");
+					 HelpIconHideorShow(true, $("#helptxtNewLotNum"));
+				}
+
+				 bValid = checkText($txtNewLotNum, "Enter a value for Lot Number.", $("#helptxtNewLotNum")) && bValid;
+
+			} catch (err) {
+				alert(err);
+			}
+			return bValid;
+		}
+
+		function ValidateDialog_Edit() {
+			var bValid = false;
+			var $txtEditQuantity = $("#MainContent_txtEditQuantity");
+
+			try {
+				//  compare in reverse order, then the error messages will display in order
+				bValid = checkText($txtEditQuantity, "Enter a value for Job Quantity.", $('#helptxtEditQuantity'));
+
+				bValid = checkLength($txtEditSLIndex, "Sub Lot Number", 0, 2, $('#helptxtEditSLIndex')) && bValid;
+				bValid = checkText($txtEditSLIndex, "Enter a value for Sub Lot Index.", $('#helptxtEditSLIndex')) && bValid;
+
+			} catch (err) {
+				alert(err);
+			}
+			return bValid;
+		}
+
+		function DialogNewPopulateDetail(strResult) {
+			try {
+				$("#MainContent_txtNewLotNum").val(strResult.d.LotNumber);
+				$("#MainContent_txtNewSLIndex").val(strResult.d.SubLotIndex);
+				$("#MainContent_txtNewQuantity").val(strResult.d.Quantity);
+				$("#MainContent_lblNewShipCode4").text(strResult.d.ShipCode4);
+				$("#MainContent_lblNewDriverSS").text(strResult.d.DriverSeatStyle);
+				$("#MainContent_lblNewPassSS").text(strResult.d.PassengerSeatStyle);
+				$("#MainContent_lblNewModelDesc").text(strResult.d.ModelDescription);
+				GetProductionSchedule_DialogNew_GetProductIDList($('#MainContent_ddlNewProdID'), strResult.d.ProductID);
+			}
+			catch (Error) {
+				alert(Error);
+			}
+		}
+		
+        function DialogNewPopulateProductDetail(strResult) {
+		    try {
+		        $("#MainContent_lblNewShipCode4").text(strResult.d.ShipCode4);
+		        $("#MainContent_lblNewDriverSS").text(strResult.d.DriverSeatStyle);
+		        $("#MainContent_lblNewPassSS").text(strResult.d.PassengerSeatStyle);
+		        $("#MainContent_lblNewModelDesc").text(strResult.d.ModelDescription);
+		    }
+		    catch (Error) {
+		        alert(Error);
+		    }
+		}
+
+
+		function DialogEditPopulateDetail(strResult) {
+			try {
+				$("#MainContent_txtEditLotNum").val(strResult.d.LotNumber);
+				$txtEditSLIndex.val(strResult.d.SubLotIndex);
+				$("#MainContent_txtEditQuantity").val(strResult.d.Quantity);
+				$("#MainContent_lblEditShipCode4").text(strResult.d.ShipCode4);
+				$("#MainContent_lblEditDriverSS").text(strResult.d.DriverSeatStyle);
+				$("#MainContent_lblEditPassSS").text(strResult.d.PassengerSeatStyle);
+				$("#MainContent_lblEditModelDesc").text(strResult.d.ModelDescription);
+				$("#MainContent_txtEditNotes").val(strResult.d.mProductionNotes);
+				GetProductionSchedule_DialogNew_GetProductIDList($ddlEditProdID, strResult.d.ProductID);
+				ShowCursor_Default();
+				$("#divDlgEditOverlay").fadeOut();
+			}
+			catch (Error) {
+				alert(Error);
+			}
+		}
+
+		function DialogEditPopulateProductDetail(strResult) {
+		    try {
+		        $("#MainContent_lblEditShipCode4").text(strResult.d.ShipCode4);
+		        $("#MainContent_lblEditDriverSS").text(strResult.d.DriverSeatStyle);
+		        $("#MainContent_lblEditPassSS").text(strResult.d.PassengerSeatStyle);
+		        $("#MainContent_lblEditModelDesc").text(strResult.d.ModelDescription);
+		    }
+		    catch (Error) {
+		        alert(Error);
+		    }
+		}
+		function setControls() {
+			try {
+				$hidNewProdID.val($ddlNewProdID.val());
+				$hidNewLotNew.val($ddlNewLotNew.val());
+				$hidNewNValues.val($ddlNewNValues.val());
+
+				var cb = document.getElementById('MainContent_cbNewNextPos');
+				cb.disabled = false;
+
+				if (searchLots() == true) {
+					disableDlgLocationControls();
+				}
+				else if (cb.checked == true) {
+					disableSomeControls();
+				}
+				else {
+					enableAllControls();
+				}
+
+				ShowCursor_Default();
+				$("#divDlgNewOverlay").fadeOut();
+
+			} catch (error) {
+				alert('Error: ' + error)
+			}
+		}
+
+		function searchLots() {
+			try {
+				var input = document.getElementById('MainContent_txtNewLotNum').value.toLowerCase();
+				var ddl = document.getElementById('MainContent_ddlNewLotNew');
+				var ddlOptions = document.getElementById('MainContent_ddlNewLotNew').options;
+
+				input = input.replace(/-/g, '');
+
+				for (var i = 0; i < ddlOptions.length; i++) {
+					if (ddlOptions[i].value.toLowerCase() == input) {
+						return true;
+					}
+				}
+				return false;
+			} catch (error) {
+				alert('Error: ' + error)
+			}
+		}
+
+		function disableDlgLocationControls() {
+			try {
+				document.getElementById('MainContent_ddlNewLotNew').disabled = true;
+				document.getElementById('MainContent_rblNewLocation').disabled = true;
+				document.getElementById('MainContent_cbNewNextPos').disabled = true;
+				document.getElementById('MainContent_cbNewNextPos').parentNode.disabled = true;
+			}
+			catch (error) {
+				alert('Error: ' + error)
+			}
+		}
+
+		function disableSomeControls() {
+			try {
+				document.getElementById('MainContent_ddlNewLotNew').disabled = true;
+				document.getElementById('MainContent_rblNewLocation').disabled = true;
+			}
+			catch (error) {
+				alert('Error: ' + error)
+			}
+		}
+
+		function enableAllControls() {
+			try {
+				document.getElementById('MainContent_ddlNewLotNew').disabled = false;
+				document.getElementById('MainContent_rblNewLocation').disabled = false;
+				document.getElementById('MainContent_cbNewNextPos').disabled = false;
+				document.getElementById('MainContent_cbNewNextPos').parentNode.disabled = false;
+			}
+			catch (error) {
+				alert('Error: ' + error)
+			}
+		}
+
+		function OpenProductionScheduleReport() {
+			var url = baseUrl + '/2Reporting/Reports.aspx?report=';
+
+			if (orderType == "1") {
+				url += "ProductionSchedule&webpageTitle=Production Schedule Report (Setex)";
+			} else {
+				url += "ProductionScheduleHonda&webpageTitle=Production Schedule Report (Honda)";
+			}
+
+			d1 = Date.parse($tbDay.val());
+			if (d1 == null) {
+				alert('Error:  Invalid Date.');
+			}   else {
+				if (!d1.is().monday()) {
+					d1.last().monday();
+				}
+				url += '&BegDT=' + d1.toString("MM/dd/yyyy");
+			}
+
+
+			window.open(url);
+
+			return false;
+		}
+
+		function ExportSchedule() {
+			var params;
+
+			if (orderType == "1") { //setex
+				params = $("#MainContent_lblDateMon").text();
+			} else {
+				params = $("#MainContent_lblSingleDayOfWeek").text();
+			}
+
+			window.open('ProductionScheduleExport.aspx?Args=' + params);
+		}
+
+	</script>
+	<!-- This added for this page only we want the scroll for the tabs -->
+	<style type="text/css" >
+		#divButtonsTop .inputButton, #divButtonsBottom .inputButton
+		{
+			width: 105px;
+		}
+		.ui-tab-content, .ui-tabs-panel
+		{
+			overflow-x:scroll;
+			overflow-y:hidden;
+        }
+		#tabs
+		{
+			max-width:1333px;
+		}
+		.mainInner
+        {
+            display:inherit ;
+        }
+		#divDlgNewLot .selectDropDown, #divDlgEditLot .selectDropDown
+		{
+			width: 200px;
+		}
+		#divDlgNewLot .textEntry, #divDlgEditLot .textEntry
+		{
+			width: 190px;
+		}
+		#divComments
+		{
+		    vertical-align: bottom; 
+		    text-align: left; 
+		    margin: 4px; 
+		    max-width:1330px;
+		}
+
+	</style>
+</asp:Content>
+<asp:Content ID="Content2" ContentPlaceHolderID="MainContent" runat="server">
+	<asp:UpdatePanel ID="UpdatePanel1" runat="server">
+		<ContentTemplate>
+			<div id="divHiddenFields">
+				<input id="hidLotNum" type="hidden" runat="server">
+				<input id="hidEditProdID" type="hidden" runat="server">
+
+				<input id="hidNewProdID" type="hidden" runat="server">
+				<input id="hidNewLotNew" type="hidden" runat="server">
+				<input id="hidNewNValues" type="hidden" runat="server">
+
+				<input id="hidSelectedTree" type="hidden" runat="server">
+				<input id="hidNodeText" type="hidden" runat="server">
+				<input id="hidNodeID" type="hidden" runat="server">
+				<input id="hidNodeDepth" type="hidden" runat="server">
+				<input id="hidNodeSeqDT" type="hidden" runat="server">
+				<input id="hidNodeLot" type="hidden" runat="server">
+				<input id="hidNodeSubLot" type="hidden" runat="server">
+				<input id="hidLastTab" type="hidden" runat="server">
+			</div>
+			<div id="divFilters" style="margin: 4px; text-align: left;">
+				<table style="border-collapse: collapse; padding: 0; margin-bottom: 10px; width: 1000px">
+					<tr style="vertical-align: middle;">
+						<td style="width: 220px">
+							<asp:RadioButtonList ID="rbOrders" runat="server" AutoPostBack="True" RepeatDirection="Horizontal" CssClass="inputRadioButton">
+								<asp:ListItem Value="1" Selected="True">Setex Orders</asp:ListItem>
+								<asp:ListItem Value="0">All Orders</asp:ListItem>
+							</asp:RadioButtonList>
+						</td>
+						<td style="width: 80px">
+							<asp:Label ID="LABEL18" runat="server" CssClass="spanLabel">Enter Date:</asp:Label>
+						</td>
+						<td style="width: 16px; text-align: right; padding-top: 8px;">
+							<asp:ImageButton ID="ibPrev" runat="server" CssClass="cmdShowWait" ImageUrl="~/images/Arrows/bbPrevpage.gif"></asp:ImageButton>
+						</td>
+						<td style="width: 140px; text-align: left; padding-left: 10px;">
+							<asp:TextBox ID="tbDay" runat="server" Width="96px" CssClass="textEntry"></asp:TextBox>
+						</td>
+						<td style="width: 16px; text-align: left; padding-top: 8px;">
+							<asp:ImageButton ID="ibNext" runat="server" CssClass="cmdShowWait" ImageUrl="~/images/Arrows/bbNextpage.gif"></asp:ImageButton>
+						</td>
+						<td style="text-align: left; padding: 0px 0px 0px 12px; width: 90px;">
+							<asp:Button ID="cmdRefresh" runat="server" CssClass="inputButton cmdShowWait" Text="Refresh"></asp:Button>
+						</td>
+						<td style="width: 180px;">
+							<asp:CheckBox ID="cbHold" runat="server" AutoPostBack="True" Text="Show ON HOLD Lots" Checked="True" CssClass="selectCheckBox h3" />
+						</td>
+						<td>
+							<asp:Label ID="lblWeekTotalCaption" runat="server" CssClass="spanLabel">Total for Week:</asp:Label>
+							<asp:Label ID="lblTotal" runat="server" CssClass="spanLabel">?</asp:Label>
+						</td>
+					</tr>
+				</table>
+			</div>
+                <div id="tabs">
+				    <ul>
+					    <li><a href="#tabs-1">Week</a></li>
+					    <li><a href="#tabs-2">Day</a></li>
+				    </ul>
+				    <div id="tabs-1" class="displayNone">
+					    <table id="Table2" style="border-collapse: collapse; padding: 0; margin-left: -14px;">
+						    <tr>
+							    <td>
+								    <asp:Label ID="lblDateMon" runat="server" CssClass="spanLabel h4">Monday</asp:Label>
+							    </td>
+							    <td>
+								    <asp:Label ID="lblDateTue" runat="server" CssClass="spanLabel h4">Tuesday</asp:Label>
+							    </td>
+							    <td>
+								    <asp:Label ID="lblDateWed" runat="server" CssClass="spanLabel h4">Wednesday</asp:Label>
+							    </td>
+							    <td>
+								    <asp:Label ID="lblDateThu" runat="server" CssClass="spanLabel h4">Thursday</asp:Label>
+							    </td>
+							    <td>
+								    <asp:Label ID="lblDateFri" runat="server" CssClass="spanLabel h4">Fri</asp:Label>
+							    </td>
+							    <td>
+								    <asp:Label ID="lblDateSat" runat="server" CssClass="spanLabel h4">Saturday</asp:Label>
+							    </td>
+							    <td>
+								    <asp:Label ID="lblDateSun" runat="server" CssClass="spanLabel h4">Sunday</asp:Label>
+							    </td>
+						    </tr>
+						    <tr>
+							    <td style="vertical-align: middle">
+								    <asp:Panel ID="pnlTreeviewMon" runat="server" ScrollBars="Auto" Width="180" Height="280" CssClass="divBorder">
+									    <asp:TreeView ID="treeMon" runat="server" BorderWidth="0" NodeIndent="10">
+										    <NodeStyle CssClass="treeViewNode" />
+										    <SelectedNodeStyle CssClass="treeViewNodeSelected ui-state-default" />
+									    </asp:TreeView>
+								    </asp:Panel>
+							    </td>
+							    <td>
+								    <asp:Panel ID="pnlTreeviewTue" runat="server" ScrollBars="Auto" Width="180" Height="280" CssClass="divBorder">
+									    <asp:TreeView ID="treeTue" runat="server" BorderWidth="0" NodeIndent="10">
+										    <NodeStyle CssClass="treeViewNode" />
+										    <SelectedNodeStyle CssClass="treeViewNodeSelected ui-state-default" />
+									    </asp:TreeView>
+								    </asp:Panel>
+							    </td>
+							    <td>
+								    <asp:Panel ID="pnlTreeviewWed" runat="server" ScrollBars="Auto" Width="180" Height="280" CssClass="divBorder">
+									    <asp:TreeView ID="treeWed" runat="server" BorderWidth="0" NodeIndent="10">
+										    <NodeStyle CssClass="treeViewNode" />
+										    <SelectedNodeStyle CssClass="treeViewNodeSelected ui-state-default" />
+									    </asp:TreeView>
+								    </asp:Panel>
+							    </td>
+							    <td>
+								    <asp:Panel ID="pnlTreeviewThu" runat="server" ScrollBars="Auto" Width="180" Height="280" CssClass="divBorder">
+									    <asp:TreeView ID="treeThu" runat="server" BorderWidth="0" NodeIndent="10">
+										    <NodeStyle CssClass="treeViewNode" />
+										    <SelectedNodeStyle CssClass="treeViewNodeSelected ui-state-default" />
+									    </asp:TreeView>
+								    </asp:Panel>
+							    </td>
+							    <td>
+								    <asp:Panel ID="pnlTreeviewFir" runat="server" ScrollBars="Auto" Width="180" Height="280" CssClass="divBorder">
+									    <asp:TreeView ID="treeFri" runat="server" BorderWidth="0" NodeIndent="10">
+										    <NodeStyle CssClass="treeViewNode" />
+										    <SelectedNodeStyle CssClass="treeViewNodeSelected ui-state-default" />
+									    </asp:TreeView>
+								    </asp:Panel>
+							    </td>
+							    <td>
+								    <asp:Panel ID="pnlTreeviewSat" runat="server" ScrollBars="Auto" Width="180" Height="280" CssClass="divBorder">
+									    <asp:TreeView ID="treeSat" runat="server" BorderWidth="0" NodeIndent="10">
+										    <NodeStyle CssClass="treeViewNode" />
+										    <SelectedNodeStyle CssClass="treeViewNodeSelected ui-state-default" />
+									    </asp:TreeView>
+								    </asp:Panel>
+							    </td>
+							    <td>
+								    <asp:Panel ID="pnlTreeviewSun" runat="server" ScrollBars="Auto" Width="180" Height="280" CssClass="divBorder">
+									    <asp:TreeView ID="treeSun" runat="server" BorderWidth="0" NodeIndent="10">
+										    <NodeStyle CssClass="treeViewNode" />
+										    <SelectedNodeStyle CssClass="treeViewNodeSelected ui-state-default" />
+									    </asp:TreeView>
+								    </asp:Panel>
+							    </td>
+						    </tr>
+						    <tr>
+							    <td style="text-align: center;">
+								    <div id="divButtonsMon" class="divExpandCollapse">
+									    <asp:Button ID="btnExpMon" runat="server" Text="Expand" CssClass="inputButton" />
+									    <asp:Button ID="btnColMon" runat="server" Text="Collapse" CssClass="inputButton" />
+								    </div>
+								    <asp:Label ID="Label7" runat="server" CssClass="spanLabel h4">Total: </asp:Label>
+								    <asp:Label ID="lblTotalMon" runat="server" CssClass="spanLabel h4">0</asp:Label>
+							    </td>
+							    <td style="text-align: center;">
+								    <div id="divButtonsTue" class="divExpandCollapse">
+									    <asp:Button ID="btnExpTue" runat="server" Text="Expand" CssClass="inputButton" />
+									    <asp:Button ID="btnColTue" runat="server" Text="Collapse" CssClass="inputButton" />
+								    </div>
+								    <asp:Label ID="Label9" runat="server" CssClass="spanLabel h4">Total: </asp:Label>
+								    <asp:Label ID="lblTotalTue" runat="server" CssClass="spanLabel h4">0</asp:Label>
+							    </td>
+							    <td style="text-align: center;">
+								    <div id="divButtonsWed" class="divExpandCollapse">
+									    <asp:Button ID="btnExpWed" runat="server" Text="Expand" CssClass="inputButton" />
+									    <asp:Button ID="btnColWed" runat="server" Text="Collapse" CssClass="inputButton" />
+								    </div>
+								    <asp:Label ID="Label11" runat="server" CssClass="spanLabel h4">Total: </asp:Label>
+								    <asp:Label ID="lblTotalWed" runat="server" CssClass="spanLabel h4">0</asp:Label>
+							    </td>
+							    <td style="text-align: center;">
+								    <div id="divButtonsThu" class="divExpandCollapse">
+									    <asp:Button ID="btnExpThu" runat="server" Text="Expand" CssClass="inputButton" />
+									    <asp:Button ID="btnColThu" runat="server" Text="Collapse" CssClass="inputButton" />
+								    </div>
+								    <asp:Label ID="Label13" runat="server" CssClass="spanLabel h4">Total: </asp:Label>
+								    <asp:Label ID="lblTotalThu" runat="server" CssClass="spanLabel h4">0</asp:Label>
+							    </td>
+							    <td style="text-align: center;">
+								    <div id="divButtonsFri" class="divExpandCollapse">
+									    <asp:Button ID="btnExpFri" runat="server" Text="Expand" CssClass="inputButton" />
+									    <asp:Button ID="btnColFri" runat="server" Text="Collapse" CssClass="inputButton" />
+								    </div>
+								    <asp:Label ID="Label15" runat="server" CssClass="spanLabel h4">Total: </asp:Label>
+								    <asp:Label ID="lblTotalFri" runat="server" CssClass="spanLabel h4">0</asp:Label>
+							    </td>
+							    <td style="text-align: center;">
+								    <div id="divButtonsSat" class="divExpandCollapse">
+									    <asp:Button ID="btnExpSat" runat="server" Text="Expand" CssClass="inputButton" />
+									    <asp:Button ID="btnColSat" runat="server" Text="Collapse" CssClass="inputButton" />
+								    </div>
+								    <asp:Label ID="Label17" runat="server" CssClass="spanLabel h4">Total: </asp:Label>
+								    <asp:Label ID="lblTotalSat" runat="server" CssClass="spanLabel h4">0</asp:Label>
+							    </td>
+							    <td style="text-align: center;">
+								    <div id="divButtonsSun" class="divExpandCollapse">
+									    <asp:Button ID="btnExpSun" runat="server" Text="Expand" CssClass="inputButton" />
+									    <asp:Button ID="btnColSun" runat="server" Text="Collapse" CssClass="inputButton" />
+								    </div>
+								    <asp:Label ID="Label19" runat="server" CssClass="spanLabel h4">Total: </asp:Label>
+								    <asp:Label ID="lblTotalSun" runat="server" CssClass="spanLabel h4">0</asp:Label>
+							    </td>
+						    </tr>
+					    </table>
+				    </div>
+				    <div id="tabs-2" class="displayNone">
+					    <table id="Table3" style="border-collapse: collapse; padding: 0;">
+						    <tr>
+							    <td>
+								    <asp:Label ID="lblSingleDayOfWeek" runat="server" CssClass="spanLabel h4"></asp:Label>
+							    </td>
+						    </tr>
+						    <tr>
+							    <td style="vertical-align: middle">
+								    <asp:Panel ID="PaneltreeDay" runat="server" ScrollBars="Auto" Width="180" Height="280" CssClass="divBorder">
+									    <asp:TreeView ID="treeDay" runat="server" BorderWidth="0" NodeIndent="10" ExpandDepth="2">
+										    <NodeStyle CssClass="treeViewNode" />
+										    <SelectedNodeStyle CssClass="treeViewNodeSelected ui-state-default" />
+									    </asp:TreeView>
+								    </asp:Panel>
+							    </td>
+						    </tr>
+						    <tr>
+							    <td style="text-align: center;">
+								    <div id="divButtonsSingleDayOfWeek" class="divExpandCollapse">
+									    <asp:Button ID="cmdExpDay" runat="server" Text="Expand" CssClass="inputButton" />
+									    <asp:Button ID="cmdColDay" runat="server" Text="Collapse" CssClass="inputButton" />
+								    </div>
+								    <asp:Label ID="LABEL21" runat="server" CssClass="spanLabelh4">Total: </asp:Label>
+								    <asp:Label ID="lblTotalSingleDay" runat="server" CssClass="spanLabel h4">0</asp:Label>
+							    </td>
+						    </tr>
+					    </table>
+				    </div>
+			    </div>
+
+		</ContentTemplate>
+	</asp:UpdatePanel>
+	<div id="divButtonsTop" style="margin: 4px; text-align: left;">
+		<asp:UpdatePanel ID="UpdatePanel6" runat="server">
+			<ContentTemplate>
+				<asp:Button ID="cmdNew" runat="server" Text="New" CssClass="inputButton"></asp:Button>
+				<asp:Button ID="cmdMove" runat="server" Text="Move" CssClass="inputButton"></asp:Button>
+				<asp:Button ID="cmdEdit" runat="server" Text="Edit" CssClass="inputButton"></asp:Button>
+				<asp:Button ID="cmdOnHold" runat="server" Text="On Hold" CssClass="inputButton cmdShowWait"></asp:Button>
+				<asp:Button ID="cmdOffHold" runat="server" Text="Off Hold" CssClass="inputButton cmdShowWait"></asp:Button>
+				<asp:Button ID="cmdDelete" runat="server" Text="Delete" CssClass="inputButton"></asp:Button>
+				<asp:Button ID="cmdResequence" runat="server" Text="Resequence" CssClass="inputButton cmdShowWait"></asp:Button>
+				<asp:Button ID="cmdPrint" runat="server" Text="Print" CssClass="inputButton"></asp:Button>
+			</ContentTemplate>
+		</asp:UpdatePanel>
+	</div>
+	<div id="divButtonsBottom" style="margin: 4px; text-align: left;">
+		<asp:UpdatePanel ID="UpdatePanel7" runat="server">
+			<ContentTemplate>
+				<asp:Button ID="cmdRevInc" runat="server" Text="Revisions" CssClass="inputButton"></asp:Button>
+				<asp:Button ID="cmdExport" runat="server" Text="Export" CssClass="inputButton"></asp:Button>
+				<span id="divToggleButtons">
+					<asp:Button ID="cmdExpandAll" runat="server" Text="Expand All" CssClass="inputButton"></asp:Button>
+					<asp:Button ID="cmdCollapseAll" runat="server" Text="Collapse All" CssClass="inputButton"></asp:Button>
+				</span>
+			</ContentTemplate>
+		</asp:UpdatePanel>
+	</div>
+	<div id="divComments" >
+		<asp:UpdatePanel ID="UpdatePanel2" runat="server">
+			<ContentTemplate>
+				<asp:Panel ID="pnlRev" runat="server">
+					<asp:Label ID="Label8" runat="server" ForeColor="Black" CssClass="spanLabel">Revision No:</asp:Label>
+					<asp:Label ID="lblRevNo" runat="server" CssClass="spanLabel h3"></asp:Label>
+					<asp:Label ID="Label12" runat="server" ForeColor="Black" CssClass="spanLabel">Comments:</asp:Label>
+					<asp:Label ID="lblRevComments" runat="server" CssClass="spanLabel h3"></asp:Label>
+				</asp:Panel>
+			</ContentTemplate>
+		</asp:UpdatePanel>
+	</div>
+	<div id="divDlgDelete" title="Delete" class="displayNone">
+		<p>
+			<span class="ui-icon ui-icon-alert" style="float: left; margin: 0 7px 50px 0;"></span>You are about to Delete. Do you wish to continue?.
+		</p>
+	</div>
+	<div id="divDlgResequence" title="Resequence" class="displayNone">
+		<p>
+			<span class="ui-icon ui-icon-alert" style="float: left; margin: 0 7px 50px 0;"></span>You are about to Resequence the Lots.<br />Do you wish to continue?
+		</p>
+	</div>
+	<div id="divDlgAddRevision" title="Revision" class="displayNone">
+		<asp:UpdatePanel ID="UpdatePanel3" runat="server">
+			<ContentTemplate>
+		<p class="validationHints h4">
+			All fields must be completed.</p>
+		        <table id="tblRevision" class="tableCenter" >
+			        <tr>
+				        <td style="width: 92px">
+					        <asp:Label ID="Label10" runat="server" CssClass="spanLabel h4">Date:</asp:Label>
+				        </td>
+				        <td style="width: 100%">
+					        <asp:Label ID="lblDate" runat="server" CssClass="spanLabel h4"></asp:Label>
+				        </td>
+				        <td>
+				        </td>
+			        </tr>
+			        <tr>
+				        <td>
+					        <asp:Label ID="LABEL14" runat="server" CssClass="spanLabel h4">Revision: </asp:Label>
+				        </td>
+				        <td>
+					        <asp:Label ID="lblRev" runat="server" CssClass="spanLabel h4"></asp:Label>
+				        </td>
+				        <td>
+				        </td>
+			        </tr>
+			        <tr style="height: 100%">
+				        <td style="vertical-align: top"  >
+					        <asp:Label ID="LABEL16" runat="server" CssClass="spanLabel h4">Comments: </asp:Label>
+				        </td>
+				        <td >
+					        <asp:TextBox ID="txtComment" runat="server" CssClass="textEntry h4" MaxLength="500" TextMode="MultiLine" Width="100%" Height="100px"></asp:TextBox>
+				        </td>
+				        <td>
+					        <div id="helpRevisionComment" class="ui-state-default ui-corner-all">
+						        <span class="ui-icon ui-icon-help"></span>
+					        </div>
+				        </td>
+			        </tr>
+		        </table>
+			</ContentTemplate>
+		</asp:UpdatePanel>
+	</div>
+	<div id="divDlgMoveLot" title="Move" class="displayNone">
+		<div id="divDlgMoveOverlay" class="ui-widget-overlay" style="z-index: 1000;"></div>
+		<table id="tblMoveLot" class="tableCenter">
+			<tr>
+				<td>
+					<asp:Label ID="Label20" runat="server" CssClass="spanLabel h3">Move</asp:Label>
+				</td>
+				<td>
+					<asp:Label ID="lblType" runat="server" CssClass="spanLabel h4"></asp:Label>
+				</td>
+			</tr>
+			<tr>
+				<td>
+				</td>
+				<td>
+					<asp:Label ID="lblLotNum" runat="server" CssClass="spanLabel h4"></asp:Label>
+				</td>
+			</tr>
+			<tr>
+				<td>
+				</td>
+				<td>
+				</td>
+			</tr>
+			<tr>
+				<td>
+					<asp:Label ID="LABEL22" runat="server" CssClass="spanLabel h3">Location</asp:Label>
+				</td>
+				<td>
+					<asp:RadioButtonList ID="rblBeforeAfter" runat="server" RepeatDirection="Horizontal" CssClass="inputRadioButton h4">
+						<asp:ListItem Value="BEFORE" Selected="True">Before</asp:ListItem>
+						<asp:ListItem Value="AFTER">After</asp:ListItem>
+					</asp:RadioButtonList>
+				</td>
+			</tr>
+			<tr>
+				<td>
+				</td>
+				<td>
+					<asp:DropDownList ID="ddlLot" runat="server" Width="160px" CssClass="selectDropDown h4">
+					</asp:DropDownList>
+				</td>
+			</tr>
+			<tr>
+				<td colspan="2">
+					<div id="divMoveShipIndex">
+						<asp:CheckBox ID="cbMoveShipIndex" runat="server" Text="Also Move in Shipping Schedule" CssClass="selectCheckBox h4"></asp:CheckBox>
+					</div>
+				</td>
+			</tr>
+		</table>
+	</div>
+	<div id="divDlgNewLot" title="New" class="displayNone">
+		<div id="divDlgNewOverlay" class="ui-widget-overlay" style="z-index: 1000;"></div>
+			<p class="validationHints h5">
+				All fields must be completed.</p>
+			<table id="tblNewLot" class="tableCenter">
+				<tr>
+					<td>
+						<asp:Label ID="Label23" runat="server" CssClass="spanLabel h3">Lot Number</asp:Label>
+					</td>
+					<td>
+						<asp:TextBox ID="txtNewLotNum" runat="server" CssClass="textEntry h4"></asp:TextBox>
+					</td>
+					<td>
+						<div id="helptxtNewLotNum" class="ui-state-default ui-corner-all">
+							<span class="ui-icon ui-icon-help"></span>
+						</div>
+					</td>
+				</tr>
+				<tr>
+					<td>
+						<asp:Label ID="Label24" runat="server" CssClass="spanLabel h3">Sub-Lot Index</asp:Label>
+					</td>
+					<td>
+						<asp:TextBox ID="txtNewSLIndex" runat="server" CssClass="textEntry h4 numericOnly"></asp:TextBox>
+					</td>
+					<td>
+						<div id="helptxtNewSLIndex" class="ui-state-default ui-corner-all">
+							<span class="ui-icon ui-icon-help"></span>
+						</div>
+					</td>
+				</tr>
+				<tr>
+					<td>
+						<asp:Label ID="Label25" runat="server" CssClass="spanLabel h3">Job Quantity</asp:Label>
+					</td>
+					<td>
+						<asp:TextBox ID="txtNewQuantity" runat="server" CssClass="textEntry h4 numericOnly"></asp:TextBox>
+					</td>
+					<td>
+						<div id="helptxtNewQuantity" class="ui-state-default ui-corner-all">
+							<span class="ui-icon ui-icon-help"></span>
+						</div>
+					</td>
+				</tr>
+				<tr style="vertical-align: top">
+					<td>
+						<asp:Label ID="Label26" runat="server" CssClass="spanLabel h3" Width="120px">Frame Code & Interior Color</asp:Label>
+					</td>
+					<td>
+						<asp:DropDownList ID="ddlNewProdID" runat="server" CssClass="selectDropDown h3">
+						</asp:DropDownList>
+					</td>
+				</tr>
+				<tr>
+					<td>
+						<asp:Label ID="LABEL28" runat="server" CssClass="spanLabel h3">N-Value</asp:Label>
+					</td>
+					<td>
+						<asp:DropDownList ID="ddlNewNValues" runat="server" CssClass="selectDropDown h3">
+						</asp:DropDownList>
+					</td>
+				</tr>
+				<tr>
+					<td>
+						<asp:Label ID="LABEL29" runat="server" Width="140px" CssClass="spanLabel h3">Shipping Code (4)</asp:Label>
+					</td>
+					<td>
+						<asp:Label ID="lblNewShipCode4" runat="server" CssClass="spanLabel h4"></asp:Label>
+					</td>
+				</tr>
+				<tr>
+					<td>
+						<asp:Label ID="Label30" runat="server" CssClass="spanLabel h3">Model Desc.</asp:Label>
+					</td>
+					<td>
+						<asp:Label ID="lblNewModelDesc" runat="server" CssClass="spanLabel h4"></asp:Label>
+					</td>
+				</tr>
+				<tr>
+					<td>
+						<asp:Label ID="LABEL31" runat="server" CssClass="spanLabel h3">Driver Seat Style</asp:Label>
+					</td>
+					<td>
+						<asp:Label ID="lblNewDriverSS" runat="server" CssClass="spanLabel h4"></asp:Label>
+					</td>
+				</tr>
+				<tr>
+					<td>
+						<asp:Label ID="LABEL32" runat="server" CssClass="spanLabel h3">Pass. Seat Style</asp:Label>
+					</td>
+					<td>
+						<asp:Label ID="lblNewPassSS" runat="server" CssClass="spanLabel h4"></asp:Label>
+					</td>
+				</tr>
+				<tr>
+					<td>
+						<asp:Label ID="LABEL33" runat="server" CssClass="spanLabel h3">Location</asp:Label>
+					</td>
+					<td>
+						<asp:CheckBox ID="cbNewNextPos" runat="server" Text="Next Position" CssClass="inputRadioButton h4"></asp:CheckBox><br>
+						<asp:RadioButtonList ID="rblNewLocation" runat="server" RepeatDirection="Horizontal" CssClass="h4">
+							<asp:ListItem Value="BEFORE" Selected="True">Before</asp:ListItem>
+							<asp:ListItem Value="AFTER">After</asp:ListItem>
+						</asp:RadioButtonList>
+					</td>
+				</tr>
+				<tr>
+					<td style="height: 13px">
+					</td>
+					<td style="height: 13px">
+						<asp:DropDownList ID="ddlNewLotNew" runat="server" CssClass="selectDropDown h4">
+						</asp:DropDownList>
+					</td>
+				</tr>
+			</table>
+	</div>
+	<div id="divDlgEditLot" title="Edit" class="displayNone">
+		<div id="divDlgEditOverlay" class="ui-widget-overlay" style="z-index: 1000;"></div>
+		<p class="validationHints h5">
+			All fields must be completed.</p>
+		<table id="tblEditLot" class="tableCenter">
+			<tr>
+				<td>
+					<asp:Label ID="Label_23" runat="server" CssClass="spanLabel h3">Lot Number</asp:Label>
+				</td>
+				<td>
+					<asp:TextBox ID="txtEditLotNum" runat="server" CssClass="textEntry h4" ReadOnly="true"></asp:TextBox>
+				</td>
+			</tr>
+			<tr>
+				<td>
+					<asp:Label ID="Label_24" runat="server" CssClass="spanLabel h3">Sub-Lot Index</asp:Label>
+				</td>
+				<td>
+					<asp:TextBox ID="txtEditSLIndex" runat="server" CssClass="textEntry h4 numericOnly"></asp:TextBox>
+				</td>
+				<td>
+					<div id="helptxtEditSLIndex" class="ui-state-default ui-corner-all">
+						<span class="ui-icon ui-icon-help"></span>
+					</div>
+				</td>
+			</tr>
+			<tr>
+				<td>
+					<asp:Label ID="Label_25" runat="server" CssClass="spanLabel h3">Job Quantity</asp:Label>
+				</td>
+				<td>
+					<asp:TextBox ID="txtEditQuantity" runat="server" CssClass="textEntry h4 numericOnly"></asp:TextBox>
+				</td>
+				<td>
+					<div id="helptxtEditQuantity" class="ui-state-default ui-corner-all">
+						<span class="ui-icon ui-icon-help"></span>
+					</div>
+				</td>
+			</tr>
+			<tr style="vertical-align: top">
+				<td>
+					<asp:Label ID="Label_26" runat="server" CssClass="spanLabel h3" Width="120px">Frame Code & Interior Color</asp:Label>
+				</td>
+				<td>
+					<asp:DropDownList ID="ddlEditProdID" runat="server" CssClass="selectDropDown h3">
+					</asp:DropDownList>
+				</td>
+			</tr>
+			<tr>
+				<td>
+					<asp:Label ID="LABEL_29" runat="server" Width="140px" CssClass="spanLabel h3">Shipping Code (4)</asp:Label>
+				</td>
+				<td>
+					<asp:Label ID="lblEditShipCode4" runat="server" CssClass="spanLabel h4"></asp:Label>
+				</td>
+			</tr>
+			<tr>
+				<td>
+					<asp:Label ID="Label_30" runat="server" CssClass="spanLabel h3">Model Desc.</asp:Label>
+				</td>
+				<td>
+					<asp:Label ID="lblEditModelDesc" runat="server" CssClass="spanLabel h4"></asp:Label>
+				</td>
+			</tr>
+			<tr>
+				<td>
+					<asp:Label ID="LABEL_31" runat="server" CssClass="spanLabel h3">Driver Seat Style</asp:Label>
+				</td>
+				<td>
+					<asp:Label ID="lblEditDriverSS" runat="server" CssClass="spanLabel h4"></asp:Label>
+				</td>
+			</tr>
+			<tr>
+				<td>
+					<asp:Label ID="LABEL_32" runat="server" CssClass="spanLabel h3">Pass. Seat Style</asp:Label>
+				</td>
+				<td>
+					<asp:Label ID="lblEditPassSS" runat="server" CssClass="spanLabel h4"></asp:Label>
+				</td>
+			</tr>
+			<tr>
+				<td style="height: 13px">
+					<asp:Label ID="LABEL_47" runat="server" CssClass="spanLabel h3">Production Notes</asp:Label>
+				</td>
+				<td style="height: 13px">
+					<asp:TextBox ID="txtEditNotes" runat="server" CssClass="textEntry h3"></asp:TextBox>
+				</td>
+			</tr>
+		</table>
+	</div>
+</asp:Content>

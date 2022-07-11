@@ -1,0 +1,97 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+<siteMap>
+	<siteMapNode roles="*" >
+		<siteMapNode url="" title="Operations" description="Operations" roles="*" >
+			<siteMapNode url="~/1Operations/0ProductionSchedule/ProductionSchedule30.aspx" title="Production Schedule 30" description="Production Schedule 30" />
+			<siteMapNode url="~/1Operations/1ProductionSchedule/ProductionSchedule.aspx" title="Production Schedule" description="Production Schedule" />
+			<siteMapNode url="~/1Operations/2ShippingSchedule/ShippingSchedule.aspx" title="Shipping Schedule" description="Shipping Schedule" />
+			<siteMapNode url="~/1Operations/3DailyBuildQuantities/DailyBuildQuantities.aspx" title="Daily Build Quantities" description="Daily Build Quantities" />
+			<siteMapNode url="" title="Label Printing" description="Label Printing" roles="*" >
+				<!--NO LONGER USED <siteMapNode url="~/1Operations/4LabelPrinting/1PrintNewSSNLabel/PrintNewSSNLabel.aspx" title="Print New SSN Label" description="Print New SSN Label" />-->
+				<siteMapNode url="~/1Operations/4LabelPrinting/2ReprintSSNLabel/ReprintSSNLabel.aspx" title="Reprint SSN Label" description="Reprint SSN Label" />
+				<siteMapNode url="~/1Operations/4LabelPrinting/3ShippingLabel/ShippingLabel.aspx" title="Shipping Label" description="Shipping Label" />
+				<siteMapNode url="~/1Operations/4LabelPrinting/5BatchPrint/BatchPrint.aspx" title="Batch Label" description="Batch Label" />
+				<siteMapNode url="~/1Operations/4LabelPrinting/1PrintNewSSNLabel/PrintNewSSNLabel.aspx" title="New SSN Label" description="New SSN Label" />
+			</siteMapNode>
+			<siteMapNode url="" title="Lot Trace" description="Lot Trace" roles="*">
+				<siteMapNode url="~/1Operations/5LotTrace/1LotTraceData/LotTraceData.aspx" title="Lot Trace Data" description="Lot Trace Data" />
+				<siteMapNode url="~/1Operations/5LotTrace/2LotTraceDataTransfer/LotTraceDataTransfer.aspx" title="Lot Trace Data Transfer" description="Lot Trace Data Transfer" />
+				<!--NO LONGER USED <siteMapNode url="~/1Operations/5LotTrace/4ArchiveLotTraceDataTransfer/ArchiveLotTraceDataTransfer.aspx" title="Archive Lot Trace Data Transfer" description="Archive Lot Trace Data Transfer" />-->
+			</siteMapNode>
+			<siteMapNode url="~/1Operations/6ReworkMaterialDisposition/ReworkMaterialDisposition.aspx" title="Rework Material Disposition" description="Rework Material Disposition" />
+		</siteMapNode>
+
+		<siteMapNode url="" title="Reporting" description="Reporting" roles="*" >
+			<siteMapNode url="" title="Lot Trace Report" description="Lot Trace Report" roles="*">
+				<siteMapNode url="~/2Reporting/Reports.aspx?report=SetexLotTraceDataReport&amp;webpageTitle=Lot Trace Report (Setex)" title="Lot Trace Report (Setex)" />
+				<siteMapNode url="~/2Reporting/Reports.aspx?report=HondaLotTraceDataReport&amp;webpageTitle=Lot Trace Report (Honda)" title="Lot Trace Report (Honda)" />
+			</siteMapNode>
+			<siteMapNode url="~/2Reporting/Reports.aspx?report=LabelPrintHistoryDataReport&amp;webpageTitle=Label Print History Report" title="Label Print History Report" description="Label Print History Report" />
+			<siteMapNode url="~/2Reporting/Reports.aspx?report=ShippingLabelPrintHistory&amp;webpageTitle=Shipping Label Print History Report" title="Shipping Label Print History Report" description="Shipping Label Print History Report" />
+			<siteMapNode url="~/2Reporting/Reports.aspx?report=LineConfigurationReport&amp;webpageTitle=Line Configuration Report" title="Line Configuration Report" description="Line Configuration Report" />
+			<siteMapNode url="~/2Reporting/1TruckMapReport/TruckMapReport.aspx" title="Truck Map Report" description="Truck Map Report"  />
+      <siteMapNode url="~/2Reporting/6ReworkMaterialReports/ReworkMaterialDispositionReports.aspx" title="Rework Material Disposition Reports"  description="Rework Material Disposition Reports" />
+		<siteMapNode url="~/2Reporting/Reports.aspx?report=GoodTorqueReport&amp;webpageTitle=Good Torque Report" title="Good Torque Report" />
+		<siteMapNode url="~/2Reporting/Reports.aspx?report=SBRData&amp;webpageTitle=SBR Data Report" title="SBR Data Report" />
+		<siteMapNode url="~/2Reporting/Reports.aspx?report=AVSData&amp;webpageTitle=AVS Data Report" title="AVS Data Report" />
+		</siteMapNode>
+
+		<siteMapNode url="" title="System Configuration" description="System Configuration" roles="*" >
+			<siteMapNode url="~/3SystemConfiguration/10ParameterListConfiguration/ParameterListConfiguration.aspx" title="Parameter List Configuration" description="Parameter List Configuration" />
+			<siteMapNode url="" title="Product Profiles" description="Product Profiles" roles="*">
+				<siteMapNode url="~/3SystemConfiguration/1ProductProfiles/1ProductConfiguration/ProductConfiguration.aspx" title="Product Configuration" description="Product Configuration" />
+				<siteMapNode url="~/3SystemConfiguration/1ProductProfiles/2ParameterConfiguration/ParameterConfiguration.aspx" title="Parameter Configuration" description="Parameter Configuration" />
+			</siteMapNode>
+      <siteMapNode url="~/3SystemConfiguration/2LineConfiguration/LineConfiguration.aspx" title="Line Configuration" description="Line Configuration" />
+      <siteMapNode url="" title="Station Configuration" description="Station Configuration" roles="*">
+				<siteMapNode url="~/3SystemConfiguration/1StationConfiguration/1StationConfiguration/StationConfiguration.aspx" title="Station Configuration" description="Station Configuration" />
+				<siteMapNode url="~/3SystemConfiguration/1StationConfiguration/3StationSequenceConfiguration/StationSequenceConfiguration.aspx" title="Station Sequence Configuration" description="Station Sequence Configuration" />
+				<siteMapNode url="~/3SystemConfiguration/1StationConfiguration/4StationComponentScanAssignment/StationComponentScanAssignment.aspx" title="Station Component Scan Assignment" description="Station Component Scan Assignment" />
+				<siteMapNode url="~/3SystemConfiguration/1StationConfiguration/5StationTaskConfiguration/StationTaskConfiguration.aspx" title="Station Task Configuration" description="Station Task Configuration" />
+				<siteMapNode url="~/3SystemConfiguration/1StationConfiguration/6StationToolConfiguration/StationToolConfiguration.aspx" title="Station Tool Configuration" description="Station Tool Configuration" />
+			</siteMapNode>
+      <siteMapNode url="" title="Station ODS Configuration" description="Station ODS Configuration" roles="*">
+				<siteMapNode url="~/3SystemConfiguration/1StationConfiguration/7StationODSConfiguration/StationODSConfiguration.aspx" title="Station ODS Configuration"  description="Station ODS Configuration" />
+        <siteMapNode url="~/3SystemConfiguration/1StationConfiguration/7StationODSConfiguration/StationODSPreview.aspx" title="Station ODS Preview"  description="Station ODS Preview" />
+        <siteMapNode url="~/3SystemConfiguration/1StationConfiguration/7StationODSConfiguration/StationODSRevisionLog.aspx" title="Station Revision Log"  description="Station Revision Log" />
+				<siteMapNode url="~/3SystemConfiguration/1StationConfiguration/8OperatorDisplayConfiguration/OperatorDisplayConfiguration.aspx" title="Operator Display Configuration"  description="Operator Display Configuration" />
+			</siteMapNode>
+			<siteMapNode url="~/3SystemConfiguration/31LabelConfiguration/LabelConfiguration.aspx " title="Label Configuration" description="Label Configuration" />
+			<siteMapNode url="~/3SystemConfiguration/7ShippingTemplateConfiguration/ShippingTemplateConfiguration.aspx" title="Shipping Template Configuration" description="Shipping Template Configuration" />
+			<siteMapNode url="~/3SystemConfiguration/80StyleGroupConfiguration/StyleGroupConfiguration.aspx" title="Style Group Configuration" description="Style Group Configuration" />
+			<siteMapNode url="~/3SystemConfiguration/91ComponentConfiguration/ComponentConfiguration.aspx" title="Component Configuration" description="Component Configuration" />
+			<siteMapNode url="~/3SystemConfiguration/81ComponentNameConfiguration/ComponentNameConfiguration.aspx" title="Component Name Configuration" description="Component Name Configuration" />
+			<siteMapNode url="~/3SystemConfiguration/92ComponentCodeConfiguration/ComponentCodeConfiguration.aspx" title="Component Code Configuration" description="Component Code Configuration" />
+			<siteMapNode url="~/3SystemConfiguration/89ProductCodeConfiguration/ProductCodeConfiguration.aspx" title="Product Code Configuration" description="Product Code Configuration" />
+			<siteMapNode url="~/3SystemConfiguration/93PlantParametersConfiguration/PlantParametersConfiguration.aspx" title="Plant Parameters Configuration" description="Plant Parameters Configuration" />
+			<siteMapNode url="~/3SystemConfiguration/82ConfigurationUploadDownload/ConfigurationUploadDownload.aspx" title="Configuration Upload/Download" description="Configuration Upload/Download" />
+			<siteMapNode url="~/3SystemConfiguration/96ShiftConfiguration/ShiftConfiguration.aspx" title="Shift Configuration" description="Shift Configuration" />
+			<siteMapNode url="" title="Rework Material Configuration" description="Rework Material Configuration" roles="*">
+				<siteMapNode url="~/3SystemConfiguration/97ReworkMaterialConfiguration/1BillOfMaterialMaintenance/BillOfMaterialMaintenance.aspx" title="Bill Of Material Maintenance" description="Bill Of Material Maintenance" />
+				<siteMapNode url="~/3SystemConfiguration/97ReworkMaterialConfiguration/2ReworkMaterialListConfiguration/ReworkMaterialDispositionListConfiguration.aspx" title="Rework Material Disposition List Configuration" description="Rework Material Disposition List Configuration" />
+			</siteMapNode>
+			<siteMapNode url="~/3SystemConfiguration/98PrinterConfiguration/PrinterConfiguration.aspx " title="Printer Configuration" description="Printer Configuration"/>
+		</siteMapNode>
+
+		<siteMapNode url="" title="System Administration" description="System Administration" roles="*">
+			<siteMapNode url="" title="Customer Orders" description="" roles="*">
+				<siteMapNode url="~/4SystemAdministration/0CustomerOrders/3KDPlanProcessing/KDPlanProcessing.aspx" title="KD Plan Processing" description="KD Plan Processing" />
+			</siteMapNode>
+			<siteMapNode url="~/4SystemAdministration/1ErrorHistory/ErrorHistory.aspx" title="Error History" description="Error History" />
+			<siteMapNode url="" title="Security Management" description="" roles="*" >
+				<siteMapNode url="~/4SystemAdministration/2SecurityManagement/1UserAccounts/UserAccounts.aspx" title="User Accounts" description="User Accounts" />
+				<siteMapNode url="~/4SystemAdministration/2SecurityManagement/2SiteSecurity/SiteSecurity.aspx" title="Site Security" description="Site Security" />
+				<siteMapNode url="~/4SystemAdministration/2SecurityManagement/3UserTypes/UserTypes.aspx" title="User Types" description="User Types" />
+			</siteMapNode>
+			<siteMapNode url="~/4SystemAdministration/3ApplicationConfiguration/ApplicationConfiguration.aspx" title="Application Configuration" description="Application Configuration" />
+			<siteMapNode url="~/4SystemAdministration/4DebugHistory/DebugHistory.aspx" title="Debug History" description="Debug History" />
+			<!--<siteMapNode url="~/4SystemAdministration/6SystemDiagnosticInformation/SystemDiagnosticInformation.aspx" title="System Diagnostic Information" description="System Diagnostic Information" />-->
+
+			<siteMapNode url="" title="Rework Material History" description="" roles="*">
+				<siteMapNode url="~/4SystemAdministration/7ReworkMaterialHistory/1MaterialDispositionHistory/MaterialDispositionHistory.aspx" title="Material Disposition History" description="Material Disposition History" />
+				<siteMapNode url="~/4SystemAdministration/7ReworkMaterialHistory/2ReworkHistory/ReworkHistory.aspx" title="Rework History" description="Rework History" />
+			</siteMapNode>
+
+		</siteMapNode>
+	</siteMapNode>
+</siteMap>

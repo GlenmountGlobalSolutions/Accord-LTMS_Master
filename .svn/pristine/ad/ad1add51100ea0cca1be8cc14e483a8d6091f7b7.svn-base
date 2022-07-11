@@ -1,0 +1,701 @@
+﻿Imports System.Data.SqlClient
+Imports System.Xml
+
+Public Class OperatorDisplayConfiguration
+    Inherits System.Web.UI.Page
+
+    Const cUpOne As Integer = -1
+    Const cDownOne As Integer = 1
+    Private Const KEY_CHECK_IMG_ID As String = "CHECK_IMG_ID"
+
+    Private checkPics As New ArrayList
+
+#Region "Event Handlers"
+    Protected Sub Page_Load(ByVal sender As Object, ByVal e As System.EventArgs) Handles Me.Load
+        Try
+            If Not Page.IsPostBack Then
+                ResetPage()
+            End If
+        Catch ex As Exception
+            Master.eMsg(ex.ToString())
+        End Try
+    End Sub
+
+    Public Sub Page_PreRender(ByVal sender As System.Object, ByVal e As System.EventArgs) Handles MyBase.PreRender
+        Try
+            EnableControls()
+        Catch ex As Exception
+            Master.eMsg(ex.ToString())
+        End Try
+    End Sub
+
+    Private Sub ddConfigurationTypes_SelectedIndexChanged(sender As Object, e As System.EventArgs) Handles ddConfigurationTypes.SelectedIndexChanged
+        Try
+            ResetConfigurations()
+            ResetSavedValues()
+
+            If ddConfigurationTypes.SelectedIndex > 0 Then
+
+                LoadConfigurations(CInt(ddConfigurationTypes.SelectedValue))
+            End If
+        Catch ex As Exception
+            Master.eMsg(ex.ToString())
+        End Try
+    End Sub
+
+    Private Sub lbConfigurations_SelectedIndexChanged(sender As Object, e As System.EventArgs) Handles lbConfigurations.SelectedIndexChanged
+        Try
+            If lbConfigurations.SelectedIndex > -1 Then
+
+                ResetParameters()
+                ResetSavedValues()
+
+                LoadConfigurationParameters(CInt(ddConfigurationTypes.SelectedValue), CInt(lbConfigurations.SelectedValue))
+            End If
+        Catch ex As Exception
+            Master.eMsg(ex.ToString())
+        End Try
+    End Sub
+
+    Private Sub ibDown_Click(sender As Object, e As System.Web.UI.ImageClickEventArgs) Handles ibDown.Click
+        Try
+
+            Dim configurationTypeID As Integer = CInt(ddConfigurationTypes.SelectedValue)
+            Dim configurationID As Integer = CInt(lbConfigurations.SelectedValue)
+            Dim configurationText As String = lbConfigurations.SelectedItem.Text
+
+            If (Me.lbConfigurations.SelectedIndex > (Me.lbConfigurations.Items.Count - 1)) Then
+                Master.Alert = "Cannot move item down."
+            Else
+                ResetParameters()
+                ResetSavedValues()
+
+                ChangeConfigurationDisplayID(configurationID, cDownOne)
+
+                'reload the page
+                ResetPage()
+                ddConfigurationTypes.SelectedIndex = ddConfigurationTypes.Items.IndexOf(ddConfigurationTypes.Items.FindByValue(configurationTypeID.ToString()))
+                LoadConfigurations(configurationTypeID)
+                lbConfigurations.SelectedIndex = lbConfigurations.Items.IndexOf(lbConfigurations.Items.FindByValue(configurationID.ToString()))
+                LoadConfigurationParameters(configurationTypeID, configurationID)
+                Master.tMsg("SAVE", "Configuration [" & configurationText & "] was moved down.")
+
+            End If
+        Catch ex As Exception
+            Master.eMsg(ex.ToString())
+        End Try
+    End Sub
+
+    Private Sub ibUP_Click(sender As Object, e As System.Web.UI.ImageClickEventArgs) Handles ibUP.Click
+        Try
+            Dim configurationTypeID As Integer = CInt(ddConfigurationTypes.SelectedValue)
+            Dim configurationID As Integer = CInt(lbConfigurations.SelectedValue)
+            Dim configurationText As String = lbConfigurations.SelectedItem.Text
+
+            If (lbConfigurations.SelectedIndex < 1) Then
+                Master.Alert = "Cannot move item up."
+            Else
+                ResetParameters()
+                ResetSavedValues()
+
+                ChangeConfigurationDisplayID(configurationID, cUpOne)
+
+                'reload the page
+                ResetPage()
+                ddConfigurationTypes.SelectedIndex = ddConfigurationTypes.Items.IndexOf(ddConfigurationTypes.Items.FindByValue(configurationTypeID.ToString()))
+                LoadConfigurations(configurationTypeID)
+                lbConfigurations.SelectedIndex = lbConfigurations.Items.IndexOf(lbConfigurations.Items.FindByValue(configurationID.ToString()))
+                LoadConfigurationParameters(configurationTypeID, configurationID)
+
+                Master.tMsg("SAVE", "Configuration [" & configurationText & "] was moved up.")
+
+            End If
+        Catch ex As Exception
+            Master.eMsg(ex.ToString())
+        End Try
+    End Sub
+
+    Private Sub cmdNew_Click(sender As Object, e As System.EventArgs) Handles cmdNew.Click
+        Try
+            If ValidateParameters("NEW") Then
+                Dim configurationTypeID As Integer = CInt(ddNewType.SelectedValue)
+                Dim newName As String = tbNewName.Text
+
+                AddConfiguration(newName, configurationTypeID)
+                Master.tMsg("SAVE", "Configuration [" & newName & "] was added.")
+
+
+                'reload the page
+                ResetPage()
+                ResetSavedValues()
+                ddConfigurationTypes.SelectedIndex = ddConfigurationTypes.Items.IndexOf(ddConfigurationTypes.Items.FindByValue(configurationTypeID.ToString()))
+                LoadConfigurations(configurationTypeID)
+                lbConfigurations.SelectedIndex = lbConfigurations.Items.IndexOf(lbConfigurations.Items.FindByText(newName))
+                LoadConfigurationParameters(configurationTypeID, CInt(lbConfigurations.SelectedValue))
+            End If
+
+        Catch ex As Exception
+            Master.eMsg(ex.ToString())
+        End Try
+    End Sub
+
+    Private Sub cmdSave_Click(sender As Object, e As System.EventArgs) Handles cmdSave.Click
+        Try
+
+            If lbConfigurations.SelectedIndex >= 0 Then
+                Dim msg As String = ""
+                Dim xmlDoc As New XmlDocument()
+                Dim nodeList As XmlNodeList
+                Dim img As Web.UI.WebControls.Image = Nothing
+
+                Dim configurationTypeID As Integer = CInt(ddConfigurationTypes.SelectedValue)
+                Dim configurationID As Integer = CInt(lbConfigurations.SelectedValue)
+                xmlDoc.InnerXml = hidXmlParameters.Value
+
+                If xmlDoc.FirstChild.HasChildNodes Then
+
+                    'save changes
+                    SaveConfigurationParameters(configurationID, xmlDoc)
+                    hidXmlParametersSaved.Value = hidXmlParameters.Value
+
+                    'build message text to display changed values.
+                    nodeList = xmlDoc.GetElementsByTagName("Parameter")
+                    For Each element As XmlElement In nodeList
+                        If element.Attributes("newValue").Value <> element.Attributes("oldValue").Value Then
+                            msg = msg & element.Attributes("Description").Value & " was changed from [" & element.Attributes("oldValue").Value & "] to [" & element.Attributes("newValue").Value & "]. <br />"
+                        End If
+                    Next
+
+                    'reload the page
+                    ResetPage()
+                    ddConfigurationTypes.SelectedIndex = ddConfigurationTypes.Items.IndexOf(ddConfigurationTypes.Items.FindByValue(configurationTypeID.ToString()))
+                    LoadConfigurations(configurationTypeID)
+                    lbConfigurations.SelectedIndex = lbConfigurations.Items.IndexOf(lbConfigurations.Items.FindByValue(configurationID.ToString()))
+                    LoadConfigurationParameters(configurationTypeID, configurationID)
+
+                    Master.tMsg("SAVE", msg)
+                End If
+            Else
+                Master.Msg = "Please select a configuration."
+            End If
+
+        Catch ex As Exception
+            Master.eMsg(ex.ToString())
+        End Try
+    End Sub
+
+    Private Sub cmdDelete_Click(sender As Object, e As System.EventArgs) Handles cmdDelete.Click
+        Try
+            Dim configurationTypeID As Integer = CInt(ddConfigurationTypes.SelectedValue)
+            Dim configurationID As Integer = CInt(lbConfigurations.SelectedValue)
+
+            If lbConfigurations.SelectedIndex >= 0 Then
+                DeleteConfiguration(configurationID)
+                Master.tMsg("DELETE", "Configuration [" & lbConfigurations.SelectedItem.Text & "] was deleted.")
+
+                'reload the page
+                ResetPage()
+                ResetSavedValues()
+                ddConfigurationTypes.SelectedIndex = ddConfigurationTypes.Items.IndexOf(ddConfigurationTypes.Items.FindByValue(configurationTypeID.ToString()))
+                LoadConfigurations(configurationTypeID)
+            Else
+                Master.Msg = "Please select a configuration."
+            End If
+        Catch ex As Exception
+            Master.eMsg(ex.ToString())
+        End Try
+    End Sub
+
+    Private Sub cmdCopy_Click(sender As Object, e As System.EventArgs) Handles cmdCopy.Click
+        Try
+            Dim configurationTypeID As Integer = CInt(ddConfigurationTypes.SelectedValue)
+            Dim configurationID As Integer = CInt(lbConfigurations.SelectedValue)
+            Dim configurationText As String = lbConfigurations.SelectedItem.Text
+            Dim copyName As String = tbCopyName.Text.ToString()
+
+            If lbConfigurations.SelectedIndex >= 0 Then
+                CopyConfiguration(configurationTypeID, configurationID, copyName)
+
+                'reload the page
+                ResetPage()
+                ResetSavedValues()
+                ddConfigurationTypes.SelectedIndex = ddConfigurationTypes.Items.IndexOf(ddConfigurationTypes.Items.FindByValue(configurationTypeID.ToString()))
+                LoadConfigurations(configurationTypeID)
+                lbConfigurations.SelectedIndex = lbConfigurations.Items.IndexOf(lbConfigurations.Items.FindByText(copyName))
+                LoadConfigurationParameters(configurationTypeID, CInt(lbConfigurations.SelectedValue))
+
+                Master.tMsg("COPY", "Configuration [" & configurationText & "] was copied to [" & copyName & "].")
+            Else
+                Master.Msg = "Please select a configuration."
+            End If
+        Catch ex As Exception
+            Master.eMsg(ex.ToString())
+
+        End Try
+    End Sub
+
+    Private Sub cmdRename_Click(sender As Object, e As System.EventArgs) Handles cmdRename.Click
+        Try
+            Dim configurationTypeID As Integer = CInt(ddConfigurationTypes.SelectedValue)
+            Dim configurationID As Integer = CInt(lbConfigurations.SelectedValue)
+            Dim configurationText As String = lbConfigurations.SelectedItem.Text
+            Dim newText As String = tbRenameName.Text
+
+            If lbConfigurations.SelectedIndex >= 0 Then
+                RenameConfiguration(configurationID, newText)
+
+                'reload the page
+                ResetPage()
+                ResetSavedValues()
+                ddConfigurationTypes.SelectedIndex = ddConfigurationTypes.Items.IndexOf(ddConfigurationTypes.Items.FindByValue(configurationTypeID.ToString()))
+                LoadConfigurations(configurationTypeID)
+                lbConfigurations.SelectedIndex = lbConfigurations.Items.IndexOf(lbConfigurations.Items.FindByValue(configurationID.ToString()))
+                LoadConfigurationParameters(configurationTypeID, configurationID)
+
+                Master.tMsg("RENAME", "Configuration [" & configurationText & "] was renamed to [" & newText & "].")
+            Else
+                Master.Msg = "Please select a configuration."
+            End If
+        Catch ex As Exception
+            Master.eMsg(ex.ToString())
+        End Try
+    End Sub
+#End Region
+
+#Region "Methods"
+    Private Function ValidateParameters(ByVal action As String) As Boolean
+        Dim passed As Boolean = True
+
+        If action = "NEW" Then
+            If Len(tbNewName.Text) < 1 Then
+                Master.Msg = "Save canceled. Please enter a new name when creating a new configuration."
+                passed = False And passed
+            End If
+            If ddNewType.SelectedIndex <= 0 Then
+                Master.Msg = "Save canceled. Please select a new type when creating a new configuration."
+                passed = False And passed
+            End If
+        ElseIf action = "SAVE" Then
+
+        End If
+
+        Return passed
+    End Function
+
+    Private Sub LoadConfigurationTypes()
+
+        Dim ds As DataSet = GetConfigurationTypes()
+
+        With ddConfigurationTypes
+            .DataSource = ds
+            .DataTextField = "Description"
+            .DataValueField = "ConfigurationTypeID"
+            .DataBind()
+            .Items.Insert(0, "Choose a Type")
+        End With
+
+        With ddNewType
+            .DataSource = ds.Copy()
+            .DataTextField = "Description"
+            .DataValueField = "ConfigurationTypeID"
+            .DataBind()
+            .Items.Insert(0, "Choose a Type")
+        End With
+
+    End Sub
+
+    Private Sub LoadConfigurations(ByVal configurationTypeID As Integer)
+
+        Dim ds As DataSet = GetConfigurations(configurationTypeID)
+        With lbConfigurations
+            .DataSource = ds
+            .DataTextField = "Description"
+            .DataValueField = "ConfigurationID"
+            .DataBind()
+        End With
+
+    End Sub
+
+    Private Sub LoadConfigurationParameters(ByVal configurationTypeID As Integer, ByVal configurationID As Integer)
+
+        ResetParameters()
+
+        With dlParameters
+            .DataSource = GetConfigurationParameters(configurationTypeID, configurationID)
+            .DataBind()
+        End With
+
+    End Sub
+
+    Private Sub ResetPage()
+
+        ResetTypes()
+
+        LoadConfigurationTypes()
+    End Sub
+
+    Private Sub ResetParameters()
+
+        dlParameters.Controls.Clear()
+        hidXmlParameters.Value = ""
+
+        Dim xmlDoc As New XmlDocument()
+        xmlDoc.AppendChild(xmlDoc.CreateElement("Parameters"))
+        hidXmlParameters.Value = xmlDoc.InnerXml
+    End Sub
+
+    Private Sub ResetTypes()
+
+        ddConfigurationTypes.Items.Clear()
+        ResetConfigurations()
+    End Sub
+
+    Private Sub ResetConfigurations()
+
+        lbConfigurations.Items.Clear()
+        ResetParameters()
+    End Sub
+
+    Private Sub ResetSavedValues()
+        hidXmlParametersSaved.Value = ""
+
+    End Sub
+
+    Private Sub EnableControls()
+        Try
+            Master.Secure(Me.cmdNew)
+            Master.Secure(Me.cmdSave)
+            Master.Secure(Me.cmdDelete)
+            Master.Secure(Me.cmdCopy)
+            Master.Secure(Me.cmdRename)
+
+            If lbConfigurations.SelectedItem Is Nothing Then
+                cmdSave.Enabled = False
+                cmdDelete.Enabled = False
+                cmdCopy.Enabled = False
+                cmdRename.Enabled = False
+            End If
+
+            If (lbConfigurations.SelectedIndex < 1) Or lbConfigurations.SelectedItem Is Nothing Then
+                ibUP.Enabled = False
+            Else
+                ibUP.Enabled = True
+            End If
+
+            If (Me.lbConfigurations.SelectedIndex > (Me.lbConfigurations.Items.Count - 2)) Or lbConfigurations.SelectedItem Is Nothing Then
+                ibDown.Enabled = False
+            Else
+                ibDown.Enabled = True
+            End If
+
+        Catch ex As Exception
+            Master.eMsg(ex.ToString())
+        End Try
+    End Sub
+
+    Public Sub Parameter_TextChanged(ByVal sender As Object, ByVal e As EventArgs)
+        Try
+            'get reference to control
+            Dim wtb As GGS.WebInputBox = CType(sender, GGS.WebInputBox)
+            Dim xmlDoc As New XmlDocument()
+            xmlDoc.InnerXml = hidXmlParameters.Value
+
+            Dim recConfigurationID As Integer = CInt(lbConfigurations.SelectedValue)
+            Dim recValue As String = wtb.Text
+            Dim recOldValue As String = wtb.OldText
+            Dim recParameterTypeID As Integer = CInt(wtb.InputCaption)
+            Dim checkImageId As String = wtb.SQLText
+
+            If recOldValue <> recValue Then
+                Dim nodeList As XmlNodeList = xmlDoc.GetElementsByTagName("Parameter")
+                For Each element As XmlElement In nodeList
+                    If CInt(element.Attributes("ConfigurationParameterTypeID").Value) = recParameterTypeID Then
+                        element.Attributes("newValue").Value = recValue
+                    End If
+                Next
+
+                hidXmlParameters.Value = xmlDoc.InnerXml
+
+            Else
+                'no change
+            End If
+
+        Catch ex As Exception
+            Master.eMsg(ex.ToString())
+        End Try
+    End Sub
+
+    Public Sub Parameter_IndexChanged(ByVal sender As Object, ByVal e As EventArgs)
+        Try
+
+            'get reference to control
+            Dim wddl As GGS.WebDropDownList = CType(sender, GGS.WebDropDownList)
+            Dim xmlDoc As New XmlDocument()
+            xmlDoc.InnerXml = hidXmlParameters.Value
+
+            Dim recConfigurationID As Integer = CInt(lbConfigurations.SelectedValue)
+            Dim recValue As String = wddl.SelectedItem.Text
+            Dim recOldValue As String = wddl.OldText
+            Dim recParameterTypeID As Integer = CInt(wddl.InputCaption)
+            Dim checkImageId As String = wddl.SQLText
+
+            If recOldValue <> recValue Then
+                Dim nodeList As XmlNodeList = xmlDoc.GetElementsByTagName("Parameter")
+                For Each element As XmlElement In nodeList
+                    If CInt(element.Attributes("ConfigurationParameterTypeID").Value) = recParameterTypeID Then
+                        element.Attributes("newValue").Value = recValue
+                    End If
+                Next
+
+                hidXmlParameters.Value = xmlDoc.InnerXml
+
+            Else
+                'no change
+            End If
+        Catch ex As Exception
+            Master.eMsg(ex.ToString())
+        End Try
+    End Sub
+
+    Public Function DLControlBind(ByVal e As Object) As Object
+        Try
+
+            Dim inputbox As GGS.WebInputBox = Nothing
+            Dim ddList As GGS.WebDropDownList = Nothing
+            Dim imgCheck As New System.Web.UI.WebControls.Image
+            Dim oldXmlDox As New XmlDocument()
+
+            Dim dlItem As DataListItem = CType(e, DataListItem)
+            Dim drv As DataRowView = CType(dlItem.DataItem, DataRowView)
+
+            'get columns supplied for the record
+            Dim parameterLabel As String = drv("Description").ToString()
+            Dim parameterValue As String = drv("Value").ToString()
+            Dim ParameterListID As String = drv("ParameterListID").ToString()
+            Dim parameterTypeID As Integer
+            Dim parameterConfigurationID As Integer
+            If drv("ConfigurationID") IsNot DBNull.Value Then
+                parameterConfigurationID = CInt(drv("ConfigurationID"))
+            End If
+            If drv("ConfigurationParameterTypeID") IsNot DBNull.Value Then
+                parameterTypeID = CInt(drv("ConfigurationParameterTypeID"))
+            End If
+
+            'get references to each control
+            For Each ctrl As Control In dlItem.Controls
+                Select Case ctrl.ToString()
+                    Case "GGS.WebDropDownList"
+                        ddList = CType(ctrl, GGS.WebDropDownList)
+
+                    Case "GGS.WebInputBox"
+                        inputbox = CType(ctrl, GGS.WebInputBox)
+
+                    Case "System.Web.UI.WebControls.Image"
+                        imgCheck = CType(ctrl, Image)
+                End Select
+            Next
+
+            'if ParameterListID is empty display textbox else dropbox
+            If Len(ParameterListID) > 0 Then
+                'displaying dropbox
+                inputbox.Visible = False
+                ddList.Visible = True
+
+                'binding databox to source
+                dbParameterListID_Bind(ddList, Trim(ParameterListID), Trim(parameterValue), False)
+            Else
+                'displaying textbox
+                ddList.Visible = False
+                inputbox.Visible = True
+            End If
+
+            inputbox.SQLText = imgCheck.ID.ToString()
+            inputbox.OldText = parameterValue
+            inputbox.Text = parameterValue
+            inputbox.ToolTip = "Configuration Parameter Type ID = " & parameterTypeID.ToString() & ""
+            inputbox.InputCaption = parameterTypeID.ToString()
+
+            ddList.SQLText = imgCheck.ID.ToString()
+            ddList.OldText = parameterValue
+            ddList.ToolTip = "Configuration Parameter Type ID = " & parameterTypeID.ToString() & ""
+            ddList.InputCaption = parameterTypeID.ToString()
+
+            Dim xmldoc As New XmlDocument()
+            xmldoc.InnerXml = hidXmlParameters.Value
+
+            'create new node
+            Dim child As XmlElement = xmldoc.CreateElement("Parameter")
+            child.SetAttribute("ConfigurationID", parameterConfigurationID.ToString())
+            child.SetAttribute("ConfigurationParameterTypeID", parameterTypeID.ToString())
+            child.SetAttribute("newValue", parameterValue)
+            child.SetAttribute("oldValue", parameterValue)
+            child.SetAttribute("CHECK_IMG_ID", imgCheck.UniqueID.ToString())
+            child.SetAttribute("Description", parameterLabel)
+
+            'append new node to the document
+            xmldoc.FirstChild.AppendChild(child)
+
+            'save the document
+            hidXmlParameters.Value = xmldoc.InnerXml
+
+            'dispaly check mark if it's a recently saved item.
+            If Len(hidXmlParametersSaved.Value.ToString()) > 0 Then
+                oldXmlDox.InnerXml = hidXmlParametersSaved.Value
+                Dim nodeList As XmlNodeList
+                nodeList = oldXmlDox.GetElementsByTagName("Parameter")
+                For Each element As XmlElement In nodeList
+                    If element.Attributes("newValue").Value <> element.Attributes("oldValue").Value AndAlso CInt(element.Attributes("ConfigurationParameterTypeID").Value) = parameterTypeID Then
+                        imgCheck.Visible = True
+                    End If
+                Next
+            End If
+        Catch ex As Exception
+            Master.eMsg(ex.ToString())
+        End Try
+
+        Return Nothing
+    End Function
+
+    Private Sub dbParameterListID_Bind(ByRef ddList As GGS.WebDropDownList, ByRef paramID As String, ByRef Param As String, ByVal bSwapChr As Boolean)
+        Dim strSQL As String
+
+        strSQL = "SELECT tblParameterListValues.ParameterListValue " & _
+                 "FROM tblParameterLists " & _
+                 "INNER JOIN tblParameterListValues " & _
+                 "ON tblParameterLists.ParameterListID = tblParameterListValues.ParameterListID " & _
+                 "WHERE (tblParameterLists.ParameterListID = '" & paramID & "')"
+
+        ddList.DataSource = DA.GetDataSet(strSQL)
+        ddList.DataTextField = "ParameterListValue"
+        ddList.DataValueField = "ParameterListValue"
+        ddList.DataBind()
+        ddList.TabIndex.ToString()
+
+        If bSwapChr Then
+            ddList.Items.Insert(0, FormatForSaveOrDisplay(Param, False))
+            ddList.OldText = Param
+            If Not Param = "" Then        'if there is blank one already do not insert
+                ddList.Items.Insert(1, New ListItem)
+            End If
+        Else
+            ddList.Items.Insert(0, Param)
+            ddList.OldText = Param
+            If Not Param = "" Then        'if there is blank one already do not insert
+                ddList.Items.Insert(1, New ListItem)
+            End If
+        End If
+    End Sub
+
+    Private Function FormatForSaveOrDisplay(ByRef str As String, ByRef bfrmt As Boolean) As String
+        Dim dschar As DataSet
+        Dim dr As DataRow
+
+        dschar = DA.GetDataSet("SELECT *  FROM tblCharacterSwap")
+        If (bfrmt = False) Then       'display
+            For Each dr In dschar.Tables(0).Rows
+                str = str.Replace(dr(1).ToString, dr(0).ToString)
+            Next
+            Return str
+
+        Else          'save
+            For Each dr In dschar.Tables(0).Rows
+                str = str.Replace(dr(0).ToString, dr(1).ToString)
+            Next
+            Return str
+        End If
+    End Function
+#End Region
+
+#Region "Database Methods"
+
+    Private Function GetConfigurationTypes() As DataSet
+
+        Dim parameters As New List(Of SqlParameter)
+        parameters.Add(New SqlParameter("@ConfigurationTypeID", DBNull.Value))
+        Dim ds As DataSet = DA.GetDataSet("[ods].[procSelectConfigurationTypes]", parameters, "")
+
+        Return ds
+    End Function
+
+    Private Function GetConfigurations(ByVal configurationTypeID As Integer) As DataSet
+
+        Dim parameters As New List(Of SqlParameter)
+        parameters.Add(New SqlParameter("@ConfigurationTypeID", configurationTypeID))
+        Dim ds As DataSet = DA.GetDataSet("[ods].[procSelectConfigurations]", parameters, "")
+
+        Return ds
+    End Function
+
+    Private Function GetConfigurationParameters(ByVal configurationTypeID As Integer, ByVal configurationID As Integer) As DataSet
+
+        Dim parameters As New List(Of SqlParameter)
+        parameters.Add(New SqlParameter("@ConfigurationTypeID", configurationTypeID))
+        parameters.Add(New SqlParameter("@ConfigurationID", configurationID))
+        Dim ds As DataSet = DA.GetDataSet("[ods].[procSelectConfigurationParameters]", parameters, "")
+
+        Return ds
+    End Function
+
+    Private Sub DeleteConfiguration(ByVal configurationID As Integer)
+
+        Dim parameters As New List(Of SqlParameter)
+        parameters.Add(New SqlParameter("@ConfigurationID", configurationID))
+        DA.ExecSP("[ods].[procDeleteConfiguration]", parameters)
+
+    End Sub
+
+    Private Sub ChangeConfigurationDisplayID(ByVal configurationID As Integer, ByVal delta As Integer)
+
+        Dim parameters As New List(Of SqlParameter)
+        parameters.Add(New SqlParameter("@ConfigurationID", configurationID))
+        parameters.Add(New SqlParameter("@delta", delta))
+        parameters.Add(New SqlParameter("@ModifiedBy", Page.User.Identity.Name.ToString()))
+        DA.ExecSP("[ods].[procUpdateConfigurationDisplayID]", parameters)
+
+    End Sub
+
+    Private Sub AddConfiguration(ByVal description As String, ByVal configurationTypeID As Integer)
+
+        Dim parameters As New List(Of SqlParameter)
+        parameters.Add(New SqlParameter("@Description", description))
+        parameters.Add(New SqlParameter("@ConfigurationTypeID", configurationTypeID))
+        parameters.Add(New SqlParameter("@ModifiedBy", Page.User.Identity.Name.ToString()))
+        parameters.Add(New SqlParameter("@ConfigurationID", DBNull.Value))
+        DA.ExecSP("[ods].[procInsertConfiguration]", parameters)
+
+    End Sub
+
+    Private Sub RenameConfiguration(ByVal configurationID As Integer, ByVal description As String)
+
+        Dim parameters As New List(Of SqlParameter)
+        parameters.Add(New SqlParameter("@ConfigurationID", configurationID))
+        parameters.Add(New SqlParameter("@Description", description))
+        parameters.Add(New SqlParameter("@ModifiedBy", Page.User.Identity.Name.ToString()))
+        DA.ExecSP("[ods].[procRenameConfiguration]", parameters)
+
+    End Sub
+
+    Private Sub CopyConfiguration(ByVal configurationTypeID As Integer, ByVal configurationID As Integer, ByVal description As String)
+
+        Dim parameters As New List(Of SqlParameter)
+        parameters.Add(New SqlParameter("@ConfigurationTypeID", configurationTypeID))
+        parameters.Add(New SqlParameter("@ConfigurationID", configurationID))
+        parameters.Add(New SqlParameter("@Description", description))
+        parameters.Add(New SqlParameter("@ModifiedBy", Page.User.Identity.Name.ToString()))
+        DA.ExecSP("[ods].[procCopyConfiguration]", parameters)
+
+    End Sub
+
+    Private Sub SaveConfigurationParameters(ByVal configurationID As Integer, ByVal xmlParameters As XmlDocument)
+
+        Dim parameters As New List(Of SqlParameter)
+        parameters.Add(New SqlParameter("@ConfigurationID", configurationID))
+        parameters.Add(New SqlParameter("@xmlChangedParameters", xmlParameters.InnerXml.ToString()))
+        parameters.Add(New SqlParameter("@ModifiedBy", Page.User.Identity.Name.ToString()))
+        DA.ExecSP("[ods].[procSaveConfigurationParameters]", parameters)
+
+    End Sub
+
+#End Region
+
+End Class

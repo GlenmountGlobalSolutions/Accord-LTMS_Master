@@ -1,0 +1,1352 @@
+﻿Imports System.Data.SqlClient
+Public Class ConfigurationUploadDownload
+
+    Inherits System.Web.UI.Page
+
+#Region "Page Events"
+
+    Private Sub Page_Load(sender As Object, e As System.EventArgs) Handles Me.Load
+        Try
+            If Not Page.IsPostBack Then
+                ddLineNum_DataBind()
+            End If
+
+        Catch ex As Exception
+            Master.eMsg(ex.ToString())
+        End Try
+    End Sub
+
+    Private Sub Page_PreLoad(sender As Object, e As System.EventArgs) Handles Me.PreLoad
+        Try
+            EnableControls()
+
+        Catch ex As Exception
+            Master.eMsg(ex.ToString())
+        End Try
+    End Sub
+
+#End Region
+
+#Region "User Events"
+
+    Private Sub ddLineNum_SelectedIndexChanged(sender As Object, e As System.EventArgs) Handles ddLineNum.SelectedIndexChanged
+        Try
+
+            ' If (ddLineNum.SelectedItem Is Nothing) Or (ddLineNum.SelectedIndex = 0) Then
+            lblAuxPLC.Text = ""
+            lblAuxJIT.Text = ""
+            lblAuxPLCQual.Text = ""
+
+            lblCompCodePLC.Text = ""
+            lblCompcodeJIT.Text = ""
+            lblCompCodePLCQual.Text = ""
+
+            lblCompNamePLC.Text = ""
+            lblCompNameJIT.Text = ""
+            lblCompNamePLCQual.Text = ""
+
+            lblToolPLC.Text = ""
+            lblToolJIT.Text = ""
+            lblToolPLCQual.Text = ""
+
+            lblStationPLC.Text = ""
+            lblStationJIT.Text = ""
+            lblStationPLCQual.Text = ""
+
+            lblProdCodePLC.Text = ""
+            lblProdCodeJIT.Text = ""
+            lblProdCodePLCQual.Text = ""
+
+            lblUserPLC.Text = ""
+            lblUserJIT.Text = ""
+            lblUserPLCQual.Text = ""
+
+
+            If (ddLineNum.SelectedItem Is Nothing) Or (ddLineNum.SelectedIndex = 0) Then
+                '
+            Else
+                hidLineNumber.Value = ddLineNum.SelectedValue
+                hidLineTypeID.Value = CStr(BizLayer.GetLineTypeID(CInt(ddLineNum.SelectedValue)))
+                hidMultiPLC.Value = CStr(BizLayer.GetMultiPLC(CInt(ddLineNum.SelectedValue)))
+                hidUpgrade2015.Value = CStr(BizLayer.GetUpgrade2015(CInt(ddLineNum.SelectedValue)))
+                GetDataIntoCTRLs()
+
+            End If
+
+
+        Catch ex As Exception
+            Master.eMsg(ex.ToString())
+        End Try
+    End Sub
+
+    Private Sub cmdAuxDnld_Click(sender As Object, e As System.EventArgs) Handles cmdAuxDnld.Click
+        Try
+
+            If CBool(hidUpgrade2015.Value) = True Then
+
+                hidLineTypeID.Value = CStr(BizLayer.GetLineTypeID(CInt(hidLineNumber.Value)))
+
+                If CInt(hidLineTypeID.Value) = 2 Then
+                    'Rear Line
+                    UpdateTransactionParameters(1, "0001", CInt(hidLineNumber.Value), "1")
+                    Master.Msg = "Aux Task Download Initiated!"
+                    hidInitpbAuxDnld.Value = "1"
+                    cmdAuxUpld.Enabled = False
+
+                ElseIf CInt(hidLineTypeID.Value) = 3 Then 'Shipping
+                    Master.Msg = "There is no Aux Task data to download for this line!"
+                Else
+
+                    UpdateTransactionParameters(1, "0001", CInt(hidLineNumber.Value), "1")
+
+                    Master.Msg = "Aux Task Download Initiated!"
+
+                    hidInitpbAuxDnld.Value = "1"
+                    cmdAuxUpld.Enabled = False
+
+                End If
+            Else
+                Dim strSQL As String
+
+                If InStr(ddLineNum.SelectedItem.ToString, "300") > 0 Then
+                    Master.Msg = "There is no Aux Task data to download for this line!"
+                Else
+                    strSQL = "UPDATE tblApplicationParameters " & _
+                             "SET ApplicationParameterValue = '1' " & _
+                             "WHERE ApplicationID = '" & ConfigurationManager.AppSettings("TransactionManagerID") & "' "
+
+                    If InStr(ddLineNum.SelectedItem.ToString, "100") > 0 Then
+                        strSQL = strSQL + "AND ApplicationParameterTypeID = '2300'"
+                    ElseIf InStr(ddLineNum.SelectedItem.ToString, "200") > 0 Then
+                        strSQL = strSQL + "AND ApplicationParameterTypeID = '2310'"
+                        'Else
+                        '    Err.Raise(-1, "cmdProdCodeUpld_Click", "Invalid line selection, please select a line before attempting to upload or download.")
+                    End If
+
+                    DA.ExecSQL(strSQL)
+
+                    Master.Msg = "Aux Task Download Initiated!"
+
+                    hidInitpbAuxDnld.Value = "1"
+                    cmdAuxUpld.Enabled = False
+                End If
+            End If
+        Catch ex As Exception
+            Master.eMsg(ex.ToString())
+        End Try
+    End Sub
+
+    Private Sub cmdAuxDnldQual_Click(sender As Object, e As System.EventArgs) Handles cmdAuxDnldQual.Click
+        Try
+
+            'Dim intLineNumber As Integer = 0
+            'intLineNumber = CInt(ddLineNum.SelectedValue)
+
+            If CInt(hidLineTypeID.Value) = 2 Then
+                'Not defined           
+            ElseIf CInt(hidLineTypeID.Value) = 3 Then 'Shipping
+                Master.Msg = "There is no Aux Task Quality data to download for this line!"
+            Else
+
+                UpdateTransactionParameters(8, "0001", CInt(hidLineNumber.Value), "1")
+
+                Master.Msg = "Aux Task Quality Download Initiated!"
+
+                hidInitpbAuxDnldQual.Value = "1"
+                cmdAuxUpldQual.Enabled = False
+
+            End If
+
+        Catch ex As Exception
+            Master.eMsg(ex.ToString())
+        End Try
+    End Sub
+
+    Private Sub cmdAuxUpld_Click(sender As Object, e As System.EventArgs) Handles cmdAuxUpld.Click
+        Try
+
+            If CBool(hidUpgrade2015.Value) = True Then
+
+                If CInt(hidLineTypeID.Value) = 2 Then
+                    'Rear Line
+                    UpdateTransactionParameters(1, "0002", CInt(hidLineNumber.Value), "1")
+                    Master.Msg = "Aux Task Upload Initiated!"
+                    hidInitpbAuxUpld.Value = "1"
+                    cmdAuxDnld.Enabled = False
+                ElseIf CInt(hidLineTypeID.Value) = 3 Then 'Shipping
+                    Master.Msg = "There is no Aux Task data to upload for this line!"
+                Else
+
+                    UpdateTransactionParameters(1, "0002", CInt(hidLineNumber.Value), "1")
+
+                    Master.Msg = "Aux Task Upload Initiated!"
+
+                    hidInitpbAuxUpld.Value = "1"
+                    cmdAuxDnld.Enabled = False
+
+                End If
+            Else
+                Dim strSQL As String
+
+                If InStr(ddLineNum.SelectedItem.ToString, "300") > 0 Then
+                    Master.Msg = "There is no Aux Task data to upload for this line!"
+                Else
+                    strSQL = "UPDATE tblApplicationParameters " & _
+                             "SET ApplicationParameterValue = '1' " & _
+                             "WHERE ApplicationID = '" & ConfigurationManager.AppSettings("TransactionManagerID") & "' "
+
+                    If InStr(ddLineNum.SelectedItem.ToString, "100") > 0 Then
+                        strSQL = strSQL + "AND ApplicationParameterTypeID = '2387'"
+                    ElseIf InStr(ddLineNum.SelectedItem.ToString, "200") > 0 Then
+                        strSQL = strSQL + "AND ApplicationParameterTypeID = '2389'"
+                        'Else
+                        'Err.Raise(-1, "cmdAuxUpld_Click", "Invalid line selection, please select a line before attempting to upload or download.")
+                    End If
+
+                    DA.ExecSQL(strSQL)
+
+                    Master.Msg = "Aux Task Upload Initiated!"
+
+                    hidInitpbAuxUpld.Value = "1"
+                    cmdAuxDnld.Enabled = False
+                End If
+            End If
+        Catch ex As Exception
+            Master.eMsg(ex.ToString())
+        End Try
+    End Sub
+
+    Private Sub cmdAuxUpldQual_Click(sender As Object, e As System.EventArgs) Handles cmdAuxUpldQual.Click
+        Try
+
+            'Dim intLineNumber As Integer = 0
+            'intLineNumber = CInt(ddLineNum.SelectedValue)
+
+            If CInt(hidLineTypeID.Value) = 2 Then
+                'Not defined
+            ElseIf CInt(hidLineTypeID.Value) = 3 Then 'Shipping
+                Master.Msg = "There is no Aux Task Quality data to upload for this line!"
+            Else
+                UpdateTransactionParameters(8, "0002", CInt(hidLineNumber.Value), "1")
+
+                Master.Msg = "Aux Task Quality Upload Initiated!"
+
+                hidInitpbAuxUpldQual.Value = "1"
+                cmdAuxDnldQual.Enabled = False
+
+            End If
+
+        Catch ex As Exception
+            Master.eMsg(ex.ToString())
+        End Try
+    End Sub
+
+
+    Private Sub cmdCompCodeDnld_Click(sender As Object, e As System.EventArgs) Handles cmdCompCodeDnld.Click
+        Try
+
+            If CBool(hidUpgrade2015.Value) = True Then
+
+                UpdateTransactionParameters(3, "0001", CInt(hidLineNumber.Value), "1")
+
+                Master.Msg = "Component Scan Enable Download Initiated!"
+
+                hidInitpbCompScanDnld.Value = "1"
+                cmdCompCodeUpld.Enabled = False
+            Else
+                Dim strSQL As String
+
+                strSQL = "UPDATE tblApplicationParameters " & _
+                         "SET ApplicationParameterValue = '1' " & _
+                         "WHERE ApplicationID = '" & ConfigurationManager.AppSettings("TransactionManagerID") & "' "
+
+                If InStr(ddLineNum.SelectedItem.ToString, "100") > 0 Then
+                    strSQL = strSQL + "AND ApplicationParameterTypeID = '2375'"
+                ElseIf InStr(ddLineNum.SelectedItem.ToString, "200") > 0 Then
+                    strSQL = strSQL + "AND ApplicationParameterTypeID = '2377'"
+                ElseIf InStr(ddLineNum.SelectedItem.ToString, "300") > 0 Then
+                    strSQL = strSQL + "AND ApplicationParameterTypeID = '2409'"
+                    'Else
+                    '    Err.Raise(-1, "cmdProdCodeUpld_Click", "Invalid line selection, please select a line before attempting to upload or download.")
+                End If
+
+                DA.ExecSQL(strSQL)
+
+                Master.Msg = "Component Scan Enable Download Initiated!"
+
+                hidInitpbCompScanDnld.Value = "1"
+                cmdCompCodeUpld.Enabled = False
+            End If
+        Catch ex As Exception
+            Master.eMsg(ex.ToString())
+        End Try
+    End Sub
+
+    Private Sub cmdCompCodeDnldQual_Click(sender As Object, e As System.EventArgs) Handles cmdCompCodeDnldQual.Click
+        Try
+
+            'Dim intLineNumber As Integer = 0
+            'intLineNumber = CInt(ddLineNum.SelectedValue)
+
+            UpdateTransactionParameters(10, "0001", CInt(hidLineNumber.Value), "1")
+
+            Master.Msg = "Component Scan Enable Quality Download Initiated!"
+
+            hidInitpbCompScanDnldQual.Value = "1"
+            cmdCompCodeUpldQual.Enabled = False
+
+        Catch ex As Exception
+            Master.eMsg(ex.ToString())
+        End Try
+    End Sub
+
+    Private Sub cmdCompCodeUpld_Click(sender As Object, e As System.EventArgs) Handles cmdCompCodeUpld.Click
+        Try
+
+            If CBool(hidUpgrade2015.Value) = True Then
+
+                UpdateTransactionParameters(3, "0002", CInt(hidLineNumber.Value), "1")
+
+                Master.Msg = "Component Scan Enable Upload Initiated!"
+
+                hidInitpbCompScanUpld.Value = "1"
+                cmdCompCodeDnld.Enabled = False
+            Else
+                Dim strSQL As String
+
+                strSQL = "UPDATE tblApplicationParameters " & _
+                         "SET ApplicationParameterValue = '1' " & _
+                         "WHERE ApplicationID = '" & ConfigurationManager.AppSettings("TransactionManagerID") & "' "
+
+                If InStr(ddLineNum.SelectedItem.ToString, "100") > 0 Then
+                    strSQL = strSQL + "AND ApplicationParameterTypeID = '2319'"
+                ElseIf InStr(ddLineNum.SelectedItem.ToString, "200") > 0 Then
+                    strSQL = strSQL + "AND ApplicationParameterTypeID = '2320'"
+                ElseIf InStr(ddLineNum.SelectedItem.ToString, "300") > 0 Then
+                    strSQL = strSQL + "AND ApplicationParameterTypeID = '2406'"
+                    'Else
+                    'Err.Raise(-1, "cmdProdCodeUpld_Click", "Invalid line selection, please select a line before attempting to upload or download.")
+                End If
+
+                DA.ExecSQL(strSQL)
+
+                Master.Msg = "Component Scan Enable Upload Initiated!"
+
+                hidInitpbCompScanUpld.Value = "1"
+                cmdCompCodeDnld.Enabled = False
+            End If
+
+        Catch ex As Exception
+            Master.eMsg(ex.ToString())
+        End Try
+    End Sub
+
+    Private Sub cmdCompCodeUpldQual_Click(sender As Object, e As System.EventArgs) Handles cmdCompCodeUpldQual.Click
+        Try
+
+            'Dim intLineNumber As Integer = 0
+            'intLineNumber = CInt(ddLineNum.SelectedValue)
+
+            UpdateTransactionParameters(10, "0002", CInt(hidLineNumber.Value), "1")
+
+            Master.Msg = "Component Scan Enable Quality Upload Initiated!"
+
+            hidInitpbCompScanUpldQual.Value = "1"
+            cmdCompCodeDnldQual.Enabled = False
+
+        Catch ex As Exception
+            Master.eMsg(ex.ToString())
+        End Try
+    End Sub
+
+
+    Private Sub cmdCompNameDnld_Click(sender As Object, e As System.EventArgs) Handles cmdCompNameDnld.Click
+        Try
+
+            If CBool(hidUpgrade2015.Value) = True Then
+
+                UpdateTransactionParameters(14, "0001", CInt(hidLineNumber.Value), "1")
+
+                Master.Msg = "Component Name Download Initiated!"
+
+                hidInitpbCompNameDnld.Value = "1"
+                cmdCompNameUpld.Enabled = False
+            Else
+                Dim strSQL As String
+
+                strSQL = "UPDATE tblApplicationParameters " & _
+                         "SET ApplicationParameterValue = '1' " & _
+                         "WHERE ApplicationID = '" & ConfigurationManager.AppSettings("TransactionManagerID") & "' "
+
+                If InStr(ddLineNum.SelectedItem.ToString, "100") > 0 Then
+                    strSQL = strSQL + "AND ApplicationParameterTypeID = '2371'"
+                ElseIf InStr(ddLineNum.SelectedItem.ToString, "200") > 0 Then
+                    strSQL = strSQL + "AND ApplicationParameterTypeID = '2373'"
+                ElseIf InStr(ddLineNum.SelectedItem.ToString, "300") > 0 Then
+                    strSQL = strSQL + "AND ApplicationParameterTypeID = '2403'"
+                    'Else
+                    '    Err.Raise(-1, "cmdProdCodeUpld_Click", "Invalid line selection, please select a line before attempting to upload or download.")
+                End If
+
+                DA.ExecSQL(strSQL)
+
+                Master.Msg = "Component Name Download Initiated!"
+
+                hidInitpbCompNameDnld.Value = "1"
+                cmdCompNameUpld.Enabled = False
+            End If
+
+        Catch ex As Exception
+            Master.eMsg(ex.ToString())
+        End Try
+    End Sub
+
+    Private Sub cmdCompNameUpld_Click(sender As Object, e As System.EventArgs) Handles cmdCompNameUpld.Click
+        Try
+
+            If CBool(hidUpgrade2015.Value) = True Then
+
+                UpdateTransactionParameters(14, "0002", CInt(hidLineNumber.Value), "1")
+
+                Master.Msg = "Component Name Upload Initiated!"
+
+                hidInitpbCompNameUpld.Value = "1"
+                cmdCompNameDnld.Enabled = False
+            Else
+                Dim strSQL As String
+
+                strSQL = "UPDATE tblApplicationParameters " & _
+                         "SET ApplicationParameterValue = '1' " & _
+                         "WHERE ApplicationID = '" & ConfigurationManager.AppSettings("TransactionManagerID") & "' "
+
+                If InStr(ddLineNum.SelectedItem.ToString, "100") > 0 Then
+                    strSQL = strSQL + "AND ApplicationParameterTypeID = '2315'"
+                ElseIf InStr(ddLineNum.SelectedItem.ToString, "200") > 0 Then
+                    strSQL = strSQL + "AND ApplicationParameterTypeID = '2316'"
+                ElseIf InStr(ddLineNum.SelectedItem.ToString, "300") > 0 Then
+                    strSQL = strSQL + "AND ApplicationParameterTypeID = '2400'"
+                    'Else
+                    '    Err.Raise(-1, "cmdProdCodeUpld_Click", "Invalid line selection, please select a line before attempting to upload or download.")
+                End If
+
+                DA.ExecSQL(strSQL)
+
+                Master.Msg = "Component Name Upload Initiated!"
+
+                hidInitpbCompNameUpld.Value = "1"
+                cmdCompNameDnld.Enabled = False
+            End If
+
+        Catch ex As Exception
+            Master.eMsg(ex.ToString())
+        End Try
+    End Sub
+
+
+    Private Sub cmdProdCodeDnld_Click(sender As Object, e As System.EventArgs) Handles cmdProdCodeDnld.Click
+        Try
+
+            If CBool(hidUpgrade2015.Value) = True Then
+
+                UpdateTransactionParameters(15, "0001", CInt(hidLineNumber.Value), "1")
+
+                Master.Msg = "Product Code Download Initiated!"
+
+                hidInitpbProdCodeDnld.Value = "1"
+                cmdProdCodeUpld.Enabled = False
+            Else
+                Dim strSQL As String
+
+                strSQL = "UPDATE tblApplicationParameters " & _
+                         "SET ApplicationParameterValue = '1' " & _
+                         "WHERE ApplicationID = '" & ConfigurationManager.AppSettings("TransactionManagerID") & "' "
+
+                If InStr(ddLineNum.SelectedItem.ToString, "100") > 0 Then
+                    strSQL = strSQL + "AND ApplicationParameterTypeID = '2383'"
+                ElseIf InStr(ddLineNum.SelectedItem.ToString, "200") > 0 Then
+                    strSQL = strSQL + "AND ApplicationParameterTypeID = '2385'"
+                ElseIf InStr(ddLineNum.SelectedItem.ToString, "300") > 0 Then
+                    strSQL = strSQL + "AND ApplicationParameterTypeID = '2415'"
+                    'Else
+                    '    Err.Raise(-1, "cmdProdCodeDnld_Click", "Invalid line selection, please select a line before attempting to upload or download.")
+                End If
+
+                DA.ExecSQL(strSQL)
+
+                Master.Msg = "Product Code Download Initiated!"
+
+                hidInitpbProdCodeDnld.Value = "1"
+                cmdProdCodeUpld.Enabled = False
+            End If
+
+        Catch ex As Exception
+            Master.eMsg(ex.ToString())
+        End Try
+    End Sub
+
+    Private Sub cmdProdCodeUpld_Click(sender As Object, e As System.EventArgs) Handles cmdProdCodeUpld.Click
+        Try
+
+            If CBool(hidUpgrade2015.Value) = True Then
+
+                UpdateTransactionParameters(15, "0002", CInt(hidLineNumber.Value), "1")
+
+                Master.Msg = "Product Code Upload Initiated!"
+
+                hidInitpbProdCodeUpld.Value = "1"
+                cmdProdCodeDnld.Enabled = False
+            Else
+                Dim strSQL As String
+
+                strSQL = "UPDATE tblApplicationParameters " & _
+                         "SET ApplicationParameterValue = '1' " & _
+                         "WHERE ApplicationID = '" & ConfigurationManager.AppSettings("TransactionManagerID") & "' "
+
+                If InStr(ddLineNum.SelectedItem.ToString, "100") > 0 Then
+                    strSQL = strSQL + "AND ApplicationParameterTypeID = '2360'"
+                ElseIf InStr(ddLineNum.SelectedItem.ToString, "200") > 0 Then
+                    strSQL = strSQL + "AND ApplicationParameterTypeID = '2361'"
+                ElseIf InStr(ddLineNum.SelectedItem.ToString, "300") > 0 Then
+                    strSQL = strSQL + "AND ApplicationParameterTypeID = '2412'"
+                    'Else
+                    '    Err.Raise(-1, "cmdProdCodeUpld_Click", "Invalid line selection, please select a line before attempting to upload or download.")
+                End If
+
+                DA.ExecSQL(strSQL)
+
+                Master.Msg = "Product Code Upload Initiated!"
+
+                hidInitpbProdCodeUpld.Value = "1"
+                cmdProdCodeDnld.Enabled = False
+            End If
+        Catch ex As Exception
+            Master.eMsg(ex.ToString())
+        End Try
+    End Sub
+
+
+    Private Sub cmdStationDnld_Click(sender As Object, e As System.EventArgs) Handles cmdStationDnld.Click
+        Try
+
+            If CBool(hidUpgrade2015.Value) = True Then
+
+                UpdateTransactionParameters(5, "0001", CInt(hidLineNumber.Value), "1")
+
+                Master.Msg = "Station Download Initiated!"
+
+                hidInitpbStationDnld.Value = "1"
+                cmdStationUpld.Enabled = False
+            Else
+                Dim strSQL As String
+
+                strSQL = "UPDATE tblApplicationParameters " & _
+                         "SET ApplicationParameterValue = '1' " & _
+                         "WHERE ApplicationID = '" & ConfigurationManager.AppSettings("TransactionManagerID") & "' "
+
+                If InStr(ddLineNum.SelectedItem.ToString, "100") > 0 Then
+                    strSQL = strSQL + "AND ApplicationParameterTypeID = '2367'"
+                ElseIf InStr(ddLineNum.SelectedItem.ToString, "200") > 0 Then
+                    strSQL = strSQL + "AND ApplicationParameterTypeID = '2369'"
+                ElseIf InStr(ddLineNum.SelectedItem.ToString, "300") > 0 Then
+                    strSQL = strSQL + "AND ApplicationParameterTypeID = '2423'"
+                    'Else
+                    '    Err.Raise(-1, "cmdProdCodeUpld_Click", "Invalid line selection, please select a line before attempting to upload or download.")
+                End If
+
+                DA.ExecSQL(strSQL)
+
+                Master.Msg = "Station Download Initiated!"
+
+                hidInitpbStationDnld.Value = "1"
+                cmdStationUpld.Enabled = False
+            End If
+
+        Catch ex As Exception
+            Master.eMsg(ex.ToString())
+        End Try
+    End Sub
+
+    Private Sub cmdStationDnldQual_Click(sender As Object, e As System.EventArgs) Handles cmdStationDnldQual.Click
+        Try
+
+            'Dim intLineNumber As Integer = 0
+            'intLineNumber = CInt(ddLineNum.SelectedValue)
+
+            UpdateTransactionParameters(11, "0001", CInt(hidLineNumber.Value), "1")
+
+            Master.Msg = "Station Quality Download Initiated!"
+
+            hidInitpbStationDnldQual.Value = "1"
+            cmdStationUpldQual.Enabled = False
+
+        Catch ex As Exception
+            Master.eMsg(ex.ToString())
+        End Try
+    End Sub
+
+    Private Sub cmdStationUpld_Click(sender As Object, e As System.EventArgs) Handles cmdStationUpld.Click
+        Try
+
+            If CBool(hidUpgrade2015.Value) = True Then
+
+                UpdateTransactionParameters(5, "0002", CInt(hidLineNumber.Value), "1")
+
+                Master.Msg = "Station Upload Initiated!"
+
+                hidInitpbStationUpld.Value = "1"
+                cmdStationDnld.Enabled = False
+            Else
+                Dim strSQL As String
+
+                strSQL = "UPDATE tblApplicationParameters " & _
+                         "SET ApplicationParameterValue = '1' " & _
+                         "WHERE ApplicationID = '" & ConfigurationManager.AppSettings("TransactionManagerID") & "' "
+
+                If InStr(ddLineNum.SelectedItem.ToString, "100") > 0 Then
+                    strSQL = strSQL + "AND ApplicationParameterTypeID = '2324'"
+                ElseIf InStr(ddLineNum.SelectedItem.ToString, "200") > 0 Then
+                    strSQL = strSQL + "AND ApplicationParameterTypeID = '2327'"
+                ElseIf InStr(ddLineNum.SelectedItem.ToString, "300") > 0 Then
+                    strSQL = strSQL + "AND ApplicationParameterTypeID = '2420'"
+                    'Else
+                    '    Err.Raise(-1, "cmdProdCodeUpld_Click", "Invalid line selection, please select a line before attempting to upload or download.")
+                End If
+
+                DA.ExecSQL(strSQL)
+
+                Master.Msg = "Station Upload Initiated!"
+
+                hidInitpbStationUpld.Value = "1"
+                cmdStationDnld.Enabled = False
+            End If
+        Catch ex As Exception
+            Master.eMsg(ex.ToString())
+        End Try
+    End Sub
+
+    Private Sub cmdStationUpldQual_Click(sender As Object, e As System.EventArgs) Handles cmdStationUpldQual.Click
+        Try
+
+            'Dim intLineNumber As Integer = 0
+            'intLineNumber = CInt(ddLineNum.SelectedValue)
+
+            UpdateTransactionParameters(11, "0002", CInt(hidLineNumber.Value), "1")
+
+            Master.Msg = "Station Quality Upload Initiated!"
+
+            hidInitpbStationUpldQual.Value = "1"
+            cmdStationDnldQual.Enabled = False
+
+        Catch ex As Exception
+            Master.eMsg(ex.ToString())
+        End Try
+    End Sub
+
+
+    Private Sub cmdToolDnld_Click(sender As Object, e As System.EventArgs) Handles cmdToolDnld.Click
+        Try
+
+            If CBool(hidUpgrade2015.Value) = True Then
+
+                If CInt(hidLineTypeID.Value) = 2 Then
+                    'Rear Line
+                    UpdateTransactionParameters(6, "0001", CInt(hidLineNumber.Value), "1")
+                    Master.Msg = "Tool Download Initiated!"
+                    hidInitpbToolDnld.Value = "1"
+                    cmdToolUpld.Enabled = False
+                ElseIf CInt(hidLineTypeID.Value) = 3 Then 'Shipping
+                    Master.Msg = "There is no Tool data to download for this line!"
+                Else
+
+                    UpdateTransactionParameters(6, "0001", CInt(hidLineNumber.Value), "1")
+
+                    Master.Msg = "Tool Download Initiated!"
+
+                    hidInitpbToolDnld.Value = "1"
+                    cmdToolUpld.Enabled = False
+
+                End If
+            Else
+                Dim strSQL As String
+
+                If InStr(ddLineNum.SelectedItem.ToString, "300") > 0 Then
+                    Master.Msg = "There is no Tool data to download for this line!"
+                Else
+                    strSQL = "UPDATE tblApplicationParameters " & _
+                             "SET ApplicationParameterValue = '1' " & _
+                             "WHERE ApplicationID = '" & ConfigurationManager.AppSettings("TransactionManagerID") & "' "
+
+                    If InStr(ddLineNum.SelectedItem.ToString, "100") > 0 Then
+                        strSQL = strSQL + "AND ApplicationParameterTypeID = '2379'"
+                    ElseIf InStr(ddLineNum.SelectedItem.ToString, "200") > 0 Then
+                        strSQL = strSQL + "AND ApplicationParameterTypeID = '2381'"
+                        'Else
+                        '    Err.Raise(-1, "cmdProdCodeUpld_Click", "Invalid line selection, please select a line before attempting to upload or download.")
+                    End If
+
+                    DA.ExecSQL(strSQL)
+
+                    Master.Msg = "Tool Download Initiated!"
+
+                    hidInitpbToolDnld.Value = "1"
+                    cmdToolUpld.Enabled = False
+                End If
+            End If
+        Catch ex As Exception
+            Master.eMsg(ex.ToString())
+        End Try
+    End Sub
+
+    Private Sub cmdToolDnldQual_Click(sender As Object, e As System.EventArgs) Handles cmdToolDnldQual.Click
+        Try
+
+            'Dim intLineNumber As Integer = 0
+            'intLineNumber = CInt(ddLineNum.SelectedValue)
+
+            If CInt(hidLineTypeID.Value) = 2 Then
+                'Not defined
+            ElseIf CInt(hidLineTypeID.Value) = 3 Then 'Shipping
+                Master.Msg = "There is no Tool data to download for this line!"
+            Else
+
+                UpdateTransactionParameters(12, "0001", CInt(hidLineNumber.Value), "1")
+
+                Master.Msg = "Tool Quality Download Initiated!"
+
+                hidInitpbToolDnldQual.Value = "1"
+                cmdToolUpldQual.Enabled = False
+
+            End If
+
+        Catch ex As Exception
+            Master.eMsg(ex.ToString())
+        End Try
+    End Sub
+
+    Private Sub cmdToolUpld_Click(sender As Object, e As System.EventArgs) Handles cmdToolUpld.Click
+        Try
+
+            If CBool(hidUpgrade2015.Value) = True Then
+
+                If CInt(hidLineTypeID.Value) = 2 Then
+                    'Rear Line
+                    UpdateTransactionParameters(6, "0002", CInt(hidLineNumber.Value), "1")
+                    Master.Msg = "Tool Upload Initiated!"
+                    hidInitpbToolUpld.Value = "1"
+                    cmdToolDnld.Enabled = False
+                ElseIf CInt(hidLineTypeID.Value) = 3 Then 'Shipping
+                    Master.Msg = "There is no Tool data to download for this line!"
+                Else
+
+                    UpdateTransactionParameters(6, "0002", CInt(hidLineNumber.Value), "1")
+
+                    Master.Msg = "Tool Upload Initiated!"
+
+                    hidInitpbToolUpld.Value = "1"
+                    cmdToolDnld.Enabled = False
+
+                End If
+            Else
+                Dim strSQL As String
+
+                If InStr(ddLineNum.SelectedItem.ToString, "300") > 0 Then
+                    Master.Msg = "There is no Tool data to upload for this line!"
+                Else
+                    strSQL = "UPDATE tblApplicationParameters " & _
+                             "SET ApplicationParameterValue = '1' " & _
+                             "WHERE ApplicationID = '" & ConfigurationManager.AppSettings("TransactionManagerID") & "' "
+
+                    If InStr(ddLineNum.SelectedItem.ToString, "100") > 0 Then
+                        strSQL = strSQL + "AND ApplicationParameterTypeID = '2331'"
+                    ElseIf InStr(ddLineNum.SelectedItem.ToString, "200") > 0 Then
+                        strSQL = strSQL + "AND ApplicationParameterTypeID = '2334'"
+                        'Else
+                        '    Err.Raise(-1, "cmdToolUpld_Click", "Invalid line selection, please select a line before attempting to upload or download.")
+                    End If
+
+                    DA.ExecSQL(strSQL)
+
+                    Master.Msg = "Tool Upload Initiated!"
+
+                    hidInitpbToolUpld.Value = "1"
+                    cmdToolDnld.Enabled = False
+
+                End If
+            End If
+
+        Catch ex As Exception
+            Master.eMsg(ex.ToString())
+        End Try
+    End Sub
+
+    Private Sub cmdToolUpldQual_Click(sender As Object, e As System.EventArgs) Handles cmdToolUpldQual.Click
+        Try
+
+            'Dim intLineNumber As Integer = 0
+            'intLineNumber = CInt(ddLineNum.SelectedValue)
+
+            If CInt(hidLineTypeID.Value) = 2 Then
+                'Not defined
+            ElseIf CInt(hidLineTypeID.Value) = 3 Then 'Shipping
+                Master.Msg = "There is no Tool data to download for this line!"
+            Else
+
+                UpdateTransactionParameters(12, "0002", CInt(hidLineNumber.Value), "1")
+
+                Master.Msg = "Tool Quality Upload Initiated!"
+
+                hidInitpbToolUpldQual.Value = "1"
+                cmdToolDnldQual.Enabled = False
+
+            End If
+
+        Catch ex As Exception
+            Master.eMsg(ex.ToString())
+        End Try
+    End Sub
+
+
+
+    Private Sub cmdUserDnld_Click(sender As Object, e As System.EventArgs) Handles cmdUserDnld.Click
+        Try
+
+            If CBool(hidUpgrade2015.Value) = True Then
+
+                UpdateTransactionParameters(4, "0001", CInt(hidLineNumber.Value), "1")
+
+                Master.Msg = "User Download Initiated!"
+
+                hidInitpbUserDnld.Value = "1"
+                cmdUserUpld.Enabled = False
+            Else
+                Dim strSQL As String
+
+                strSQL = "UPDATE tblApplicationParameters " & _
+                         "SET ApplicationParameterValue = '1' " & _
+                         "WHERE ApplicationID = '" & ConfigurationManager.AppSettings("TransactionManagerID") & "' "
+
+                If InStr(ddLineNum.SelectedItem.ToString, "100") > 0 Then
+                    strSQL = strSQL + "AND ApplicationParameterTypeID = '2397'"
+                ElseIf InStr(ddLineNum.SelectedItem.ToString, "200") > 0 Then
+                    strSQL = strSQL + "AND ApplicationParameterTypeID = '2398'"
+                ElseIf InStr(ddLineNum.SelectedItem.ToString, "300") > 0 Then
+                    strSQL = strSQL + "AND ApplicationParameterTypeID = '2418'"
+                    'Else
+                    '    Err.Raise(-1, "cmdUserDnld_Click", "Invalid line selection, please select a line before attempting to upload or download.")
+                End If
+
+                DA.ExecSQL(strSQL)
+
+                Master.Msg = "User Download Initiated!"
+
+                hidInitpbUserDnld.Value = "1"
+                cmdUserUpld.Enabled = False
+            End If
+        Catch ex As Exception
+            Master.eMsg(ex.ToString())
+        End Try
+    End Sub
+
+    Private Sub cmdUserDnldQual_Click(sender As Object, e As System.EventArgs) Handles cmdUserDnldQual.Click
+        Try
+
+            'Dim intLineNumber As Integer = 0
+            'intLineNumber = CInt(ddLineNum.SelectedValue)
+
+
+            UpdateTransactionParameters(4, "0001", CInt(hidLineNumber.Value), "1")
+
+            Master.Msg = "User Quality Download Initiated!"
+
+            hidInitpbUserDnldQual.Value = "1"
+            cmdUserUpldQual.Enabled = False
+
+        Catch ex As Exception
+            Master.eMsg(ex.ToString())
+        End Try
+    End Sub
+
+    Private Sub cmdUserUpld_Click(sender As Object, e As System.EventArgs) Handles cmdUserUpld.Click
+        Try
+
+            If CBool(hidUpgrade2015.Value) = True Then
+
+                UpdateTransactionParameters(4, "0002", CInt(hidLineNumber.Value), "1")
+
+                Master.Msg = "User Upload Initiated!"
+
+                hidInitpbUserUpld.Value = "1"
+                cmdUserDnld.Enabled = False
+            Else
+                Dim strSQL As String
+
+                strSQL = "UPDATE tblApplicationParameters " & _
+                         "SET ApplicationParameterValue = '1' " & _
+                         "WHERE ApplicationID = '" & ConfigurationManager.AppSettings("TransactionManagerID") & "' "
+
+                If InStr(ddLineNum.SelectedItem.ToString, "100") > 0 Then
+                    strSQL = strSQL + "AND ApplicationParameterTypeID = '2395'"
+                ElseIf InStr(ddLineNum.SelectedItem.ToString, "200") > 0 Then
+                    strSQL = strSQL + "AND ApplicationParameterTypeID = '2396'"
+                ElseIf InStr(ddLineNum.SelectedItem.ToString, "300") > 0 Then
+                    strSQL = strSQL + "AND ApplicationParameterTypeID = '2417'"
+                    'Else
+                    '    Err.Raise(-1, "cmdUserUpld_Click", "Invalid line selection, please select a line before attempting to upload or download.")
+                End If
+
+                DA.ExecSQL(strSQL)
+
+                Master.Msg = "User Upload Initiated!"
+
+                hidInitpbUserUpld.Value = "1"
+                cmdUserDnld.Enabled = False
+            End If
+        Catch ex As Exception
+            Master.eMsg(ex.ToString())
+        End Try
+    End Sub
+
+    Private Sub cmdUserUpldQual_Click(sender As Object, e As System.EventArgs) Handles cmdUserUpldQual.Click
+        Try
+
+            'Dim intLineNumber As Integer = 0
+            'intLineNumber = CInt(ddLineNum.SelectedValue)
+
+            UpdateTransactionParameters(4, "0002", CInt(hidLineNumber.Value), "1")
+
+            Master.Msg = "User Quality Upload Initiated!"
+
+            hidInitpbUserUpldQual.Value = "1"
+            cmdUserDnldQual.Enabled = False
+
+        Catch ex As Exception
+            Master.eMsg(ex.ToString())
+        End Try
+    End Sub
+
+
+    Private Sub cmdRefresh_Click(sender As Object, e As System.EventArgs) Handles cmdRefresh.Click
+        Try
+            GetDataIntoCTRLs()
+        Catch ex As Exception
+            Master.eMsg(ex.ToString())
+        End Try
+    End Sub
+
+    Private Sub cmdRefreshProgBars_Click(sender As Object, e As System.EventArgs) Handles cmdRefreshProgBars.Click
+        Try
+            ResetTransactionProgress()
+            GetDataIntoCTRLs()
+        Catch ex As Exception
+            Master.eMsg(ex.ToString())
+        End Try
+    End Sub
+
+#End Region
+
+#Region "Methods"
+
+    Private Sub ddLineNum_DataBind()
+        With ddLineNum
+            .DataSource = DA.GetDataSet("SELECT LineNumber, LineName FROM dbo.tblSGLines ORDER BY LineName")
+            .DataTextField = "LineName"
+            .DataValueField = "LineNumber"
+            .DataBind()
+            .Items.Insert(0, "Choose a Line")
+        End With
+    End Sub
+
+
+    Private Sub EnableControls()
+        Master.Secure(cmdRefresh)
+        Master.Secure(cmdRefreshProgBars)
+        Master.Secure(cmdAuxDnld)
+        Master.Secure(cmdAuxUpld)
+        Master.Secure(cmdCompCodeDnld)
+        Master.Secure(cmdCompCodeUpld)
+        Master.Secure(cmdCompNameDnld)
+        Master.Secure(cmdCompNameUpld)
+        Master.Secure(cmdToolDnld)
+        Master.Secure(cmdToolUpld)
+        Master.Secure(cmdStationDnld)
+        Master.Secure(cmdStationUpld)
+        Master.Secure(cmdProdCodeDnld)
+        Master.Secure(cmdProdCodeUpld)
+        Master.Secure(cmdUserDnld)
+        Master.Secure(cmdUserUpld)
+
+        Master.Secure(cmdAuxDnldQual)
+        Master.Secure(cmdAuxUpldQual)
+        Master.Secure(cmdCompCodeDnldQual)
+        Master.Secure(cmdCompCodeUpldQual)
+        'Master.Secure(cmdCompNameDnldQual)
+        'Master.Secure(cmdCompNameUpldQual)
+        Master.Secure(cmdToolDnldQual)
+        Master.Secure(cmdToolUpldQual)
+        Master.Secure(cmdStationDnldQual)
+        Master.Secure(cmdStationUpldQual)
+        'Master.Secure(cmdProdCodeDnldQual)
+        'Master.Secure(cmdProdCodeUpldQual)
+        Master.Secure(cmdUserDnldQual)
+        Master.Secure(cmdUserUpldQual)
+
+
+
+        If (ddLineNum.SelectedItem Is Nothing) Or (ddLineNum.SelectedIndex < 1) Then
+            cmdRefresh.Enabled = False
+            cmdRefreshProgBars.Enabled = False
+            cmdAuxDnld.Enabled = False
+            cmdAuxUpld.Enabled = False
+            cmdCompCodeDnld.Enabled = False
+            cmdCompCodeUpld.Enabled = False
+            cmdCompNameDnld.Enabled = False
+            cmdCompNameUpld.Enabled = False
+            cmdToolDnld.Enabled = False
+            cmdToolUpld.Enabled = False
+            cmdStationDnld.Enabled = False
+            cmdStationUpld.Enabled = False
+            cmdProdCodeDnld.Enabled = False
+            cmdProdCodeUpld.Enabled = False
+            cmdUserDnld.Enabled = False
+            cmdUserUpld.Enabled = False
+
+            cmdAuxDnldQual.Enabled = False
+            cmdAuxUpldQual.Enabled = False
+            cmdCompCodeDnldQual.Enabled = False
+            cmdCompCodeUpldQual.Enabled = False
+            'cmdCompNameDnldQual.Enabled = False
+            'cmdCompNameUpldQual.Enabled = False
+            cmdToolDnldQual.Enabled = False
+            cmdToolUpldQual.Enabled = False
+            cmdStationDnldQual.Enabled = False
+            cmdStationUpldQual.Enabled = False
+            'cmdProdCodeDnldQual.Enabled = False
+            'cmdProdCodeUpldQual.Enabled = False
+            cmdUserDnldQual.Enabled = False
+            cmdUserUpldQual.Enabled = False
+        End If
+
+        '20141217  per PHarhay, and RBrown  Disable these as there is no 2nd PLC for Accord
+        cmdAuxDnldQual.Enabled = False
+        cmdAuxUpldQual.Enabled = False
+        cmdCompCodeDnldQual.Enabled = False
+        cmdCompCodeUpldQual.Enabled = False
+        'cmdCompNameDnldQual.Enabled = False
+        'cmdCompNameUpldQual.Enabled = False
+        cmdToolDnldQual.Enabled = False
+        cmdToolUpldQual.Enabled = False
+        cmdStationDnldQual.Enabled = False
+        cmdStationUpldQual.Enabled = False
+        'cmdProdCodeDnldQual.Enabled = False
+        'cmdProdCodeUpldQual.Enabled = False
+        cmdUserDnldQual.Enabled = False
+        cmdUserUpldQual.Enabled = False
+
+    End Sub
+
+
+    Private Sub GetDataIntoCTRLs()
+
+        If CInt(hidLineTypeID.Value) = 1 Then 'Fronts
+            cmdAuxDnld.Enabled = True
+            cmdAuxUpld.Enabled = True
+            cmdToolDnld.Enabled = True
+            cmdToolUpld.Enabled = True
+
+            If CBool(hidMultiPLC.Value) = True Then 'Build and Quality PLCs
+                cmdAuxDnldQual.Enabled = True
+                cmdAuxUpldQual.Enabled = True
+                cmdToolDnldQual.Enabled = True
+                cmdToolUpldQual.Enabled = True
+            Else 'Only 1 PLC
+                cmdAuxDnldQual.Enabled = False
+                cmdAuxUpldQual.Enabled = False
+                cmdToolDnldQual.Enabled = False
+                cmdToolUpldQual.Enabled = False
+                cmdCompCodeDnldQual.Enabled = False
+                cmdCompCodeUpldQual.Enabled = False
+                cmdStationDnldQual.Enabled = False
+                cmdStationUpldQual.Enabled = False
+            End If
+
+        ElseIf CInt(hidLineTypeID.Value) = 2 Then 'Rears
+            cmdAuxDnldQual.Enabled = False
+            cmdAuxUpldQual.Enabled = False
+            cmdToolDnldQual.Enabled = False
+            cmdToolUpldQual.Enabled = False
+            cmdCompCodeDnldQual.Enabled = False
+            cmdCompCodeUpldQual.Enabled = False
+            cmdStationDnldQual.Enabled = False
+            cmdStationUpldQual.Enabled = False
+        ElseIf CInt(hidLineTypeID.Value) = 3 Then 'Shipping
+            cmdAuxDnld.Enabled = False
+            cmdAuxUpld.Enabled = False
+            cmdToolDnld.Enabled = False
+            cmdToolUpld.Enabled = False
+            cmdAuxDnldQual.Enabled = False
+            cmdAuxUpldQual.Enabled = False
+            cmdToolDnldQual.Enabled = False
+            cmdToolUpldQual.Enabled = False
+            cmdCompCodeDnldQual.Enabled = False
+            cmdCompCodeUpldQual.Enabled = False
+            cmdStationDnldQual.Enabled = False
+            cmdStationUpldQual.Enabled = False
+        End If
+
+
+
+
+
+        If CBool(hidUpgrade2015.Value) = True Then
+            lblAuxPLC.Text = SelectTransactionParameter(1, "0003", CInt(hidLineNumber.Value))
+            lblAuxPLCQual.Text = SelectTransactionParameter(8, "0003", CInt(hidLineNumber.Value))
+            lblAuxJIT.Text = SelectTransactionParameter(1, "0004", CInt(hidLineNumber.Value))
+
+            'CompScan
+            lblCompCodePLC.Text = SelectTransactionParameter(3, "0003", CInt(hidLineNumber.Value))
+            lblCompCodePLCQual.Text = SelectTransactionParameter(10, "0003", CInt(hidLineNumber.Value))
+            lblCompcodeJIT.Text = SelectTransactionParameter(3, "0004", CInt(hidLineNumber.Value))
+
+            lblCompNamePLC.Text = SelectTransactionParameter(14, "0003", CInt(hidLineNumber.Value))
+            'lblCompNamePLCQual.Text = SelectTransactionParameter(14, "0003", cint(hidLineNumber.Value)) 
+            lblCompNameJIT.Text = SelectTransactionParameter(14, "0004", CInt(hidLineNumber.Value))
+
+            lblToolPLC.Text = SelectTransactionParameter(6, "0003", CInt(hidLineNumber.Value))
+            lblToolPLCQual.Text = SelectTransactionParameter(12, "0003", CInt(hidLineNumber.Value))
+            lblToolJIT.Text = SelectTransactionParameter(6, "0004", CInt(hidLineNumber.Value))
+
+            lblStationPLC.Text = SelectTransactionParameter(5, "0003", CInt(hidLineNumber.Value))
+            lblStationPLCQual.Text = SelectTransactionParameter(11, "0003", CInt(hidLineNumber.Value))
+            lblStationJIT.Text = SelectTransactionParameter(5, "0004", CInt(hidLineNumber.Value))
+
+            lblProdCodePLC.Text = SelectTransactionParameter(15, "0003", CInt(hidLineNumber.Value))
+            'lblProdCodePLCQual.Text = SelectTransactionParameter(15, "0003", cint(hidLineNumber.Value)) 
+            lblProdCodeJIT.Text = SelectTransactionParameter(15, "0004", CInt(hidLineNumber.Value))
+
+            lblUserPLC.Text = SelectTransactionParameter(4, "0003", CInt(hidLineNumber.Value))
+            lblUserPLCQual.Text = "" 'SelectTransactionParameter(4, "0003", CInt(hidLineNumber.Value))
+            lblUserJIT.Text = SelectTransactionParameter(4, "0004", CInt(hidLineNumber.Value))
+
+
+            'Build Progress
+            hidpbAuxDnld.Value = SelectTransactionParameter(1, "0007", CInt(hidLineNumber.Value))
+            hidpbAuxUpld.Value = SelectTransactionParameter(1, "0008", CInt(hidLineNumber.Value))
+
+            hidpbCompScanDnld.Value = SelectTransactionParameter(3, "0007", CInt(hidLineNumber.Value))
+            hidpbCompScanUpld.Value = SelectTransactionParameter(3, "0008", CInt(hidLineNumber.Value))
+
+            hidpbCompNameDnld.Value = SelectTransactionParameter(14, "0007", CInt(hidLineNumber.Value))
+            hidpbCompNameUpld.Value = SelectTransactionParameter(14, "0008", CInt(hidLineNumber.Value))
+
+            hidpbToolDnld.Value = SelectTransactionParameter(6, "0007", CInt(hidLineNumber.Value))
+            hidpbToolUpld.Value = SelectTransactionParameter(6, "0008", CInt(hidLineNumber.Value))
+
+            hidpbStationDnld.Value = SelectTransactionParameter(5, "0007", CInt(hidLineNumber.Value))
+            hidpbStationUpld.Value = SelectTransactionParameter(5, "0008", CInt(hidLineNumber.Value))
+
+            hidpbProdCodeDnld.Value = SelectTransactionParameter(15, "0007", CInt(hidLineNumber.Value))
+            hidpbProdCodeUpld.Value = SelectTransactionParameter(15, "0008", CInt(hidLineNumber.Value))
+
+            hidpbUserDnld.Value = SelectTransactionParameter(4, "0007", CInt(hidLineNumber.Value))
+            hidpbUserUpld.Value = SelectTransactionParameter(4, "0008", CInt(hidLineNumber.Value))
+
+            If CBool(hidMultiPLC.Value) = True Then
+                'Quality Progress
+                hidpbAuxDnldQual.Value = SelectTransactionParameter(8, "0007", CInt(hidLineNumber.Value))
+                hidpbAuxUpldQual.Value = SelectTransactionParameter(8, "0008", CInt(hidLineNumber.Value))
+
+                hidpbCompScanDnldQual.Value = SelectTransactionParameter(10, "0007", CInt(hidLineNumber.Value))
+                hidpbCompScanUpldQual.Value = SelectTransactionParameter(10, "0008", CInt(hidLineNumber.Value))
+
+                'hidpbCompNameDnldQual.Value = SelectTransactionParameter(14, "0007", cint(hidLineNumber.Value)) 
+                'hidpbCompNameUpldQual.Value = SelectTransactionParameter(14, "0008", cint(hidLineNumber.Value)) 
+
+                hidpbToolDnldQual.Value = SelectTransactionParameter(12, "0007", CInt(hidLineNumber.Value))
+                hidpbToolUpldQual.Value = SelectTransactionParameter(12, "0008", CInt(hidLineNumber.Value))
+
+                hidpbStationDnldQual.Value = SelectTransactionParameter(11, "0007", CInt(hidLineNumber.Value))
+                hidpbStationUpldQual.Value = SelectTransactionParameter(11, "0008", CInt(hidLineNumber.Value))
+
+                'hidpbProdCodeDnldQual.Value = SelectTransactionParameter(15, "0007", cint(hidLineNumber.Value)) 
+                'hidpbProdCodeUpldQual.Value = SelectTransactionParameter(15, "0008", cint(hidLineNumber.Value)) 
+
+                'hidpbUserDnldQual.Value = SelectTransactionParameter(11, "0007", CInt(hidLineNumber.Value))
+                'hidpbUserUpldQual.Value = SelectTransactionParameter(11, "0008", CInt(hidLineNumber.Value))
+            End If
+        Else
+
+            Dim dsTimeStamps As DataSet
+            Dim dsProgress As DataSet
+            Dim dr As DataRow
+            Dim sSQL As String
+
+            sSQL = "EXEC procGetRecipeTimestamps '" + ddLineNum.SelectedItem.ToString() + "'"
+            dsTimeStamps = DA.GetDataSet(sSQL)
+
+            For Each dr In dsTimeStamps.Tables(0).Rows
+                Select Case dr("RecipeName").ToString
+                    Case "Aux PLC"
+                        lblAuxPLC.Text = dr("DateTimeValue").ToString
+                    Case ("Aux JIT")
+                        lblAuxJIT.Text = dr("DateTimeValue").ToString
+                    Case "CompCode PLC"
+                        lblCompCodePLC.Text = dr("DateTimeValue").ToString
+                    Case "CompCode JIT"
+                        lblCompcodeJIT.Text = dr("DateTimeValue").ToString
+                    Case "CompName PLC"
+                        lblCompNamePLC.Text = dr("DateTimeValue").ToString
+                    Case "CompName JIT"
+                        lblCompNameJIT.Text = dr("DateTimeValue").ToString
+                    Case "Tool PLC"
+                        lblToolPLC.Text = dr("DateTimeValue").ToString
+                    Case "Tool JIT"
+                        lblToolJIT.Text = dr("DateTimeValue").ToString
+                    Case "Station PLC"
+                        lblStationPLC.Text = dr("DateTimeValue").ToString
+                    Case "Station JIT"
+                        lblStationJIT.Text = dr("DateTimeValue").ToString
+                    Case "ProdCode PLC"
+                        lblProdCodePLC.Text = dr("DateTimeValue").ToString
+                    Case "ProdCode JIT"
+                        lblProdCodeJIT.Text = dr("DateTimeValue").ToString
+                    Case "User PLC"
+                        lblUserPLC.Text = dr("DateTimeValue").ToString
+                    Case "User JIT"
+                        lblUserJIT.Text = dr("DateTimeValue").ToString
+                End Select
+            Next
+
+
+            sSQL = "EXEC procGetRecipeProgress '" + ddLineNum.SelectedItem.ToString() + "'"
+            dsProgress = DA.GetDataSet(sSQL)
+
+            For Each dr In dsProgress.Tables(0).Rows
+                Select Case dr("RecipeName").ToString
+                    Case "Aux DLD"
+                        hidpbAuxDnld.Value = dr("Value").ToString
+                    Case ("Aux UPLD")
+                        hidpbAuxUpld.Value = dr("Value").ToString
+                    Case "CompScan DLD"
+                        hidpbCompScanDnld.Value = dr("Value").ToString
+                    Case "CompScan UPLD"
+                        hidpbCompScanUpld.Value = dr("Value").ToString
+                    Case "CompName DLD"
+                        hidpbCompNameDnld.Value = dr("Value").ToString
+                    Case "CompName UPLD"
+                        hidpbCompNameUpld.Value = dr("Value").ToString
+                    Case "Tool DLD"
+                        hidpbToolDnld.Value = dr("Value").ToString
+                    Case "Tool UPLD"
+                        hidpbToolUpld.Value = dr("Value").ToString
+                    Case "Station DLD"
+                        hidpbStationDnld.Value = dr("Value").ToString
+                    Case "Station UPLD"
+                        hidpbStationUpld.Value = dr("Value").ToString
+                    Case "ProdCode DLD"
+                        hidpbProdCodeDnld.Value = dr("Value").ToString
+                    Case "ProdCode UPLD"
+                        hidpbProdCodeUpld.Value = dr("Value").ToString
+                    Case "User DLD"
+                        hidpbUserDnld.Value = dr("Value").ToString
+                    Case "User UPLD"
+                        hidpbUserUpld.Value = dr("Value").ToString
+                End Select
+            Next
+
+            dsTimeStamps.Dispose()
+            dsProgress.Dispose()
+        End If
+
+
+    End Sub
+
+
+    Private Sub UpdateTransactionParameters(ByRef TransactionID As Integer, ByRef TransactionParameterTypeID As String, ByRef LineNumber As Integer, ByRef TransactionParameterValue As String)
+
+        Try
+            Dim oSqlParameter As SqlParameter
+            Dim colParameters As New List(Of SqlParameter)
+
+            Dim status As String = ""
+            Dim message As String = ""
+
+            oSqlParameter = New SqlParameter("@TransactionID", SqlDbType.Int)
+            oSqlParameter.Value = TransactionID
+            colParameters.Add(oSqlParameter)
+
+            oSqlParameter = New SqlParameter("@TransactionParameterTypeID", SqlDbType.VarChar, 4)
+            oSqlParameter.Value = TransactionParameterTypeID
+            colParameters.Add(oSqlParameter)
+
+            oSqlParameter = New SqlParameter("@LineNumber", SqlDbType.Int)
+            oSqlParameter.Value = LineNumber
+            colParameters.Add(oSqlParameter)
+
+            oSqlParameter = New SqlParameter("@TransactionParameterValue", SqlDbType.VarChar, 200)
+            oSqlParameter.Value = TransactionParameterValue
+            colParameters.Add(oSqlParameter)
+
+            DA.ExecSP("procSG2015UpdateTransParams", colParameters)
+
+        Catch ex As Exception
+            Master.eMsg(ex.ToString())
+        End Try
+    End Sub
+
+
+    Private Function SelectTransactionParameter(ByRef TransactionID As Integer, ByRef TransactionParameterTypeID As String, ByRef LineNumber As Integer) As String
+
+        Try
+            Dim oSqlParameter As SqlParameter
+            Dim colParameters As New List(Of SqlParameter)
+            Dim colOutput As List(Of SqlParameter)
+            Dim status As String = ""
+            Dim message As String = ""
+
+            SelectTransactionParameter = ""
+
+            oSqlParameter = New SqlParameter("@TransactionID", SqlDbType.Int)
+            oSqlParameter.Value = TransactionID
+            colParameters.Add(oSqlParameter)
+
+            oSqlParameter = New SqlParameter("@TransactionParameterTypeID", SqlDbType.VarChar, 4)
+            oSqlParameter.Value = TransactionParameterTypeID
+            colParameters.Add(oSqlParameter)
+
+            oSqlParameter = New SqlParameter("@LineNumber", SqlDbType.Int)
+            oSqlParameter.Value = LineNumber
+            colParameters.Add(oSqlParameter)
+
+            oSqlParameter = New SqlParameter("@TransactionParameterValue", SqlDbType.VarChar, 200)
+            oSqlParameter.Direction = ParameterDirection.Output
+            colParameters.Add(oSqlParameter)
+
+            colOutput = DA.ExecSP("procSG2015SelectTransParams", colParameters)
+
+            For Each oParameter In colOutput
+                With oParameter
+                    If .Direction = ParameterDirection.Output Then
+                        SelectTransactionParameter = oParameter.Value.ToString()
+                        Exit For
+                    End If
+                End With
+            Next
+
+        Catch ex As Exception
+            Master.eMsg(ex.ToString())
+            SelectTransactionParameter = ""
+        End Try
+    End Function
+
+    Private Sub ResetTransactionProgress()
+
+        Try
+            DA.ExecSQL("Update tblSGTransactionParameters Set TransactionParameterValue = '100' WHERE (TransactionParameterTypeID = '0007' or TransactionParameterTypeID = '0008') AND LineNumber = " & CInt(hidLineNumber.Value))
+        Catch ex As Exception
+            Master.eMsg(ex.ToString())
+        End Try
+    End Sub
+
+#End Region
+
+End Class

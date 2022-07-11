@@ -1,0 +1,149 @@
+﻿/* General
+----------------------------------------------------------*/
+#divODSContent
+{
+    width: 1100px;
+}
+
+.imgPrint, .imgExpandCollapse, .imgHeaderExpandCollapse
+{
+    cursor: pointer;
+}
+.imgHeaderExpandCollapse
+{
+    margin-left:1px;
+}
+
+/* DROP DOWN LIST PANEL  (overlayed on top of the grids)
+----------------------------------------------------------*/
+#divFilterPanel
+{
+    width: 1100px;
+    top: 15px;
+    margin-left: 0px; 
+}
+#divFilterPanel p
+{
+    margin: 0px 8px 5px 0px;
+    float: left;
+}
+#divFilterPanel .spanLabel
+{
+    display: block;
+    text-align: Left;
+}
+#divFilterPanel .selectDropDown
+{
+    margin-top:5px;
+    width: 160px;
+}
+#divFilterPanel .spanReadOnly
+{
+    width: 213px;
+    display: inline-block;
+}
+
+.filterButtons
+{
+    margin-top:20px !important;
+}
+
+/* GRIDVIEWS
+----------------------------------------------------------*/
+#divMCRGrid
+{
+    clear:both;
+    float:left;
+    margin-top:10px;
+}
+
+#MainContent_gvMCRGrid select[disabled]
+{
+    background-color: #f7f7f7;
+}
+
+
+.MCRNumberColumn > * 
+{
+    vertical-align : middle;
+}
+
+.hiddenClass
+{
+    display:none;
+}
+
+.mcrEditable, .editStationMCR
+{
+    cursor: pointer;
+}
+
+.mcrDescriptionMaster
+{
+    cursor: pointer;    
+    padding-left: 4px;
+}
+.mcrDescriptionDetail
+{
+    padding-left: 4px;
+}
+.gvDetails
+{
+    margin: 8px 0px  8px 8px;
+}
+.confirmMCRNumber
+{
+    font-weight:bold;
+}
+
+.subDataGrid_HeaderStyle
+{
+    
+    color: #404040;
+    font-size:11px;
+    font-weight:lighter;
+    
+    /*
+    color: White;
+    background-color: #6495ED;
+    font-weight: bold;
+    */
+    line-height: normal;
+    height: 20;
+    border-top-left-radius: 5px;
+    border-top-right-radius: 5px;
+
+}
+
+#divDialogEdit span.spanLabel
+{
+    width: 120px;
+    display: inline-block;
+}
+#divDialogEdit span.ui-icon-triangle-1-e, #divDialogEditStationMCR span.ui-icon-triangle-1-e
+{
+    float: left;
+    padding-right: 5px;
+    /*margin-top: 4px;*/
+}
+#divDialogEdit p, #divDialogEditStationMCR p
+{
+    margin-bottom: 4px;
+    margin-top: 4px;
+    display:table;
+}
+#divEditArea span, #divDialogEditStationMCR span
+{
+    vertical-align:top;
+}
+#divEditArea .mcrDate
+{
+    margin-top:4px;
+}
+
+#divDialogEditStationMCR span.spanLabel
+{
+    display:inline-block;
+    vertical-align:top;
+    width:100px;    
+}

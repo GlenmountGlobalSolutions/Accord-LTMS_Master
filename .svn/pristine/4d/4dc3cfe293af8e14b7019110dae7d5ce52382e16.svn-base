@@ -1,0 +1,1603 @@
+﻿Imports System.IO
+Imports System.Data.SqlClient
+
+Public Class KDPlanProcessing
+    Inherits System.Web.UI.Page
+
+    Private BatchModuleApplicationID As String
+    Private ImpersonDomain As String
+    Private ImpersonUser As String
+    Private ImpersonPass As String
+
+    Private ActivateFrameTest As Boolean = False
+    Private ActivateRecordLengthTest As Boolean = False
+    Private ActivateQuantityTest As Boolean = False
+    Private ActivateSequenceTest As Boolean = False
+
+#Region "Events"
+    Protected Sub Page_Load(ByVal sender As Object, ByVal e As System.EventArgs) Handles Me.Load
+        Try
+            BatchModuleApplicationID = ConfigurationManager.AppSettings("BatchModuleApplicationID")
+            ActivateFrameTest = CBool(ConfigurationManager.AppSettings("BatchModuleActivateFrameTest"))
+            ActivateRecordLengthTest = CBool(ConfigurationManager.AppSettings("BatchModuleActivateRecordLenghtTest"))
+            ActivateQuantityTest = CBool(ConfigurationManager.AppSettings("BatchModuleActivateQuantityTest"))
+            ActivateSequenceTest = CBool(ConfigurationManager.AppSettings("BatchModuleActivateSequenceTest"))
+
+            ImpersonDomain = ReturnDomain()
+            ImpersonUser = ReturnUser()
+            ImpersonPass = ReturnPassword()
+
+            If Not Page.IsPostBack Then
+                If (ImpersonUser.ToString().Length > 0) Then
+                    Using New Impersonation(ImpersonDomain, ImpersonUser, ImpersonPass)
+                        'load files into directory tree listbox and clear file parameters
+                        LoadFiles()
+                        ResetControls()
+
+                    End Using
+                Else
+                    LoadFiles()
+                    ResetControls()
+                End If
+            End If
+        Catch ex As Exception
+            Master.eMsg(ex.ToString())
+        End Try
+    End Sub
+
+    Private Sub Page_PreRender(ByVal sender As System.Object, ByVal e As System.EventArgs) Handles MyBase.PreRender
+        Try
+            Page.DataBind()
+            EnableControls()
+        Catch ex As Exception
+            Master.eMsg(ex.ToString())
+        End Try
+    End Sub
+
+    Private Sub TreeView_SelectedNodeChanged(sender As Object, e As System.EventArgs) Handles TreeView.SelectedNodeChanged
+        Dim node As TreeNode
+        Dim strNvalues As New ArrayList
+        Dim strDirIn As String = ReturnInbound()
+        Dim strDirArc As String = ReturnOutbound()
+        Dim x As Integer = 0
+        Try
+            'clear out all file information
+            ResetControls()
+
+            node = TreeView.SelectedNode
+            If (node IsNot Nothing) AndAlso (node.Text <> strDirIn) AndAlso (node.Text <> strDirArc) Then
+                lblFileName.Text = node.Text.ToString()
+
+                If (ImpersonUser.ToString().Length > 0) Then
+                    Using New Impersonation(ImpersonDomain, ImpersonUser, ImpersonPass)
+                        'Call function to determine what N-values are in file
+                        strNvalues = ReturnNvalues(node.Parent.Text & node.Text)
+                        'write entire KD plan to textbox
+                        WriteKDPlanAll(node.Parent.Text & node.Text)
+                    End Using
+                Else
+                    'Call function to determine what N-values are in file
+                    strNvalues = ReturnNvalues(node.Parent.Text & node.Text)
+                    'write entire KD plan to textbox
+                    WriteKDPlanAll(node.Parent.Text & node.Text)
+                End If
+            End If
+
+            'if N-Values found in file
+            If (strNvalues IsNot Nothing) AndAlso (strNvalues.Count > 0) Then
+                For x = 0 To strNvalues.Count - 1
+                    'populate the list box with N-values in the file
+                    lbNfiles.Items.Add(strNvalues.Item(x).ToString())
+                Next
+            End If
+        Catch ex As Exception
+            Master.eMsg(ex.ToString())
+        End Try
+
+    End Sub
+
+    Private Sub lbNfiles_SelectedIndexChanged(ByVal sender As System.Object, ByVal e As System.EventArgs) Handles lbNfiles.SelectedIndexChanged
+        'call function to only display in text box the N-file for the current selection from the list box
+
+        If lbNfiles.SelectedValue <> "" Then    'make sure an N-value is selected
+            ChangeSelectedKDPlan()
+        End If
+    End Sub
+
+    Private Sub cmdMove_Click(ByVal sender As System.Object, ByVal e As System.EventArgs) Handles cmdMove.Click
+        'copy to outbound if file is located in the inbound directory or 
+        'copy to inbound if the file is located in the outbound directory
+
+        Try
+            Dim strDirIn As String = ReturnInbound()
+            Dim strDirArc As String = ReturnOutbound()
+            Dim strFileDest As String
+            Dim strFileSrc As String
+
+            'get path of file selected
+            Dim strfilepath As String = TreeView.SelectedNode.Parent.Text()
+
+
+            strFileSrc = strfilepath + lblFileName.Text
+            If strfilepath = strDirIn Then
+                'from inbound so copy to outbound
+                strFileDest = strDirArc + lblFileName.Text
+
+            ElseIf strfilepath = strDirArc Then
+                'from outbound so copy to inbound
+                strFileDest = strDirIn + lblFileName.Text
+            Else
+                strFileDest = ""
+            End If
+
+            If (ImpersonUser.ToString().Length > 0) Then
+                Using New Impersonation(ImpersonDomain, ImpersonUser, ImpersonPass)
+
+                    'write to outbound, copy original file to new directory
+                    File.Copy(strFileSrc, strFileDest)
+                    'delete original file
+                    File.Delete(strFileSrc)
+                End Using
+            Else
+                'write to outbound, copy original file to new directory
+                File.Copy(strFileSrc, strFileDest)
+                'delete original file
+                File.Delete(strFileSrc)
+            End If
+
+
+            'refresh the view after deleting file
+            'load files into directory tree listbox and clear file parameters
+            LoadFiles()
+            ResetControls()
+        Catch ex As Exception
+            Master.eMsg(ex.ToString())
+        End Try
+    End Sub
+
+    Private Sub cmdDelete_Click(ByVal sender As System.Object, ByVal e As System.EventArgs) Handles cmdDelete.Click
+        Try
+            'get path of current selection
+            Dim strfilepath As String = TreeView.SelectedNode.Parent.Text()
+
+            If (ImpersonUser.ToString().Length > 0) Then
+                Using New Impersonation(ImpersonDomain, ImpersonUser, ImpersonPass)
+
+                    File.Delete(strfilepath & lblFileName.Text)
+                End Using
+            Else
+                File.Delete(strfilepath & lblFileName.Text)
+            End If
+
+            'refresh the view after deleting file
+            'load files into directory tree listbox and clear file parameters
+            LoadFiles()
+            ResetControls()
+
+        Catch ex As Exception
+            Master.eMsg(ex.ToString())
+
+        End Try
+    End Sub
+
+    Private Sub cmdProcess_Click(ByVal sender As System.Object, ByVal e As System.EventArgs) Handles cmdProcess.Click
+        ' Handle the Process dialog first:
+        If dialogProcessAction.Value.ToUpper() = "PROCESS" Then
+            'process button was clicked
+            Me.divDialogProcessAccept_Click()
+
+        ElseIf dialogProcessAction.Value.ToUpper() = "CANCEL" Then
+            'cancel button was clicked
+            divDialogProcessCancel_Click()
+
+        ElseIf dialogProcessAction.Value.ToUpper() = "REPORT" Then
+            'report button was clicked
+
+            '(currently handled with the .click event.)
+        End If
+        'reset the process button idicator
+        dialogProcessAction.Value = ""
+
+
+
+
+        Dim colParameters As New List(Of SqlParameter)
+        Dim colOutput As List(Of SqlParameter) = Nothing
+        Dim oSqlParameter As Data.SqlClient.SqlParameter
+        Dim strWarningMessage As String
+        Dim blnProcess As Boolean = False 'set to true if user clicks ok to process
+        'Dim blnValid As Boolean 'set to  true if validation is ok
+        Dim strErrorRecords As String
+        Dim strErrorFrame As String
+        Dim NValue As String
+        Dim objNode As New TreeNode
+        Dim objNodeParent As New TreeNode
+        Dim strArrayErrorQuantity As New ArrayList
+        Dim strArrayErrorRecords As New ArrayList
+        Dim strArrayErrorFrame As New ArrayList
+        Dim blnValidQuantity As Boolean
+        Dim blnValidSequence As Boolean
+        Dim strValidSequence As String
+        Dim strValidQuantity As String
+        Dim blnN0Indicator As Boolean
+        Dim intMultiMonthFlag As Integer = 0
+        Dim bcontinue As Boolean = False
+        Dim status As String
+
+        'determine if N-1 data already exists, if it does, prompt user whether this data is N-0 data
+        'if labeled as n-1 file check if n-0
+        If lbNfiles.SelectedValue <> "" Then
+            If InStr(Trim(lbNfiles.SelectedValue.ToString), "N-1", CompareMethod.Text) > 0 Then 'N-1 Data Found
+                If ReturnProcessed(lbNfiles.SelectedValue) = 0 Then
+                    blnN0Indicator = False
+                    Session("N0Indicator") = "FALSE"
+                Else
+                    'N-1 already processed, ask if this is N-0 data
+                    blnN0Indicator = True
+                    Session("N0Indicator") = "TRUE"
+                End If
+            Else
+                'Not N-1 Data
+                blnN0Indicator = False
+                Session("N0Indicator") = "FALSE"
+            End If
+        End If
+
+        'Dim i As Integer
+        Try
+            'set SQL parameters for status output: used to report back  if DTS package successed
+            oSqlParameter = New SqlParameter("@Status", SqlDbType.VarChar, 5)
+            oSqlParameter.Direction = ParameterDirection.Output
+            colParameters.Add(oSqlParameter)
+
+            objNode = TreeView.SelectedNode
+            objNodeParent = objNode.Parent
+            Dim strfilepath As String = objNodeParent.Text()
+            'set path to currently selected parent node
+            If lbNfiles.SelectedValue <> "" Then    'check to make sure N-Value selected
+
+                If InStr(lbNfiles.SelectedValue.ToString, "*", CompareMethod.Text) > 0 Then
+                    ' Alert = "* found"
+                    intMultiMonthFlag = 1
+                End If
+                NValue = lbNfiles.SelectedValue.Substring(0, 3)
+
+                WriteNValue(lbNfiles.SelectedValue) 'write N-value selected to temp table
+
+
+                'create file then test file
+                bcontinue = False
+                If (ImpersonUser.ToString().Length > 0) Then
+                    Using New Impersonation(ImpersonDomain, ImpersonUser, ImpersonPass)
+                        bcontinue = CreateDtsFile(ReturnDTSFile(), strArrayErrorFrame, strArrayErrorRecords, blnValidQuantity, blnValidSequence)
+
+                    End Using
+                Else
+                    'without impersonation
+                    bcontinue = CreateDtsFile(ReturnDTSFile(), strArrayErrorFrame, strArrayErrorRecords, blnValidQuantity, blnValidSequence)
+                End If
+
+                If bcontinue = True Then
+
+                    strErrorFrame = ""
+                    If strArrayErrorFrame.Count <> 0 Then
+                        'there were error in the frame codes
+                        strErrorFrame = "The following Frame codes were found in the incoming " & lbNfiles.SelectedValue & " file, but are not configured in JIT Manager.  " & _
+                        "This file can not be processed until the following frame codes have been added to the system or added to the No-Build Indicator.|"
+                        'prepare the text for display in the error popup box, use | for newline character, javascript will convert | to new line character
+                        For i = 0 To strArrayErrorFrame.Count - 1
+                            strErrorFrame = strErrorFrame & strArrayErrorFrame.Item(i).ToString() & "|"
+                        Next i
+                    End If
+
+                    'populate warning messsage if error in Record Length
+                    strErrorRecords = ""
+                    If strArrayErrorRecords.Count <> 0 Then
+                        'add lines to the text message to display in the error popup.
+                        For i = 0 To strArrayErrorRecords.Count - 1
+                            strErrorRecords = strErrorRecords & strArrayErrorRecords.Item(i).ToString() & ", "
+                        Next i
+                        strErrorRecords = "On Line " & strErrorRecords
+                        strErrorRecords = strErrorRecords & "of the incoming file, the length of characters  does not meet the configured length range.  " & _
+                        "Please verify that this line contains valid data. "
+
+                    End If
+
+                    strValidQuantity = ""
+                    If blnValidQuantity = False Then
+                        'quantity validation failed so add this message to popup.
+                        strValidQuantity = "The quantity found in the incoming N-1 file does not match the quantity found in the current N-2 data."
+                    End If
+
+                    strValidSequence = ""
+                    If blnValidSequence = False Then
+                        'sequence validation failed, so add this message to popup.
+                        strValidSequence = "Sequence validation failed, KD-plan selected will be processed out of order." & "|"
+
+                    End If
+
+                    strWarningMessage = ""
+                    If strErrorFrame <> "" Then
+                        'add | so will appear as carriage return in popup
+                        strWarningMessage = strWarningMessage & strErrorFrame & "|"
+                    End If
+                    If strValidSequence <> "" Then
+                        'add | so will appear as carriage return in popup
+                        strWarningMessage = strWarningMessage & strValidSequence & "|"
+                    End If
+                    If strErrorRecords <> "" Then
+                        'add | so will appear as carriage return in popup
+                        strWarningMessage = strWarningMessage & strErrorRecords & "|"
+                    End If
+                    If strValidQuantity <> "" Then
+                        'add | so will appear as carriage return in popup
+                        strWarningMessage = strWarningMessage & "|" & strValidQuantity & "|"
+                    End If
+
+                    If strArrayErrorRecords.Count = 0 And strArrayErrorFrame.Count = 0 And blnValidQuantity = True And blnValidSequence = True Then
+                        'if validation true, then no errors
+                        If captureValidFlag.Value.ToString.ToUpper() = "TRUE" Then
+                            'user clicked ok to validation and process anyway
+                            'call function to write DTS parameters including file name and N-Value to process
+                            WriteNValue(lbNfiles.SelectedValue)
+
+                            'call final process file popup here if
+                            If captureProcessFlag.Value.ToString.ToUpper() = "" Then
+                                If intMultiMonthFlag = 1 Then
+                                    strWarningMessage = "<font color=RED size=2><B> The File Contains Data Outside of the Month Specified!  Are you sure you want to process: " & lbNfiles.SelectedValue & "data?</b></font> "
+                                Else
+                                    strWarningMessage = "<font color=RED size=2><B> Are you sure you want to process: " & lbNfiles.SelectedValue & "data?</b></font> "
+                                End If
+                                'Page.ClientScript.RegisterStartupScript(Me.GetType, "captureProcess", "<script>captureProcess('" & strWarningMessage & "')</script>")
+
+                                divDialogProcessMessage.InnerHtml = strWarningMessage
+                                dialogControl.Value = "captureProcess"
+                            ElseIf captureProcessFlag.Value.ToString.ToUpper = "TRUE" Then
+                                'On second time through if process popup true then
+                                captureProcessFlag.Value = ""
+                                'process file
+                                If Session("KDProcess").ToString.ToUpper() = "TRUE" Then
+                                    If NValue = "N-1" Then
+                                        If Session("N0Process").ToString.ToUpper() = "TRUE" Then       'check if user clicked ok to N-0 Processing
+                                            'process as an N-0 file
+                                            captureProcessFlag.Value = "FALSE"
+                                            Session("N0Process") = "FALSE"
+                                            colOutput = DA.ExecSP("procDTSExecuteN0", colParameters)
+                                        Else
+                                            'process as an N-1 file
+                                            Session("KDProcess") = "UNKNOWN"
+                                            captureProcessFlag.Value = "FALSE"
+                                            colOutput = DA.ExecSP("procDTSExecuteN1", colParameters)
+
+                                        End If
+                                    ElseIf NValue = "N-2" Then
+                                        Session("KDProcess") = "UNKNOWN"
+                                        captureProcessFlag.Value = "FALSE"
+                                        colOutput = DA.ExecSP("procDTSExecuteN2", colParameters)
+                                    ElseIf NValue = "N-3" Then
+                                        captureProcessFlag.Value = "FALSE"
+                                        Session("KDProcess") = "UNKNOWN"
+                                        colOutput = DA.ExecSP("procDTSExecuteN3", colParameters)
+                                    End If
+
+                                    status = ""
+                                    For Each par As SqlParameter In colOutput
+                                        With par
+                                            If .Direction = ParameterDirection.Output And .ParameterName = "@Status" Then
+                                                status = par.Value.ToString()
+                                                'add support for N-0 processing MS 01-05-2006
+                                                If status = "1" And NValue = "N-0" Then
+                                                    Master.tMsg("cmdProcess", lbNfiles.SelectedValue & " data has been successfully loaded from file " & lblFileName.Text)
+                                                ElseIf status = "1" And ReturnProcessed(lbNfiles.SelectedValue) > 0 Then
+                                                    Master.tMsg("cmdProcess", lbNfiles.SelectedValue & " data has been successfully loaded from file " & lblFileName.Text)
+                                                Else
+                                                    Master.tMsg("cmdProcess", "Warning! File " & lblFileName.Text & " encountered an error processing " & lbNfiles.SelectedValue & " data.")
+                                                End If
+                                            End If
+                                        End With
+                                    Next
+                                End If
+                            End If
+                        End If
+                        If captureProcessFlag.Value.ToString.ToUpper = "" Then
+                            'first time through, so popup confirmation popup box
+                            If intMultiMonthFlag = 1 Then
+                                strWarningMessage = "<font color=RED size=2><B> The File Contains Data Outside of the Month Specified!  Are you sure you want to process: " & lbNfiles.SelectedValue & " data? </b></font> "
+                            Else
+                                strWarningMessage = "<font color=RED size=2><B> Are you sure you want to process: " & lbNfiles.SelectedValue & " data? </b></font> "
+                            End If
+                            'Page.ClientScript.RegisterStartupScript(Me.GetType, "captureProcess", "<script>captureProcess('" & strWarningMessage & "')</script>")
+
+                            divDialogProcessMessage.InnerHtml = strWarningMessage
+                            dialogControl.Value = "captureProcess"
+                        End If
+                        If captureProcessFlag.Value.ToString.ToUpper = "TRUE" Then
+                            'if process popup true then process the file.
+                            captureValidFlag.Value = ""
+
+                            'process file
+                            If Session("KDProcess").ToString.ToUpper() = "TRUE" Then
+                                If NValue = "N-1" Then
+                                    If Session("N0Process").ToString.ToUpper() = "TRUE" Then       'check if user clicked ok to N-0 Processing
+                                        'process as an N-0 file
+                                        captureProcessFlag.Value = "FALSE"
+                                        Session("N0Process") = "FALSE"
+                                        colOutput = DA.ExecSP("procDTSExecuteN0", colParameters)
+                                    Else
+                                        'process as an N-1 file
+                                        Session("KDProcess") = "UNKNOWN"
+                                        captureProcessFlag.Value = "FALSE"
+                                        colOutput = DA.ExecSP("procDTSExecuteN1", colParameters)
+                                    End If
+                                ElseIf NValue = "N-2" Then
+                                    Session("KDProcess") = "UNKNOWN"
+                                    captureProcessFlag.Value = "FALSE"
+                                    colOutput = DA.ExecSP("procDTSExecuteN2", colParameters)
+                                ElseIf NValue = "N-3" Then
+                                    Session("KDProcess") = "UNKNOWN"
+                                    captureProcessFlag.Value = "FALSE"
+                                    colOutput = DA.ExecSP("procDTSExecuteN3", colParameters)
+
+                                End If
+
+
+                                status = ""
+                                For Each par As SqlParameter In colOutput
+                                    With par
+                                        If .Direction = ParameterDirection.Output And .ParameterName = "@Status" Then
+                                            status = par.Value.ToString()
+
+                                            'add support for N-0 processing MS 01-05-2006
+                                            If status = "1" And NValue = "N-0" Then
+                                                Master.tMsg("cmdProcess", lbNfiles.SelectedValue & " data has been successfully loaded from file " & lblFileName.Text)
+                                            ElseIf status = "1" And ReturnProcessed(lbNfiles.SelectedValue) > 0 Then
+                                                Master.tMsg("cmdProcess", lbNfiles.SelectedValue & " data has been successfully loaded from file " & lblFileName.Text)
+                                            Else
+                                                Master.tMsg("cmdProcess", "Warning! File " & lblFileName.Text & " encountered an error processing " & lbNfiles.SelectedValue & " data.")
+                                            End If
+                                        End If
+                                    End With
+                                Next
+                                'move file to outbound
+                            End If
+                        End If
+                    Else
+                        If captureValidFlag.Value.ToString.ToUpper = "" Then
+                            If strArrayErrorFrame.Count <> 0 Then
+                                'frame errors, so setup popup dialog for critical validation alert
+                                tbConfirmValidDisabledMessage.Text = Regex.Replace(strWarningMessage, "[|]", vbCrLf)
+                                'dialogMessage01.Value = strWarningMessage
+                                dialogControl.Value = "captureValidDisabled"
+                            Else
+                                'no frame errors, so non-critical validation
+                                'Page.ClientScript.RegisterStartupScript(Me.GetType, "captureValid", "<script>captureValid('" & strWarningMessage & "')</script>")
+
+                                tbConfirmValidMessage.Text = strWarningMessage
+                                dialogControl.Value = "captureValid"
+                            End If
+                        End If
+                        If captureValidFlag.Value.ToString.ToUpper = "TRUE" Then
+                            'call function to write DTS parameters including file name and N-Value to process
+                            WriteNValue(lbNfiles.SelectedValue)
+
+                            'call process popup here if process null
+                            If captureProcessFlag.Value.ToString.ToUpper = "" Then
+                                If intMultiMonthFlag = 1 Then
+                                    strWarningMessage = "<font color=RED size=2><B> The File Contains Data Outside of the Month Specified!  Are you sure you want to process: " & lbNfiles.SelectedValue & " data?</font></B> "
+                                Else
+                                    strWarningMessage = "<font color=RED size=2><B> Are you sure you want to process: " & lbNfiles.SelectedValue & " data?</font></B> "
+                                End If
+                                'Page.ClientScript.RegisterStartupScript(Me.GetType, "captureProcess", "<script>captureProcess('" & strWarningMessage & "')</script>")
+
+                                divDialogProcessMessage.InnerHtml = strWarningMessage
+                                dialogControl.Value = "captureProcess"
+                            ElseIf captureProcessFlag.Value.ToString.ToUpper = "TRUE" Then
+                                'if process popup true then
+                                'process fiel
+                                captureValidFlag.Value = ""
+                                'process file
+                                'make sure user clicked ok and verify this
+                                If Session("KDProcess").ToString.ToUpper() = "TRUE" Then
+                                    If NValue = "N-1" Then
+                                        If Session("N0Process").ToString.ToUpper() = "TRUE" Then       'check if user clicked ok to N-0 Processing
+                                            'process as an N-0 file
+                                            captureProcessFlag.Value = "FALSE"
+                                            Session("N0Process") = "FALSE"
+                                            colOutput = DA.ExecSP("procDTSExecuteN0", colParameters)
+                                        Else
+                                            Session("KDProcess") = "UNKNOWN"
+                                            'process as an N-1 file
+                                            captureProcessFlag.Value = "FALSE"
+                                            colOutput = DA.ExecSP("procDTSExecuteN1", colParameters)
+                                        End If
+                                    ElseIf NValue = "N-2" Then
+                                        Session("KDProcess") = "UNKNOWN"
+                                        captureProcessFlag.Value = "FALSE"
+                                        colOutput = DA.ExecSP("procDTSExecuteN2", colParameters)
+                                    ElseIf NValue = "N-3" Then
+                                        Session("KDProcess") = "UNKNOWN"
+                                        captureProcessFlag.Value = "FALSE"
+                                        colOutput = DA.ExecSP("procDTSExecuteN3", colParameters)
+                                    End If
+
+                                    status = ""
+                                    For Each par As SqlParameter In colOutput
+                                        With par
+                                            If .Direction = ParameterDirection.Output And .ParameterName = "@Status" Then
+                                                status = par.Value.ToString()
+
+                                                'add support for N-0 processing MS 01-05-2006
+                                                If status = "1" And NValue = "N-0" Then
+                                                    Master.tMsg("cmdProcess", lbNfiles.SelectedValue & " data has been successfully loaded from file " & lblFileName.Text)
+                                                ElseIf status = "1" And ReturnProcessed(lbNfiles.SelectedValue) > 0 Then
+                                                    Master.tMsg("cmdProcess", lbNfiles.SelectedValue & " data has been successfully loaded from file " & lblFileName.Text)
+                                                Else
+                                                    Master.tMsg("cmdProcess", "Warning! File " & lblFileName.Text & " encountered an error processing " & lbNfiles.SelectedValue & " data.")
+                                                End If
+                                            End If
+                                        End With
+                                    Next
+
+                                End If
+                            ElseIf captureProcessFlag.Value.ToString.ToUpper = "FALSE" Then
+                                'user clicked cancel
+                                captureValidFlag.Value = ""
+                            End If
+                        End If
+                        If captureValidFlag.Value.ToString.ToUpper = "FALSE" Then
+                            captureValidFlag.Value = ""
+                        End If
+                    End If
+                    captureProcessFlag.Value = ""
+
+                End If
+            Else
+                Master.tMsg("cmdProcess", "Please choose a KD-plan to process!")
+            End If
+        Catch ex As Exception
+            Master.eMsg(ex.Source)
+            Master.tMsg("cmdProcess", "Warning! File " & lblFileName.Text & " encountered an error processing " & lbNfiles.SelectedValue & " data. Error: " & ex.ToString())
+
+        End Try
+    End Sub
+
+
+#End Region
+
+#Region "Methods"
+    Private Sub ChangeSelectedKDPlan()
+        Try
+            'find N-value selected.
+            Dim strNValue As String = lbNfiles.SelectedValue.ToString
+
+            'find currently selected file
+            Dim strfilepath As String = TreeView.SelectedNode.Parent.Text.ToString()
+
+            If (ImpersonUser.ToString().Length > 0) Then
+                Using New Impersonation(ImpersonDomain, ImpersonUser, ImpersonPass)
+                    'call function to write only the selected plan to the textbox.
+                    WriteKDPlanSelected(strfilepath & lblFileName.Text, strNValue)
+
+                End Using
+            Else
+                'call function to write only the selected plan to the textbox without impersonation.
+                WriteKDPlanSelected(strfilepath & lblFileName.Text, strNValue)
+            End If
+
+
+            'query database to determine if selected N-value is in table and therefore KD plan has been processed
+            'if the data is N-0 there will never be an N-0 Value in the Orders Table so do not have to worry about this condition
+            Dim intCompare As Integer = ReturnProcessed(strNValue)  'returns count of records with N-value
+            If intCompare > 0 Then
+                'set to processed
+                lblStatus.Text = "Processed"
+
+            Else
+                'set to not processed
+                lblStatus.Text = "Not Processed"
+
+            End If
+
+        Catch ex As Exception
+            Master.eMsg(ex.ToString())
+        End Try
+    End Sub
+
+    Private Sub LoadFiles()
+        Try
+            Dim sfiles() As String
+            Dim sfile As String
+            Dim strDirIn As String = ReturnInbound()
+            Dim strDirArc As String = ReturnOutbound()
+
+            Dim objChildNode As TreeNode
+            Dim objParentNode As TreeNode
+
+            Dim x As Integer = 0
+
+            'clear out tree control
+            TreeView.Nodes.Clear()
+
+            '********  INCOMMING  ***************
+            If Len(strDirIn) > 0 Then
+                objParentNode = New TreeNode
+                objParentNode.Text = strDirIn
+
+                'add parent node to root level
+                TreeView.Nodes.Add(objParentNode)
+
+                If (ImpersonUser.ToString().Length > 0) Then
+                    Using New Impersonation(ImpersonDomain, ImpersonUser, ImpersonPass)
+
+                        sfiles = GetListOfFilesWithoutPath(strDirIn)
+                    End Using
+                Else
+
+                    sfiles = GetListOfFilesWithoutPath(strDirIn)
+                End If
+
+                'now add child node
+                For Each sfile In sfiles
+                    objChildNode = New TreeNode
+                    objChildNode.Text = sfile
+                    objParentNode.ChildNodes.Add(objChildNode)
+                Next
+            Else
+                Master.eMsg("Error: Inbound directory isn't configured.")
+            End If
+
+
+            '***********  OUTGOING  ************
+            sfiles = Nothing
+            If Len(strDirArc) > 0 Then
+
+                objParentNode = New TreeNode
+                objParentNode.Text = strDirArc
+
+                'add parent node to root level
+                TreeView.Nodes.Add(objParentNode)
+
+                If (ImpersonUser.ToString().Length > 0) Then
+                    Using New Impersonation(ImpersonDomain, ImpersonUser, ImpersonPass)
+
+                        sfiles = GetListOfFilesWithoutPath(strDirArc)
+                    End Using
+                Else
+                    'without impersonation
+                    sfiles = GetListOfFilesWithoutPath(strDirArc)
+                End If
+
+                'now add child nodes
+                For Each sfile In sfiles
+                    objChildNode = New TreeNode
+                    objChildNode.Text = sfile
+                    objParentNode.ChildNodes.Add(objChildNode)
+
+                Next
+            Else
+                Master.eMsg("Error: Outbound directory isn't configured.")
+            End If
+        Catch ex As Exception
+            Master.eMsg(ex.ToString())
+        End Try
+    End Sub
+
+    Private Function ReturnNvalues(ByVal path As String) As ArrayList
+        'this function will return the n values in current file.  These are used for populating list box, the file status, and file date
+        'update 1-20-2006 modify so for N-0 files, it will count the number of records of each and 
+        'then populate based on that.
+
+        Dim strReturnNvalues As New ArrayList
+        Dim strLine As String
+        Dim strModstrJobs As String
+        Dim strDetailRecord As String
+        Dim strProdLine As String
+        Dim strFrameCodeFromFile As String
+        Dim lstNoBuildIdentifierArray As New ArrayList
+
+        Dim strNoBuildStartPosition As Integer
+        Dim strNoBuildStringLength As Integer
+
+        Dim mnth As String
+        Dim yr As String
+        Dim day As String
+        Dim key As String
+        Dim keyCount As Integer
+        Dim dateCounts As New Hashtable
+        Dim de As DictionaryEntry
+        Dim maxDate As DictionaryEntry
+        Dim dt As DateTime
+
+
+        lblAsterick.Text = ""   'reset the flag
+        lblAsterick.Visible = False
+
+        Try
+            'open a stream to path passed in
+            Using sReader = New StreamReader(path)
+
+                'returns the production line for the file to be processed configured in the database
+                strProdLine = ReturnProdLine()
+
+                'build array of identifiers for "no build frame codes"
+                For Each Str As String In ReturnNoBuildStringIdentifiers().Split(","c)
+                    lstNoBuildIdentifierArray.Add(Str)
+                Next
+
+                strNoBuildStringLength = ReturnNoBuildStringLength()
+                strNoBuildStartPosition = ReturnNoBuildStartPosition()
+
+                ' ||||||'READ'|||||||||
+                strLine = Trim(sReader.ReadLine)  'read in very first line which should be header record
+                strLine = strLine.Replace(Chr(9), "")
+                Do While strLine = ""
+                    strLine = Trim(sReader.ReadLine)
+                Loop
+
+                ' get KD plan date from first record in file and format it
+                'read in the file send date
+                mnth = strLine.Substring(51, 6).Substring(2, 2)    'parse out month
+                day = strLine.Substring(51, 6).Substring(4, 2) 'parse out day
+                yr = strLine.Substring(51, 6).Substring(0, 2) 'parse out year
+
+                strModstrJobs = mnth & "/" & "01" & "/" & yr
+                lblSendDate.Text = mnth & "/" & day & "/" & yr 'set the file send date
+                strDetailRecord = ""
+                If strLine = "" Then        'check for invalid records, extra spaces in file, or end of file
+                    strLine = Trim(sReader.ReadLine)
+                Else
+                    'find the month and year of the lot to be created
+                    strDetailRecord = Trim(strLine).Substring(0, 7)
+                End If
+
+                Do While (sReader.Peek <> -1)  '1 record has been read at this point
+                    'keep processing rows until the trailer record is reached
+                    Do Until strDetailRecord = "**TRAIL"
+                        If strDetailRecord = "**HEADE" Then
+                            Exit Do 'means found 2nd header record, done with detail records
+                        Else 'start processing detail records
+                            '////////detail records
+                            strFrameCodeFromFile = strLine.Substring(11, 7) & strLine.Substring(31, 1)
+                            'check for production line and exit do if not configured line
+                            strProdLine = strLine.Substring(2, 1)
+
+                            If lstNoBuildIdentifierArray.Contains(UCase(strFrameCodeFromFile.Substring(strNoBuildStartPosition - 1, strNoBuildStringLength))) Then
+                                'skip the line because no build frame code foudn
+                                'JMH(framecount isn't used anywhere)       intframecount = intframecount + 1
+
+                            Else
+                                'count up the dates
+                                key = strLine.Substring(3, 4)
+                                'check that key does not already exist and also that it is not a no-build
+                                If Not dateCounts.ContainsKey(key) Then
+                                    dateCounts.Add(key, 1)
+                                Else
+                                    keyCount = CInt(dateCounts.Item(key))
+                                    keyCount = keyCount + 1
+                                    dateCounts.Item(key) = keyCount
+                                End If
+
+                            End If
+
+                            '/////////detail records
+                        End If
+                        'end processing detail records
+
+                        'after read in header record
+                        strLine = Trim(sReader.ReadLine) ' ||||||'READ'|||||||||
+                        strLine = strLine.Replace(Chr(9), "")
+                        If strLine = "" Then        'check for invalid records, extra spaces in file, or end of file
+                            strLine = Trim(sReader.ReadLine)
+                        Else
+                            'find the month and year of the lot to be created
+                            strDetailRecord = Trim(strLine).Substring(0, 7)
+                        End If
+                    Loop
+
+                    'read records after the header record  ' ||||||'READ'|||||||||
+                    strLine = Trim(sReader.ReadLine)
+                    strLine = strLine.Replace(Chr(9), "")
+                    If strLine.Length < ReturnStringLength() - 20 Then
+                        sReader.ReadLine()
+
+                    End If
+                    If strLine = "" Then        'check for invalid records, extra spaces in file, or end of file
+                        strLine = Trim(sReader.ReadLine)
+                    Else
+                        'find the month and year of the lot to be created
+                        strDetailRecord = Trim(strLine).Substring(0, 7)
+                    End If
+
+                    'determine max of what was passed in and set this to be returned
+                    If Not dateCounts.Count = 0 Then 'takes care of first pass
+                        For Each de In dateCounts
+                            If IsNothing(maxDate) OrElse CInt(de.Value) > CInt(maxDate.Value) Then
+                                maxDate = de
+                            End If
+                        Next
+
+                        dt = DateTime.ParseExact(maxDate.Key.ToString(), "yyMM", Nothing)
+                        mnth = dt.Month.ToString()
+                        yr = dt.Year.ToString()
+                        Dim strModKDPlan As String = mnth & "/" & "01" & "/" & yr
+
+                        'determine if N-1, N-2 or N-3, or N-0, or N-0* with data from two months
+                        Dim marker As String = ""
+                        Select Case CInt((DateDiff(DateInterval.Month, CDate(strModstrJobs), CDate(strModKDPlan))))
+                            Case 0 'found N-0 data
+                                If dateCounts.Keys.Count > 1 Then 'found two dates in the file, so set asterick data
+                                    lblAsterick.Text = "* File Contains Data Outside of Month Specified"
+                                    marker = "*"
+                                Else
+                                    lblAsterick.Text = "* Flagged as N-0 File, Double Check"
+                                    marker = "*"
+                                End If
+                                strReturnNvalues.Add("N-1 " & Format(CDate(strModKDPlan), "MMMM yyyy") & " - Line " & strProdLine & marker)
+
+                            Case 1 'found N-1 data 
+                                If dateCounts.Keys.Count > 1 Then 'found two dates in the file, so set asterick data
+                                    lblAsterick.Text = "* File Contains Data Outside of Month Specified"
+                                    marker = "*"
+                                Else : marker = ""
+                                End If
+                                strReturnNvalues.Add("N-1 " & Format(CDate(DateAdd(DateInterval.Month, 1, CDate(strModstrJobs))), "MMMM yyyy") & " - Line " & strProdLine & marker)
+
+                            Case 2 'found N-2 data
+                                strReturnNvalues.Add("N-2 " & Format(CDate(DateAdd(DateInterval.Month, 2, CDate(strModstrJobs))), "MMMM yyyy") & " - Line " & strProdLine)
+
+                            Case 3 'found N-3 data
+                                strReturnNvalues.Add("N-3 " & Format(CDate(DateAdd(DateInterval.Month, 3, CDate(strModstrJobs))), "MMMM yyyy") & " - Line " & strProdLine)
+
+                        End Select
+
+                        dateCounts.Clear()
+                        keyCount = 0
+                        maxDate.Value = Nothing
+                    End If
+                Loop
+
+            End Using
+
+            If Len(lblAsterick.Text) > 0 Then
+                lblAsterick.Visible = True
+            Else
+                lblAsterick.Visible = False
+            End If
+        Catch ex As Exception
+            Master.eMsg(ex.ToString())
+        Finally
+
+        End Try
+
+        Return strReturnNvalues
+    End Function
+
+    Private Sub WriteKDPlanAll(ByVal Path As String)
+
+        Dim strBlock As String = ""
+        Try
+            Using sReader = New StreamReader(Path)
+
+                'read entire file from path passed in      
+                Do While strBlock = ""
+                    strBlock = Trim(sReader.ReadLine)
+                Loop
+
+                strBlock = Trim(sReader.ReadToEnd)
+                sReader.Read()
+                'write to textbox
+                tbFileContents.Text = strBlock
+            End Using
+        Catch ex As Exception
+            Master.tMsg("WriteKDPlanAll", "Error in Writing KD Plan to display")
+            Master.eMsg(ex.ToString())
+        Finally
+
+        End Try
+    End Sub
+
+    Private Sub WriteKDPlanSelected(ByVal path As String, ByVal strNvalue As String)
+
+        Dim dateCounts As New Hashtable
+        Dim de As DictionaryEntry
+        Dim dt As DateTime
+        Dim maxDate As DictionaryEntry
+        Dim key As String
+        Dim keyCount As Integer
+        Dim mnth As String
+        Dim yr As String
+        Dim day As String
+        Dim strLine As String
+        Dim strNValueFoundinFile As String = ""
+        Dim strKDEntireFile As String = ""
+        Dim strModstrJobs As String
+        Dim strDetailRecord As String
+        Dim strProdLine As String
+        Dim strFrameCodeFromFile As String
+        Dim lstNoBuildIdentifierArray As New ArrayList
+
+        lblAsterick.Text = ""   'reset the flag
+
+        Try
+            'open a stream to path passed in
+            Using sReader = New StreamReader(path)
+
+                'returns the production line for the file to be processed configured in the database
+                strProdLine = ReturnProdLine()
+
+                'build array of identifiers for "no build frame codes"
+                For Each Str As String In ReturnNoBuildStringIdentifiers().Split(","c)
+                    lstNoBuildIdentifierArray.Add(Str)
+                Next
+
+                ' ||||||'READ'|||||||||
+                strLine = Trim(sReader.ReadLine)  'read in very first line which should be header record
+                strLine = strLine.Replace(Chr(9), "")
+                Do While strLine = ""
+                    strLine = Trim(sReader.ReadLine)
+                Loop
+
+                ' get KD plan date from first record in file and format it
+                mnth = strLine.Substring(51, 6).Substring(2, 2)    'parse out month
+                day = strLine.Substring(51, 6).Substring(4, 2) 'parse out day
+                yr = strLine.Substring(51, 6).Substring(0, 2) 'parse out year
+
+                strModstrJobs = mnth & "/" & "01" & "/" & yr
+                lblSendDate.Text = mnth & "/" & day & "/" & yr 'set the file send date
+                strDetailRecord = ""
+                If strLine = "" Then        'check for invalid records, extra spaces in file, or end of file
+                    strLine = Trim(sReader.ReadLine)
+                Else
+                    'find the month and year of the lot to be created
+                    strDetailRecord = Trim(strLine).Substring(0, 7)
+                End If
+                Do While (sReader.Peek <> -1)  '1 record has been read at this point
+                    'keep processing rows until the trailer record is reached
+                    Do Until strDetailRecord = "**TRAIL"
+                        If strDetailRecord = "**HEADE" Then
+                            Exit Do 'means found 2nd header record, done with detail records
+                        Else 'start processing detail records
+                            '////////detail records
+                            strFrameCodeFromFile = strLine.Substring(11, 7) & strLine.Substring(31, 1)
+                            'check for production line and exit do if not configured line
+                            strProdLine = strLine.Substring(2, 1)
+
+                            If lstNoBuildIdentifierArray.Contains(UCase(strFrameCodeFromFile.Substring(ReturnNoBuildStartPosition() - 1, ReturnNoBuildStringLength()))) Then
+                                'skip the line because no build frame code foudn
+                                '#JMH(framecount isn't used anywhere)       intframecount = intframecount + 1
+
+                            Else
+                                'count up the dates
+                                key = strLine.Substring(3, 4)
+                                'check that key does not already exist and also that it is not a no-build
+                                If Not dateCounts.ContainsKey(key) Then
+                                    dateCounts.Add(key, 1)
+                                Else
+                                    keyCount = CInt(dateCounts.Item(key))
+                                    keyCount = keyCount + 1
+                                    dateCounts.Item(key) = keyCount
+                                End If
+
+                            End If
+
+                            '/////////detail records
+                        End If
+                        'end processing detail records
+
+                        strKDEntireFile = strKDEntireFile & strLine & vbCrLf
+                        'after read in header record
+                        strLine = Trim(sReader.ReadLine) ' ||||||'READ'|||||||||
+                        strLine = strLine.Replace(Chr(9), "")
+                        If strLine = "" Then        'check for invalid records, extra spaces in file, or end of file
+                            strLine = Trim(sReader.ReadLine)
+                        Else
+                            'find the month and year of the lot to be created
+                            strDetailRecord = Trim(strLine).Substring(0, 7)
+                        End If
+
+                    Loop
+
+                    'read records after the header record  ' ||||||'READ'|||||||||
+                    strLine = Trim(sReader.ReadLine)
+                    strLine = strLine.Replace(Chr(9), "")
+                    If strLine.Length < ReturnStringLength() - 20 Then
+                        sReader.ReadLine()
+
+                    End If
+                    If strLine = "" Then        'check for invalid records, extra spaces in file, or end of file
+                        strLine = Trim(sReader.ReadLine)
+                    Else
+                        'find the month and year of the lot to be created
+                        strDetailRecord = Trim(strLine).Substring(0, 7)
+                    End If
+
+                    'determine max of what was passed in and set this to be returned
+                    If Not dateCounts.Count = 0 Then 'takes care of first pass
+                        For Each de In dateCounts
+                            If IsNothing(maxDate) OrElse CInt(de.Value) > CInt(maxDate.Value) Then
+                                maxDate = de
+                            End If
+                        Next
+
+                        dt = DateTime.ParseExact(maxDate.Key.ToString(), "yyMM", Nothing)
+                        mnth = dt.Month.ToString()
+                        yr = dt.Year.ToString()
+                        Dim strModKDPlan As String = mnth & "/" & "01" & "/" & yr
+
+                        'determine if N-1, N-2 or N-3, or N-0, or N-0* with data from two months
+                        Dim marker As String = ""
+                        Select Case CInt((DateDiff(DateInterval.Month, CDate(strModstrJobs), CDate(strModKDPlan))))
+                            Case 0 'found N-0 data
+                                If dateCounts.Keys.Count > 1 Then 'found two dates in the file, so set asterick data
+                                    lblAsterick.Text = "* File Contains Data Outside of Month Specified"
+                                    marker = "*"
+                                Else
+                                    lblAsterick.Text = "* Flagged as N-0 File, Double Check"
+                                    marker = "*"
+                                End If
+                                strNValueFoundinFile = ("N-1 " & Format(CDate(strModKDPlan), "MMMM yyyy") & " - Line " & strProdLine & marker)
+
+                            Case 1 'found N-1 data 
+                                If dateCounts.Keys.Count > 1 Then 'found two dates in the file, so set asterick data
+                                    lblAsterick.Text = "* File Contains Data Outside of Month Specified"
+                                    marker = "*"
+                                Else : marker = ""
+                                End If
+                                strNValueFoundinFile = ("N-1 " & Format(CDate(DateAdd(DateInterval.Month, 1, CDate(strModstrJobs))), "MMMM yyyy") & " - Line " & strProdLine & marker)
+
+                            Case 2 'found N-2 data
+                                strNValueFoundinFile = ("N-2 " & Format(CDate(DateAdd(DateInterval.Month, 2, CDate(strModstrJobs))), "MMMM yyyy") & " - Line " & strProdLine)
+
+                            Case 3 'found N-3 data
+                                strNValueFoundinFile = ("N-3 " & Format(CDate(DateAdd(DateInterval.Month, 3, CDate(strModstrJobs))), "MMMM yyyy") & " - Line " & strProdLine)
+                            Case Else
+
+                        End Select
+
+                        dateCounts.Clear()
+                        keyCount = 0
+                        maxDate.Value = Nothing
+                    End If
+
+                    'compare NValue found in file to one passed in
+                    If strNValueFoundinFile = strNvalue Then
+                        'write out file to textbox
+                        Exit Try
+                    Else
+                        'otherwise, clear out previous lines
+                        strKDEntireFile = ""
+                    End If
+                Loop
+
+            End Using      'streampath
+        Catch ex As Exception
+            Master.eMsg(ex.ToString())
+        Finally
+            If strKDEntireFile.Length <> 0 Then
+                tbFileContents.Text = strKDEntireFile
+            End If
+        End Try
+    End Sub
+
+    Private Function GetListOfFilesWithoutPath(strDir As String) As String()
+        Dim sfiles() As String
+
+        Try
+            'save to array list
+            sfiles = Directory.GetFiles(strDir)
+
+            'strip out the path information before the filename
+            For x = 0 To sfiles.GetLength(0) - 1
+                sfiles(x) = Path.GetFileName(sfiles(x))
+            Next
+
+            Return sfiles
+        Catch ex As Exception
+            Master.eMsg(ex.ToString())
+
+            'return empty string array
+            Return New String() {}
+        End Try
+    End Function
+
+    Function ReturnProcessed(strNValue As String) As Integer
+        Try
+            'remove asterick if present
+            strNValue = strNValue.Replace("*", "")
+            Return CInt(DA.GetDataSet("SELECT count(*) from tblorderdata where OrderParameterID='0154' and OrderParameterValue='" & strNValue & "'").Tables(0).Rows(0).Item(0))
+
+        Catch ex As Exception
+            Master.eMsg(ex.ToString())
+            Return 0
+        End Try
+    End Function
+
+    Private Sub ResetControls()
+        'clear out all file information
+        lbNfiles.Items.Clear()
+        tbFileContents.Text = ""
+        lblFileName.Text = ""
+        lblStatus.Text = ""
+        lblSendDate.Text = ""
+        lblAsterick.Text = ""
+        lblAsterick.Visible = False
+    End Sub
+
+    Private Sub EnableControls()
+        Try
+            Master.Secure(Me.cmdDelete)
+            Master.Secure(Me.cmdMove)
+            Master.Secure(Me.cmdProcess)
+
+            Dim node As TreeNode = TreeView.SelectedNode
+            Dim strDirIn As String = ReturnInbound()
+            Dim strDirArc As String = ReturnOutbound()
+            If (node IsNot Nothing) AndAlso (node.Text <> strDirIn) AndAlso (node.Text <> strDirArc) Then
+                'only enable the controls if the selected node is a file.
+                tbFileContents.Enabled = True
+                lbNfiles.Enabled = True
+                cmdDelete.Enabled = True
+                cmdMove.Enabled = True
+            Else
+                'disable all controls
+                cmdDelete.Enabled = False
+                cmdMove.Enabled = False
+                tbFileContents.Enabled = False
+                lbNfiles.Enabled = False
+            End If
+
+            If lbNfiles.SelectedIndex < 0 Then
+                'Only process when a specific plan is selected
+                cmdProcess.Enabled = False
+
+            End If
+        Catch ex As Exception
+            Master.eMsg(ex.ToString())
+        End Try
+    End Sub
+#End Region
+
+#Region "DTS File Validation "
+    Private Function CreateDtsFile(ByVal path As String, ByRef strArrayErrorFrame As ArrayList, ByRef strArrayErrorRecords As ArrayList, ByRef blnValidQuantity As Boolean, ByRef blnValidSequence As Boolean) As Boolean
+        Dim result As Boolean = True
+
+        Try
+
+            'write contents of textbox to temp file, this will have only the
+            'KD plan data selected.
+            If (result = True) Then result = WriteFile(path) And result
+
+            'do validation on frame codes
+            If (result = True) AndAlso ActivateFrameTest Then result = ValidFrameCode(path, strArrayErrorFrame) And result
+
+            'do validation on record length
+            If (result = True) AndAlso ActivateRecordLengthTest Then result = ValidRecordLength(path, strArrayErrorRecords) And result
+
+            'do validation on quantity in N-1 matching quantity in N-2
+            If (result = True) AndAlso ActivateQuantityTest Then result = ValidQuantity(path, blnValidQuantity) And result
+
+            'do validation on sequence to make sure N-1 is replacing N-2 data and N-2 is replacing N-3 data
+            'NOTE: production line validation is done by simply not displaying those KD plans that are a different production line
+            If (result = True) AndAlso ActivateSequenceTest Then result = ValidSequence(blnValidSequence) And result
+
+        Catch ex As Exception
+            Master.eMsg(ex.ToString())
+            result = False
+        End Try
+
+        Return result
+    End Function
+
+    Private Function WriteFile(ByVal path As String) As Boolean
+        Dim result As Boolean = False
+        Try
+            'delete file if currently present
+            If File.Exists(path) Then
+                File.Delete(path)
+
+            End If
+
+            'open a new file for writing
+            Using sWriter As New StreamWriter(path, False)
+                'write file out
+                sWriter.Write(tbFileContents.Text)
+
+            End Using
+
+            result = True
+        Catch ex As Exception
+            Master.eMsg(ex.ToString())
+            result = False
+        End Try
+
+        Return result
+    End Function
+
+    Private Function ValidFrameCode(ByVal path As String, ByRef errorList As ArrayList) As Boolean
+        'pull out all frame codes and store in an array and compare to data in SQL Server
+        Dim result As Boolean = False
+
+        Dim strLine As String
+        Dim strValidFrameCodeList As ArrayList
+        Dim strNoBuildIdentifierArray() As String
+        Dim noBuildStartPosition As Integer
+        Dim noBuildStringLength As Integer
+        Dim strFrameCodeFromFile As String
+
+        Dim bfound As Boolean
+
+        Try
+            strNoBuildIdentifierArray = ReturnNoBuildStringIdentifiers.Split(","c)
+            noBuildStartPosition = ReturnNoBuildStartPosition()
+            noBuildStringLength = ReturnNoBuildStringLength()
+            strValidFrameCodeList = ReturnValidFrameCodes()    'load all the valid frame codes from the database
+
+            'open a stream to path passed in
+            Using sReader = New StreamReader(path)
+
+                Do While sReader.Peek <> -1
+                    bfound = False
+                    strLine = sReader.ReadLine
+                    strFrameCodeFromFile = strLine.Substring(11, 7) & strLine.Substring(31, 1)
+
+                    'check NoBuild frame codes
+                    For Each frame As String In strNoBuildIdentifierArray
+                        If frame.ToUpper() = strFrameCodeFromFile.Substring(noBuildStartPosition - 1, noBuildStringLength).ToUpper() Then
+                            bfound = True
+                        End If
+                    Next
+
+                    'check enabled frame codes
+                    For Each frameCode As String In strValidFrameCodeList
+                        If frameCode.ToUpper() = strFrameCodeFromFile.ToUpper() Then
+                            'found a valid frame code
+                            bfound = True
+                        End If
+                    Next
+
+                    If Not bfound AndAlso Not errorList.Contains(strFrameCodeFromFile) Then
+                        'never found the frame code, add the error to the arraylist
+                        errorList.Add(strFrameCodeFromFile)
+                    End If
+                Loop
+            End Using
+
+            result = True
+        Catch ex As Exception
+            Master.eMsg(ex.ToString())
+            result = False
+        End Try
+
+        Return result
+    End Function
+
+    Private Function ValidRecordLength(ByVal path As String, ByRef errorList As ArrayList) As Boolean
+        Dim result As Boolean = False
+
+        Dim intLine As Integer = 0
+        Dim strLine As String
+        Dim lineLength As Integer = ReturnStringLength() 'return valid record length for file, this is configured in the database.
+
+        'open file for reading
+        Try
+            'open a stream to path passed in
+            Using sReader = New StreamReader(path)
+                Do While sReader.Peek <> -1
+                    strLine = sReader.ReadLine
+
+                    'check length of each strLine and keep count of line
+                    intLine = intLine + 1
+                    If strLine.Length() <> lineLength Then
+                        'if length is not the configured length, add line number to error arraylist 
+                        errorList.Add(intLine)
+                    End If
+                Loop
+            End Using
+
+            result = True
+        Catch ex As Exception
+            Master.eMsg(ex.ToString())
+            result = False
+        End Try
+
+        Return result
+    End Function
+
+    Private Function ValidQuantity(ByVal path As String, ByRef blnValid As Boolean) As Boolean
+        Dim result As Boolean = False
+
+        Dim strLine As String
+        Dim strNfileDate As String
+        Dim intDBOrderQty As Integer
+        Dim intQty As Integer
+
+        Try
+            strNfileDate = lbNfiles.SelectedValue.Remove(0, 4)  'parse down to set just to month and date
+
+            'determine if N-1 data, if N-1 data then process validation, if N-2 or N-3 return blnValid=true since no validation required for these
+            If lbNfiles.SelectedValue.Substring(0, 3) = "N-1" Then
+                'get order qty from database
+                intDBOrderQty = ReturnDBOrderQty("N-2 " & strNfileDate)
+
+                'open file for reading and get order quantity from file
+                intQty = 0
+                Using sReader = New StreamReader(path)
+                    Do While sReader.Peek <> -1
+                        strLine = sReader.ReadLine
+                        'read each line and add quantity of each order
+                        intQty = intQty + CInt(strLine.Substring(38, 5))
+                    Loop
+                End Using
+
+                'check if quantites match then return true else false
+                If intDBOrderQty = intQty Then
+                    blnValid = True
+                Else
+                    blnValid = False
+                End If
+
+            Else
+                'not N-1 data
+                blnValid = True
+            End If
+
+            result = True
+        Catch ex As Exception
+            Master.eMsg(ex.ToString())
+            result = False
+        End Try
+
+        Return result
+    End Function
+
+    Private Function ValidSequence(ByRef sequenceIsValid As Boolean) As Boolean
+        Dim result As Boolean = False
+
+        Dim mnth As String
+        Dim yr As String
+        Dim strfulldate As String
+        Dim strNfileDate As String
+        Dim OrderParameter As String
+
+        Try
+            sequenceIsValid = False
+            strNfileDate = lbNfiles.SelectedValue.Remove(0, 4)
+            strNfileDate = strNfileDate.Substring(0, strNfileDate.LastIndexOf("-") - 1)
+
+            'convert to mm\dd\yyyy format
+            mnth = strNfileDate.Remove(strNfileDate.Length - 5, 5) 'parse out month
+            yr = strNfileDate.Substring(strNfileDate.Length - 4, 4) 'parse out year
+            strfulldate = mnth & "/" & "01/" & yr
+
+            'subtract a month and format the date.
+            strfulldate = CStr(CDate(strfulldate).AddMonths(-1))
+            strfulldate = Format(CDate(strfulldate), "MMMM yyyy")
+
+            'set default value to 1, so it assumes sequence is valid since it found 1 item with previous N-value
+            Dim intDBSequence As Integer = 1
+
+
+            If lbNfiles.SelectedValue.Substring(0, 3) = "N-2" Then          'if N-2 then check db
+                'select if exists orderparameter value with current date
+                OrderParameter = "N-1 " & strfulldate & "%"
+                intDBSequence = ReturnDBOrderRecordCount(OrderParameter)
+
+            ElseIf lbNfiles.SelectedValue.Substring(0, 3) = "N-3" Then      'if N-3 then check db
+                'if N-3 then call
+                'select if exists for current date
+                OrderParameter = "N-2 " & strfulldate & "%"
+                intDBSequence = ReturnDBOrderRecordCount(OrderParameter)
+
+            Else
+                'N-0 and N-1 do not require db check
+                intDBSequence = 1
+            End If
+
+            If intDBSequence = 0 Then
+                'no N-value found for previous month
+                sequenceIsValid = False
+            Else
+                'either the data is N-1, or there were records found for previous N-value so can proceed with processing
+                sequenceIsValid = True
+            End If
+
+            result = True
+        Catch ex As Exception
+            Master.eMsg(ex.ToString())
+            result = False
+        End Try
+        Return result
+    End Function
+
+    Private Function ReturnValidFrameCodes() As ArrayList
+        'return SQL for returning the list of Valid Frame codes
+        Dim dt As DataTable = New DataTable
+        Dim results As ArrayList = New ArrayList
+        Try
+            dt = DA.GetDataSet("SELECT productid from tblProducts where componentID='03'").Tables(0)
+            For Each row As DataRow In dt.Rows()
+                results.Add(row.Item(0).ToString())
+            Next
+            Return results
+        Catch ex As Exception
+            Master.eMsg(ex.ToString())
+            Return New ArrayList
+        End Try
+    End Function
+
+    Private Function ReturnDBOrderQty(ByVal OrderParameterValue As String) As Integer
+        Dim ds As DataSet
+        Dim result As Integer
+        Try
+            ds = DA.GetDataSet("select sum(cast(orderparameterValue as integer)) from tblOrderData    where orderparameterid='0008' and sequenceNumber in (select sequencenumber from tblOrderData where OrderParameterValue='" & OrderParameterValue & "')")
+
+            If ((ds IsNot Nothing) AndAlso (ds.Tables(0).Rows.Count > 0)) AndAlso Not IsDBNull(ds.Tables(0).Rows(0).Item(0)) Then
+                result = CInt(ds.Tables(0).Rows(0).Item(0))
+            Else
+                result = 0
+            End If
+
+            Return result
+        Catch ex As Exception
+            Master.eMsg(ex.ToString())
+            Return -1
+        End Try
+    End Function
+
+    Private Function ReturnDBOrderRecordCount(ByVal OrderParameterValue As String) As Integer
+        Dim ds As DataSet
+        Dim result As Integer
+        Try
+            ds = DA.GetDataSet("SELECT count(*) from tblorderdata where OrderParameterID='0154' and OrderParameterValue Like '" & OrderParameterValue & "'")
+
+            If ((ds IsNot Nothing) AndAlso (ds.Tables(0).Rows.Count > 0)) Then
+                result = CInt(ds.Tables(0).Rows(0).Item(0))
+            Else
+                result = 0
+            End If
+
+            Return result
+        Catch ex As Exception
+            Master.eMsg(ex.ToString())
+            Return -1
+        End Try
+    End Function
+
+#End Region
+
+#Region "Get or Set ApplicationParameterValues"
+
+    Function ReturnOutbound() As String
+
+        'return directory for archived files
+        Return BizLayer.GetApplicationParameterValue("2200", BatchModuleApplicationID)
+
+    End Function
+
+    Function ReturnInbound() As String
+
+        'return directory for inbound files
+        Return BizLayer.GetApplicationParameterValue("2201", BatchModuleApplicationID)
+
+    End Function
+
+    Function ReturnDTSFile() As String
+
+        'Return directory for DTS job to look for data to process
+        Return BizLayer.GetApplicationParameterValue("2202", BatchModuleApplicationID)
+
+    End Function
+
+    Function WriteNValue(ByVal strNvalue As String) As Boolean
+        Try
+            'remove asterick if present
+            strNvalue = "'" & strNvalue.Replace("*", "") & "'"
+
+            'write n-value to database location for use with DTS file and package
+            BizLayer.SetApplicationParameterValue("2203", strNvalue, BatchModuleApplicationID)
+
+            Return True
+        Catch ex As Exception
+            Master.eMsg(ex.ToString())
+            Return False
+        End Try
+    End Function
+
+    Function ReturnProdLine() As String
+
+        'Return production line to process
+        Return BizLayer.GetApplicationParameterValue("2204", BatchModuleApplicationID)
+
+    End Function
+
+    Function ReturnStringLength() As Integer
+        Try
+
+            'return directory for valid record length of file
+            Return CInt(BizLayer.GetApplicationParameterValue("2205", BatchModuleApplicationID))
+
+        Catch ex As Exception
+            Master.eMsg(ex.ToString())
+            Master.tMsg("StringLength", "Error finding configured string length")
+            Return 0
+        End Try
+    End Function
+
+    Function ReturnNoBuildStartPosition() As Integer
+
+        'return directory for valid record length of file
+        Return CInt(BizLayer.GetApplicationParameterValue("2210", BatchModuleApplicationID))
+
+    End Function
+
+    Function ReturnNoBuildStringLength() As Integer
+
+        'return directory for valid record length of file
+        Return CInt(BizLayer.GetApplicationParameterValue("2211", BatchModuleApplicationID))
+
+    End Function
+
+    Function ReturnNoBuildStringIdentifiers() As String
+
+        'return directory for valid record length of file
+        Return BizLayer.GetApplicationParameterValue("2212", BatchModuleApplicationID)
+
+    End Function
+
+    Function ReturnUser() As String
+
+        'get username
+        Return BizLayer.GetApplicationParameterValue("2213", BatchModuleApplicationID)
+
+    End Function
+
+    Function ReturnPassword() As String
+
+        'get password
+        Return BizLayer.GetApplicationParameterValue("2214", BatchModuleApplicationID)
+
+    End Function
+
+    Function ReturnDomain() As String
+
+        'get domain
+        Return BizLayer.GetApplicationParameterValue("2215", BatchModuleApplicationID)
+
+    End Function
+
+    Function ReturnNZeroDate() As String
+
+        Return BizLayer.GetApplicationParameterValue("2236", BatchModuleApplicationID)
+
+    End Function
+
+#End Region
+
+#Region "Dialog modalProcess_.aspx"
+    Private Sub divDialogProcessAccept_Click()
+
+        Session("KDProcess") = "TRUE"
+        If CBool(Session("N0Indicator")) = True Then
+            Session("N0Process") = "TRUE"
+        Else
+
+            Session("N0Process") = "False"
+        End If
+    End Sub
+
+    Private Sub divDialogProcessCancel_Click()
+
+        Session("KDProcess") = "FALSE"
+        Session("KDReport") = "FALSE"
+        If CBool(Session("N0Indicator")) = True Then
+            Session("N0Process") = "FALSE"
+            Session("N0Report") = "FALSE"
+        Else
+
+            Session("N0Process") = "TRUE"
+        End If
+    End Sub
+
+#End Region
+
+End Class

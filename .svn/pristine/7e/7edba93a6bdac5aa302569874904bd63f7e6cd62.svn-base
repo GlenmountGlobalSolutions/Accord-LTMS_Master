@@ -1,0 +1,181 @@
+﻿<%@ Page Title="" Language="vb" AutoEventWireup="false" MasterPageFile="~/Site.Master" CodeBehind="ShippingLabel.aspx.vb" Inherits="LTMS_Master.ShippingLabel" %>
+
+<%@ MasterType VirtualPath="~/Site.master" %>
+<asp:Content ID="Content1" ContentPlaceHolderID="HeadContent" runat="server">
+    <script type="text/javascript">
+
+        function contentPageLoad(sender, args) {
+            $("input:submit").on('click', function () { ShowWaitOverlay(); });
+        }
+
+    </script>
+</asp:Content>
+<asp:Content ID="Content2" ContentPlaceHolderID="MainContent" runat="server">
+    <div id="divOverlay" class="ui-widget-overlay" style="z-index: 1000;">
+    </div>
+    <asp:UpdatePanel ID="UpdatePanel1" runat="server">
+        <ContentTemplate>
+            <div style="text-align:left">
+                <table id="Table3">
+                    <tr>
+                        <td>
+                            <table id="tblTop" style="width: 100%;">
+                                <tr>
+                                    <td style="width: 14px; text-align: left;">
+                                        <span class="ui-icon ui-icon-triangle-1-e"></span>
+                                    </td>
+                                    <td>
+                                        <asp:Label ID="Label1" runat="server" CssClass="spanLabel h3">Driver Seat Serial Number:</asp:Label>
+                                    </td>
+                                    <td>
+                                        <asp:TextBox ID="txtDriverSeatSerialNum" runat="server" AutoPostBack="True" TabIndex="1" CssClass="textEntry h3"></asp:TextBox>
+                                        <asp:Label ID="lblDriverSeatSerialNumStatus" runat="server" Width="10px" ForeColor="Red"></asp:Label>
+                                    </td>
+                                    <td style="width: 30px;">
+                                        &nbsp;
+                                    </td>
+                                    <td style="width: 14px; text-align: left;">
+                                        <span class="ui-icon ui-icon-triangle-1-e"></span>
+                                    </td>
+                                    <td>
+                                        <asp:Label ID="Label3" runat="server" CssClass="spanLabel h3">Label Seat Code:</asp:Label>
+                                    </td>
+                                    <td>
+                                        <asp:TextBox ID="tLabelSeatCode" runat="server" Enabled="False" CssClass="textEntry h3"></asp:TextBox>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td style="width: 14px; text-align: left;">
+                                        <span class="ui-icon ui-icon-triangle-1-e"></span>
+                                    </td>
+                                    <td>
+                                        <asp:Label ID="Label2" runat="server" CssClass="spanLabel h3">Pass. Seat Serial Number:</asp:Label>
+                                    </td>
+                                    <td>
+                                        <asp:TextBox ID="txtPassSeatSerialNum" runat="server" AutoPostBack="True"  TabIndex="2" CssClass="textEntry h3"></asp:TextBox>
+                                        <asp:Label ID="lblPassSeatSerialNumStatus" runat="server" Width="10px" ForeColor="Red"></asp:Label>
+                                    </td>
+                                    <td>
+                                        &nbsp;
+                                    </td>
+                                    <td style="width: 14px; text-align: left;">
+                                        <span class="ui-icon ui-icon-triangle-1-e"></span>
+                                    </td>
+                                    <td>
+                                        <asp:Label ID="Label9" runat="server" CssClass="spanLabel h3">Shipping Code:</asp:Label>
+                                    </td>
+                                    <td>
+                                        <asp:TextBox ID="tShippingCode4" runat="server" Enabled="False" CssClass="textEntry h3"></asp:TextBox>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td style="width: 14px; text-align: left;">
+                                        <span class="ui-icon ui-icon-triangle-1-e"></span>
+                                    </td>
+                                    <td>
+                                        <asp:Label ID="Label4" runat="server" CssClass="spanLabel h3">Rear Back Serial Number:</asp:Label>
+                                    </td>
+                                    <td>
+                                        <asp:TextBox ID="txtRearBackSerialNum"  runat="server" AutoPostBack="True"  TabIndex="3" CssClass="textEntry h3"></asp:TextBox>
+                                        <asp:Label ID="lblRearBackSerialNumStatus" runat="server" Width="10px" ForeColor="Red"></asp:Label>
+                                    </td>
+                                    <td>
+                                        &nbsp;
+                                    </td>
+                                    <td style="width: 14px; text-align: left;">
+                                        <span class="ui-icon ui-icon-triangle-1-e"></span>
+                                    </td>
+                                    <td>
+                                        <asp:Label ID="Label5" runat="server" CssClass="spanLabel h3">Model Code:</asp:Label>
+                                    </td>
+                                    <td>
+                                        <asp:TextBox ID="tModelCode" runat="server" Enabled="False" CssClass="textEntry h3"></asp:TextBox>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td style="width: 14px; text-align: left;">
+                                        <!-- <span class="ui-icon ui-icon-triangle-1-e"></span> -->
+                                    </td>
+                                    <td>
+                                        <!-- <asp:Label ID="Label10" runat="server" CssClass="spanLabel h3">Rear Cushion Serial Number:</asp:Label> -->
+                                    </td>
+                                    <td>
+                                        <!-- <asp:TextBox ID="txtRearCushionSerialNum" runat="server" AutoPostBack="True"  TabIndex="4" CssClass="textEntry h3"></asp:TextBox> -->
+                                        <!-- <asp:Label ID="lblRearCushionSerialNumStatus" runat="server" Width="10px" ForeColor="Red"></asp:Label> -->
+                                    </td>
+                                    <td>
+                                        &nbsp;
+                                    </td>
+                                    <td style="width: 14px; text-align: left;">
+                                        <span class="ui-icon ui-icon-triangle-1-e"></span>
+                                    </td>
+                                    <td>
+                                        <asp:Label ID="Label6" runat="server" CssClass="spanLabel h3">Color Description:</asp:Label>
+                                    </td>
+                                    <td>
+                                        <asp:TextBox ID="tColorDesc" runat="server" Enabled="False" CssClass="textEntry h3"></asp:TextBox>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td colspan="7" style="height: 8px">
+                                        &nbsp;
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td style="width: 14px; text-align: left;">
+                                        <span class="ui-icon ui-icon-triangle-1-e"></span>
+                                    </td>
+                                    <td>
+                                        <asp:Label ID="Label7" runat="server" CssClass="spanLabel h3">Printer:</asp:Label>
+                                    </td>
+                                    <td>
+                                        <asp:DropDownList ID="ddPrinters" runat="server" AutoPostBack="True"  TabIndex="4" CssClass="selectDropDown h3" Width="180px">
+                                        </asp:DropDownList>
+                                    </td>
+                                    <td colspan="4" style="">&nbsp;
+                                    </td>
+                                </tr>
+                                <tr>
+                                <td colspan="2">&nbsp;</td>
+                                    <td colspan="1" style="height: 14px">
+                                        <asp:Button ID="cmdPrint" runat="server" CssClass="inputButton" Enabled="False" Text="Print" TabIndex="5"  Style="width: 80px;"></asp:Button>
+                                    </td>
+                                <td colspan="4">&nbsp;</td>
+                                </tr>
+                            </table>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td colspan="2">
+                            <asp:TextBox ID="tMessage" runat="server" TextMode="MultiLine" Width="99%" Height="120px" TabIndex="6"  CssClass="textEntry h3"></asp:TextBox>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td colspan="2">
+                            <asp:Label ID="Label8" runat="server" CssClass="spanLabel h3" >Shipping Status:</asp:Label>
+                            <span>&nbsp;</span>
+                            <asp:Label ID="lblShipStatus" runat="server" ForeColor="Red" ></asp:Label>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td colspan="2">
+                            <table id="Table4">
+                                <tr>
+                                    <td>
+                                        <asp:Label ID="lblPrintDupSSN" runat="server" ForeColor="Red" Visible="False"></asp:Label>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td>
+                                        <asp:Button ID="cmdPrintYes" runat="server" Width="75px" Height="24px" CssClass="inputButton" Text="Yes" Visible="False"></asp:Button>
+                                        <asp:Button ID="cmdPrintNo"  runat="server" Width="75px" Height="24px" CssClass="inputButton" Text="No" Visible="False"></asp:Button>
+                                    </td>
+                                </tr>
+                            </table>
+                        </td>
+                    </tr>
+                </table>
+            </div>
+        </ContentTemplate>
+    </asp:UpdatePanel>
+</asp:Content>
